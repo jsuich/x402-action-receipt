@@ -80,9 +80,18 @@ what the post-settlement-accountability cluster asks for:
   rules (spec §10).
 - **Vectors are inputs.** The default run verifies the committed `vectors/`;
   regeneration is explicit (`--regenerate`). Keys derive from fixed seeds, so
-  regeneration is reproducible.
+  key material, payloads, and every `actionRef` regenerate identically.
+  Signature reproducibility is algorithm-dependent: EdDSA vectors regenerate
+  byte-for-byte (deterministic by construction), while ES256/ES256K sign with
+  fresh per-signature randomness (not RFC 6979), so their signature bytes differ
+  between runs. Every verdict is identical regardless — the record is identified
+  by `actionRef`, which is independent of signature entropy.
 - **Determinism**: no wall-clock or RNG affects a recorded verdict — the
   verifier's clock is passed in, and all verdicts recompute from committed bytes.
+  A regenerated ES256/ES256K signature is fresh-random noise, not an identifier:
+  the only useful signal in it is that `r` never repeats across signings with a
+  key (repetition would be catastrophic nonce reuse); everything nameable is in
+  `actionRef`.
 - **Not a new primitive**: JCS + JWS + SHA-256, composed. The additions are the
   binding discipline and the conformance instrument. No novelty is claimed.
 
