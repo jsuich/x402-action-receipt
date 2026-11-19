@@ -1,127 +1,108 @@
-# x402 Action-Bound Receipt — draft extension + reference conformance suite
+# x402 `action-receipt` — draft extension and conformance suite
 
-A draft profile of the x402 `offer-receipt` extension that carries a
-tamper-evident, offline-verifiable binding between a settlement and what an agent
-did after it (issues [#2332], [#2648], [#2357]), plus a runnable, two-sided
-conformance harness.
+A draft x402 extension: after a payment settles, the resource server returns a
+signed statement of what was done, within what scope and with what outcome, bound
+to the settlement, to the payment requirements the client accepted, and (through
+signed binding slots) to evidence defined by other extensions.
 
-**Status:** proposed as an x402 extension in
-[x402-foundation/x402#2906][2906]. This repository is the public reference spec +
-conformance suite for that proposal, published so any implementation can run the
-vectors and cross-check results in the open.
+**Status:** draft 0.3, proposed for discussion in
+[x402-foundation/x402#2906][2906]. Draft 0.3 is a breaking revision of the 0.2.1
+draft that this repository previously held; see the spec's version history.
 
 [2906]: https://github.com/x402-foundation/x402/issues/2906
-[#2332]: https://github.com/x402-foundation/x402/issues/2332
-[#2648]: https://github.com/x402-foundation/x402/issues/2648
-[#2357]: https://github.com/x402-foundation/x402/issues/2357
 
 ## Files
 
 | File | What |
 |---|---|
-| `RECEIPT-BINDING-EXTENSION.md` | The draft spec — a profile of the approved `offer-receipt` extension |
-| `action_receipt.py` | Reference verifier + conformance suite + vector generator |
-| `vectors/` | Committed two-sided test vectors (inputs, not run-time outputs) |
-| `vectors/MANIFEST.json` | Language-neutral manifest — expected verdict + reason + settlement per vector, so any-SDK verifiers can run the suite |
-| `VECTORS.md` | Vector-by-vector coverage matrix |
+| `action-receipt.md` | The specification. It governs where it and the code disagree |
+| `action_receipt.py` | Reference verifier, conformance suite and vector generator |
+| `vectors/` | Committed test vectors (inputs, not run-time outputs) |
+| `vectors/MANIFEST.json` | Language-neutral manifest: context, expected verdict, reason code and report per vector |
+| `VECTORS.md` | Vector index, generated from the same tables the suite runs |
+| `flip_probe.py` | Disables each verifier check in turn and requires the suite to go red |
 | `requirements.txt` | Dependencies |
 | `LICENSE` | Apache-2.0 |
 
 ## Run
 
 ```bash
-python3 action_receipt.py                 # verify the committed vectors
-python3 action_receipt.py --regenerate    # re-sign + rewrite vectors, then verify
-python3 action_receipt.py --verify vectors/pos_es256_valid.json
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python action_receipt.py                 # verify the committed vectors
+.venv/bin/python action_receipt.py --verify vectors/pos_es256_valid.json
+.venv/bin/python action_receipt.py --worked        # print the spec's worked example
+.venv/bin/python action_receipt.py --regenerate    # rebuild vectors, MANIFEST.json, VECTORS.md
+.venv/bin/python flip_probe.py . /tmp/flip-scratch # show that each check can fail
 ```
 
-Expected: `all 36 pass; verifier produced both verdicts; every one of 13
-reject reason codes exercised (across 29 negative vectors)`, exit 0.
+The suite exits 0 only if every vector gives its expected verdict, reason and
+report; both verdicts were observed; every reason code was exercised; the
+mutation matrix and the identifier relations hold; and the reason codes in the
+spec match the code.
 
 ### Dependencies
 
-- `cryptography` — **required** (signature verification and vector generation).
-  A verifier that cannot check signatures must not return PASS, so there is no
-  signature-free mode.
-- `rfc8785` — optional. When importable, every payload's canonicalization is
-  cross-checked byte-for-byte against the reference RFC 8785 library, so the
-  in-repo canonicalizer is verified against the reference rather than trusted.
+- `cryptography` is required. A verifier that cannot check signatures must not
+  return PASS, so there is no signature-free mode.
+- `rfc8785` is used when present: every canonicalization is then cross-checked
+  byte for byte against that independent RFC 8785 implementation. The first line
+  of the suite's output says whether the cross-check ran. A disagreement is
+  reported as a verifier fault (`ERROR`), never as a rejected receipt.
 
-```bash
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python action_receipt.py
-```
+## What changed in draft 0.3
 
-## What this profile adds over the extension it builds on
+The changes came from review of the 0.2.1 draft and from the discussion in the
+x402 repository around post-settlement evidence.
 
-The approved `offer-receipt` extension already signs receipts. This profile adds
-what the post-settlement-accountability cluster asks for:
-
-1. an `action` block (what the agent did, its authorized scope, the outcome);
-2. `actionRef`, a content address over the JCS-canonical action tuple —
-   following #2648's convergence on RFC 8785 over a structured tuple;
-3. a **scheme-general** settlement binding — the on-chain `transaction` when a
-   scheme provides one, or a `settlementRef` (voucher / channel receipt / batch
-   root / ledger ref) when it doesn't — verified only against a *successful*
-   settlement;
-4. a `settlementStatus` (settled / capturePending / reversed / refunded) so the
-   payment lifecycle is represented separately from the service `outcome`;
-5. a canonicalization check (JWS payload bytes == `JCS(payload)`) making
-   "recomputable offline" a concrete conformance condition;
-6. reject reasons in the x402 error-taxonomy convention (`invalid_actionreceipt_*`);
-7. an executable, two-sided conformance suite that asserts its own coverage —
-   every verification branch has a negative vector that triggers it, and the run
-   confirms both verdicts were produced.
+- **`actionRef` is gone; `receiptRef` replaces it.** The 0.2.1 `actionRef` hashed
+  thirteen fields and was described as a join key and a replay key. It was
+  neither: it could not be computed before the receipt existed, and it was unique
+  per statement, not per payment. `receiptRef` is the SHA-256 of the signed
+  payload bytes, derived and not carried, and the spec says what it is and is not
+  for. It is not the four-field `action_ref` of issue #2332 and is not
+  interchangeable with it.
+- **`receiptId`.** Two payments under one batch settlement in the same second
+  produced byte-identical 0.2.1 receipts. Each receipt now carries a unique id.
+- **`requirementsDigest`** commits the accepted payment requirements: amount,
+  asset, recipient, scheme, network.
+- **`bindings`** carries values defined by other extensions under this receipt's
+  signature. A new binding type needs no change to this schema.
+- **`supersedes`** links a later lifecycle receipt (capture, reversal, refund) to
+  the one it replaces.
+- **Field grammar.** EVM addresses and hashes are lowercase in the receipt;
+  values from the unsigned settlement response are lowercased before comparison.
+  The 0.2.1 verifier rejected a correct receipt when a facilitator returned a
+  different hex case.
+- **Check order.** The canonical-bytes check now runs before schema typing, so
+  parser differences between languages land on one reason code.
+- **A report, not just a verdict.** The verifier says which bindings it compared
+  and which it could not. An unresolvable key has its own indeterminate code and
+  is no longer reported as a forged signature.
+- **Session and archival freshness.** An auditor holding a months-old receipt is
+  no longer rejected for its age.
+- **Stated limits.** The receipt is the paid counterparty's statement; the
+  settlement checks compare against an unsigned response; neither proves funds
+  moved.
 
 ## Design notes
 
-- **Scope**: JWS format only (ES256, ES256K, EdDSA), by choice — the profile is
-  verifiable end-to-end. EIP-712 is a follow-up reusing the base extension's
-  rules (spec §10).
-- **Vectors are inputs.** The default run verifies the committed `vectors/`;
-  regeneration is explicit (`--regenerate`). Keys derive from fixed seeds, so
-  key material, payloads, and every `actionRef` regenerate identically.
-  Signature reproducibility is algorithm-dependent: EdDSA vectors regenerate
-  byte-for-byte (deterministic by construction), while ES256/ES256K sign with
-  fresh per-signature randomness (not RFC 6979), so their signature bytes differ
-  between runs. Every verdict is identical regardless — the record is identified
-  by `actionRef`, which is independent of signature entropy.
-- **Determinism**: no wall-clock or RNG affects a recorded verdict — the
-  verifier's clock is passed in, and all verdicts recompute from committed bytes.
-  A regenerated ES256/ES256K signature is fresh-random noise, not an identifier:
-  the only useful signal in it is that `r` never repeats across signings with a
-  key (repetition would be catastrophic nonce reuse); everything nameable is in
-  `actionRef`.
-- **Not a new primitive**: JCS + JWS + SHA-256, composed. The additions are the
-  binding discipline and the conformance instrument. No novelty is claimed.
-
-## Related work — layering
-
-This profile is the *signed-binding* layer. It composes with, rather than
-duplicates, the action-reference identifier work:
-
-- **`draft-etcheverry-action-ref`** (individual Internet-Draft) defines the
-  `action_ref` *identifier* and a canonical envelope, and §3.1 freezes a
-  four-field preimage with optional fields kept envelope-adjacent — but it keeps
-  cryptographic signing separate from the identifier (its §8.1). This profile
-  supplies exactly that omitted layer for x402: a JWS `offer-receipt` that makes
-  the whole record signed and offline-verifiable, binding the `actionRef` and a
-  scheme-general settlement reference into one ~1–2 KB receipt. Identifier +
-  envelope underneath; signed x402 receipt-binding on top.
-- **#2648** established the RFC 8785 (JCS) canonicalization convergence over
-  #2332's original concatenation; `actionRef` follows it.
+- **JWS only** (ES256, ES256K, EdDSA). An EIP-712 format is an open question.
+- **Vectors are inputs.** Keys derive from fixed seeds, so payloads and every
+  `receiptRef` regenerate identically. EdDSA signatures regenerate byte for byte.
+  ES256 and ES256K signatures use fresh randomness, so their bytes differ between
+  regenerations; every verdict and every `receiptRef` is unaffected.
+- **All settlement identifiers in the vectors are synthetic.** The suite tests
+  the receipt procedure, not any chain.
+- **Not a new primitive.** JCS, JWS and SHA-256, composed. No novelty is claimed.
 
 ## Cross-implementation conformance
 
-`vectors/MANIFEST.json` is language-neutral: a conformant verifier loads
-`keys.json`, each vector, and the named settlement, and MUST reproduce the
-verdict and (on REJECT) the reason. Implementations in any language are welcome
-to run the suite and report results — two-sided agreement (every positive
-verifies, every negative rejects with its stated reason) in the open is the
-intended bar. Issues and cross-implementation results welcome here or on [#2906].
+`vectors/MANIFEST.json` is language-neutral. An implementation conforms if it
+reproduces every entry: verdict, reason on REJECT, report on PASS, and the
+`receiptRef` relations. Cite the manifest's `vectorsDigest` when reporting a
+result. Results from independent implementations are welcome here or on [#2906].
 
-## License · contributor
+## License and contributor
 
-Apache-2.0. Contributed openly by Holological LLC (`jsuich`). No novelty is
-claimed — an engineering composition of RFC 8785, RFC 7515 (JWS), and SHA-256,
-bound to the base `offer-receipt` extension and #2648's convergence.
+Apache-2.0. Contributed openly by Holological LLC (`jsuich`). Prepared with AI
+assistance.
