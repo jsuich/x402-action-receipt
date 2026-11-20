@@ -12,26 +12,31 @@ requirements the suite tests, and which it does not.
 adapter protocol of section 3, it reproduces every entry of
 `vectors/MANIFEST.json`: the verdict, the reason code on `REJECT`, the report
 on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
-`vectorsDigest` (currently `sha256:e01eb636a1ee203aecb645a754ef1ad14af3dbab2d7d51505ef27f9456a14ed4`).
+`vectorsDigest` (currently `sha256:ca6a6374e8cf0a7a20ae9b95a2b73302e980540e48e5608fd36fc65eb19ae511`).
 
-**Issuer.** No issuer conformance class is defined yet. The requirements that
-bind an issuer are listed in section 4 as untested, with the reason. A
-verifier-side vector can show that a malformed receipt is rejected; it cannot
-show that an issuer never produces one.
+**Issuer.** An implementation conforms as an issuer if, driven through the
+issuer adapter protocol of section 3, it handles every exchange in
+`exchanges/MANIFEST.json` as stated there: it produces exactly the expected
+payload (compared by RFC 8785 serialization) or refuses with the expected
+reason. Signing is not part of this class; a payload is signed under the header
+of spec section 3 and the result is a verifier input. Issuer requirements that
+an exchange cannot show (randomness of `receiptId`, key retention) are listed in
+section 4 as untested.
 
 **Consumer.** Requirements on how a verification result is used are listed for
 completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 81 requirements: 51 tested, 30 not tested.
-  - 10 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
+- 101 requirements: 77 tested, 24 not tested.
+  - 4 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
   - 9 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 1 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
-- 93 vectors, each named by at least one requirement.
+- 94 vectors, each named by at least one requirement.
+- 46 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -71,9 +76,35 @@ Output line:
 Two adapters are in `conformance/adapters/`: Python (the reference verifier)
 and Node (the second verifier, `verify.mjs`).
 
+### Issuer adapter protocol
+
+An issuer under test reads exchanges and writes results, one JSON object per
+line, with no arguments.
+
+```json
+{"id": "any string", "exchange": {"paymentRequired": {...}, "paymentPayload": {...},
+   "settlementResponse": {...}, "settlementReference": "..." or null,
+   "statement": {"receiptId": "...", "issuedAt": 1703123456, "action": {...},
+      "settlementStatus": "settled", "supersedes": "", "reversalTransaction": null,
+      "bindings": []}}}
+```
+
+```json
+{"id": "same string", "issued": true, "payload": {...}}
+{"id": "same string", "issued": false, "reason": "settlement_not_successful"}
+```
+
+- `payload` is the receipt payload object of spec section 6.3, not signed and
+  not serialized. `reason` is a refusal reason of spec section 6.2.
+- Any part of an exchange may be missing or malformed; the issuer must answer
+  every line with a payload or a refusal.
+- `python3 issuer.py --batch` and `node issuer.mjs` are the two issuers here.
+  `conformance/run_exchanges.py <command>` runs any issuer against the manifest.
+
 ## 4. Requirements
 
-`Tested by`: `vector` = the named vectors; `matrix` = the suite's mutation
+`Tested by`: `vector` = the named vectors; `exchange` = the named exchanges;
+`matrix` = the suite's mutation
 matrix or `receiptRef` relations; `fuzz` = a property the fuzzer asserts on
 every case; `suite` = a structural check of the suite itself.
 
@@ -105,7 +136,7 @@ every case; `suite` = a structural check of the suite itself.
 | V-BND-1 | §5.3 | MUST | Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count. | `neg_binding_unsorted`, `neg_binding_duplicate_type`, `neg_binding_extra_member`, `neg_binding_type_grammar`, `neg_binding_value_non_ascii`, `neg_binding_too_many` |
 | V-BND-2 | §4.5.1 | MUST NOT | Do not reject a receipt for an unrecognized binding type; report it as not evaluated. | `pos_bindings_unheld`, `pos_bindings_composed` |
 | V-BND-3 | §5.11 | MUST | No binding status changes the verdict. | `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs` |
-| V-BND-4 | §4.5.2 | MUST | Evaluate `action-receipt:advertised-info` when the advertised `info` is held: digest, then `scope` and `actionType` equality. | `pos_bindings_composed`, `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs` |
+| V-BND-4 | §4.5.2 | MUST | Evaluate `action-receipt:advertised-info` when the advertised `info` is held: digest, then `scope` and `actionType` equality. | `pos_bindings_composed`, `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs`, `pos_binding_advertised_scope_not_string` |
 | V-AUT-1 | §5.4 | MUST | Reject unless `kid` is authorized for the receipt's resource by the service or the recipient anchor. | `neg_signer_unauthorized`, `neg_signer_unknown_kid`, `pos_payto_signer` |
 | V-AUT-2 | §5.4 | MUST | Treat both anchors as scoped to the resource. | `neg_signer_payto_wrong_resource` |
 | V-AUT-3 | §5.4 | MUST NOT | Do not dereference a location that only the receipt names. | not tested (`needs-network`) |
@@ -147,18 +178,38 @@ every case; `suite` = a structural check of the suite itself.
 | ID | Spec | Level | Requirement | Tested by |
 |---|---|---|---|---|
 | I-ADV-1 | §2.3 | SHOULD | Advertise the extension in `PaymentRequired`. | not tested (`issuer-behaviour`) |
-| I-ADV-2 | §2.3 | MUST | Carry the advertised `actionType` and `scope` in the receipt, and commit the advertisement with a binding. | not tested (`issuer-behaviour`) |
 | I-BAS-1 | §2.4 | MAY | May emit both a base receipt and an action receipt. | not tested (`informative`) |
 | I-BAS-2 | §2.4 | MUST | When both are emitted, their common members are equal. | not tested (`issuer-behaviour`) |
-| I-SRC-1 | §4.1 | MUST | Build each member from the source the table names. | not tested (`issuer-behaviour`) |
 | I-ID-1 | §4.3 | MUST | Generate `receiptId` with at least 128 bits of secure randomness and never reuse one. | not tested (`issuer-behaviour`) |
-| I-SET-1 | §4.3 | MUST NOT | Carry no settlement identifier that settlement did not return. | not tested (`issuer-behaviour`) |
-| I-REV-1 | §4.3 | SHOULD | Carry a reversal or refund transaction in the reversal binding. | not tested (`issuer-behaviour`) |
-| I-REQ-1 | §4.4 | MUST | Hash only accepted requirements that lie in the value domain. | not tested (`issuer-behaviour`) |
-| I-REQ-2 | §4.4 | MUST NOT | Issue no receipt when the digest cannot be computed. | not tested (`issuer-behaviour`) |
-| I-BND-1 | §4.5.1 | MUST NOT | A binding does not restate or contradict a core member. | not tested (`issuer-behaviour`) |
 | I-KEY-1 | §6 | RECOMMENDED | Use a signing key separate from the `payTo` key. | not tested (`informative`) |
 | I-PRV-1 | §10 | SHOULD | Use pseudonymous `agent` and `scope` where possible. | not tested (`informative`) |
+| I-ORD-1 | §6.2 | MUST | Perform the ten steps in order. | `refuse_order_settlement_before_statement`, `refuse_order_statement_before_advertisement` |
+| I-ORD-2 | §6.2 | MUST NOT | Issue nothing once a step fails. | `refuse_settlement_failed`, `refuse_no_identifier` |
+| I-STP-1 | §6.2 | MUST | Step 1: refuse unless settlement succeeded (strictly `true`). | `refuse_settlement_failed`, `refuse_settlement_truthy_string` |
+| I-STP-2 | §6.2 | MUST | Step 2: refuse without a transaction or a settlement reference. | `refuse_no_identifier`, `issue_batch`, `issue_both_identifiers` |
+| I-STP-3 | §6.2 | MUST | Step 3: refuse unless the accepted requirements are an object in the value domain. | `refuse_requirements_non_integer`, `refuse_requirements_missing`, `issue_requirements_float_spelling` |
+| I-REQ-2 | §4.4 | MUST NOT | Issue no receipt when the requirements digest cannot be computed. | `refuse_requirements_non_integer` |
+| I-REQ-1 | §4.4 | MUST | Hash only accepted requirements that lie in the value domain. | `refuse_requirements_non_integer` |
+| I-STP-4 | §6.2 | MUST | Step 4: refuse unless the accepted network is CAIP-2 and does not conflict with a CAIP-2 response network. | `refuse_network_not_caip2`, `refuse_network_not_caip2_either_side`, `refuse_network_conflict`, `issue_response_network_not_caip2` |
+| I-STP-5 | §6.2 | MUST | Step 5: refuse without the resource URL. | `refuse_no_resource` |
+| I-STP-6 | §6.2 | MUST | Step 6: take the payer from the response, else from the scheme payload; refuse if neither. | `refuse_no_payer`, `issue_payer_from_authorization` |
+| I-STP-7 | §6.2 | MUST | Step 7: refuse unless `payTo` is had and the identifiers satisfy the grammar after lowercasing. | `refuse_payto_role_constant`, `refuse_payto_missing`, `refuse_transaction_not_hex` |
+| I-STP-7L | §6.2 | MUST | Lowercase EVM identifiers; copy others verbatim. | `issue_basic`, `issue_response_uppercase_hex`, `issue_non_evm` |
+| I-STP-8 | §6.2 | MUST | Step 8: refuse a statement that is not well formed. | `refuse_outcome_unknown`, `refuse_receiptid_short`, `refuse_issuedat_fraction`, `refuse_scope_unpaired_surrogate`, `issue_issuedat_float_spelling`, `issue_outcome_refused` |
+| I-STP-9 | §6.2 | MUST | Step 9: refuse when an advertised `actionType` or `scope` is not a string equal to the statement's. | `refuse_advertised_scope_conflict`, `refuse_advertised_scope_not_string` |
+| I-ADV-2 | §2.3 | MUST | Carry the advertised `actionType` and `scope` in the receipt and commit the advertisement. | `refuse_advertised_scope_conflict`, `issue_advertised` |
+| I-STP-10 | §6.2 | MUST | Step 10: refuse bindings that break the shape, grammar, uniqueness or count. | `refuse_binding_duplicate_type`, `refuse_binding_grammar`, `refuse_seventeen_bindings`, `refuse_bindings_not_array`, `issue_sixteen_bindings` |
+| I-BND-2 | §6.2 | MUST | Add the advertisement binding when the extension was advertised. | `issue_advertised`, `refuse_advertised_info_not_hashable` |
+| I-BND-3 | §6.2 | MUST | Add the reversal binding when the statement has a reversal transaction. | `issue_refund` |
+| I-REV-1 | §4.3 | SHOULD | Carry a reversal or refund transaction in the reversal binding. | `issue_refund` |
+| I-BND-4 | §6.2 | MUST | Refuse a supplied binding in the `action-receipt:` namespace. | `refuse_binding_reserved_type`, `refuse_binding_duplicates_advertisement` |
+| I-BND-1 | §4.5.1 | MUST NOT | A binding does not restate or contradict a core member. | not tested (`issuer-behaviour`) |
+| I-BND-5 | §6.2 | MUST | Emit bindings in ascending order of `type`. | `issue_bindings_sorted`, `issue_sixteen_bindings` |
+| I-CNV-1 | §6.1 | MUST | Treat absent and `null` optional members alike; ignore unnamed members; treat a value that is not had as not there. | `issue_null_means_absent`, `issue_action_extra_member_ignored`, `issue_transaction_wrong_type_with_reference` |
+| I-CNV-2 | §6.1 | MUST | Treat the extension as advertised only when its `info` is a JSON object. | `issue_advertisement_info_not_object`, `issue_advertised` |
+| I-SRC-1 | §4.1 | MUST | Build each member from the source the table names. | `issue_basic`, `issue_batch`, `issue_both_identifiers`, `issue_refund`, `issue_non_evm` |
+| I-SET-1 | §4.3 | MUST NOT | Carry no settlement identifier that settlement did not return. | `issue_batch`, `issue_transaction_wrong_type_with_reference` |
+| I-E2E-1 | §6.3 | MUST | Every issued receipt verifies in the context of its own exchange. | suite: issuer.py signs each issued payload and verifies it in the context derived from its exchange; fuzz_issuer.py property Q3 does the same through both verifiers for every generated exchange |
 
 ### Consumer
 
@@ -200,6 +251,10 @@ A stage that cannot run is reported as VOID and fails the cycle.
 | example | the second verifier reproduces the spec's worked example from the spec text |
 | flips | every check of the reference verifier, disabled, turns the suite red |
 | fuzz | the two verifiers agree on generated cases, and six oracle-free properties hold |
+| issuer | the reference issuer reproduces the exchange manifest, and every receipt it issues verifies in the context of its own exchange |
+| issuer-n | the second issuer reproduces the exchange manifest |
+| issuer-fl | every step of the reference issuer, disabled, turns its suite red |
+| issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |
 
 `python3 flip_probe.py . <scratch> --fuzz N` additionally measures the fuzzer:
 how many disabled checks it detects in N cases.

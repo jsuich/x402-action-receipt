@@ -3,7 +3,7 @@
   "version": 1,
   "specDraft": "0.3",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT, and the report on PASS. keys.json is a test fixture standing in for anchor and key resolution.",
-  "vectorsDigest": "sha256:e01eb636a1ee203aecb645a754ef1ad14af3dbab2d7d51505ef27f9456a14ed4",
+  "vectorsDigest": "sha256:ca6a6374e8cf0a7a20ae9b95a2b73302e980540e48e5608fd36fc65eb19ae511",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -318,6 +318,33 @@
         }
       },
       "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised_scope_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "scope": 5
+      },
       "now": 1703123500,
       "maxAgeSeconds": 3600,
       "mode": "session"
@@ -749,6 +776,33 @@
       "context": "advertised",
       "report": {
         "receiptRef": "sha256:56ffe4b810da2ec560bf6f30fc14c57776edf8a918da31a73205922768b0ecf5",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_advertised_scope_not_string.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_scope_not_a_string",
+      "report": {
+        "receiptRef": "sha256:fe664fd35fa59acda82dd588f2af62d089e076caadf9a14202868691bb4a593c",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,

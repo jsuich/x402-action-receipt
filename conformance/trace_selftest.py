@@ -21,7 +21,7 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 FILES = ["action-receipt.md", "CONFORMANCE.md", "conformance/requirements.json",
-         "conformance/trace.py", "vectors/MANIFEST.json"]
+         "conformance/trace.py", "vectors/MANIFEST.json", "exchanges/MANIFEST.json"]
 
 
 def fresh() -> pathlib.Path:
@@ -61,12 +61,16 @@ PLANTS = [
     ("T2", "a new MUST added to the spec without a requirement",
      lambda d: (d / "action-receipt.md").write_text(
          (d / "action-receipt.md").read_text().replace(
-             "## 6. Issuer requirements",
-             "A verifier MUST also refuse receipts issued on a Tuesday.\n\n## 6. Issuer requirements"))),
+             "## 6. Issuing (normative)",
+             "A verifier MUST also refuse receipts issued on a Tuesday.\n\n## 6. Issuing (normative)"))),
     ("T3", "a requirement naming a vector that does not exist",
      lambda d: edit_reqs(d, lambda rs: by_id(rs, "V-SIG-2")["vectors"].append("neg_does_not_exist.json"))),
     ("T4", "a vector that no requirement names",
      lambda d: edit_reqs(d, lambda rs: by_id(rs, "V-SIG-3").update(vectors=["neg_sig_wrong_curve.json"]))),
+    ("T4", "an exchange that no requirement names",
+     lambda d: edit_reqs(d, lambda rs: by_id(rs, "I-STP-1").update(exchanges=["refuse_settlement_failed.json"]))),
+    ("T3", "a requirement naming an exchange that does not exist",
+     lambda d: edit_reqs(d, lambda rs: by_id(rs, "I-STP-2")["exchanges"].append("refuse_nothing.json"))),
     ("T5", "an untested requirement with no listed reason",
      lambda d: edit_reqs(d, lambda rs: by_id(rs, "V-AUT-3").update(tested_by="later"))),
     ("T7", "a stale CONFORMANCE.md",

@@ -5,7 +5,8 @@ what changed as a result. Add an entry whenever a cycle finds something or the
 harness changes. A cycle that finds nothing is recorded in one line.
 
 How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --save <dir>`.
-Use seeds that have not been used before; seeds 1 to 8 and 11 to 18 are spent.
+Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
+31 to 33, 41 to 43, 51 to 53.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
@@ -96,6 +97,60 @@ while those requirements name another network. Operator
 
 Seeds 21 to 24 are spent.
 
+## Cycle 7 — 2026-11-20 (verifier)
+
+| # | Finding | Class | Resolution |
+|---|---|---|---|
+| 8 | The catalogue listed a verifier MUST with no step and no reason code: a requesting verifier "MUST additionally check that `resourceUrl` is the URL it paid for" | B | Now the first part of §5.4, with `invalid_actionreceipt_resource_mismatch`, a report entry, two vectors, a flip and a fuzz operator |
+
+Adding the report entry broke agreement with the second verifier on every
+positive vector until it was updated, which is the cycle working as intended.
+Seeds 41 to 43, 5,000 cases each: 0 disagreements.
+
+## Issuer cycle 1 — 2026-11-20
+
+Spec §6 rewritten as a ten-step procedure with named refusal reasons. Reference
+issuer (`issuer.py`), 34 exchanges with expectations declared by hand as
+differences from the payload printed in spec §4.7, issuer flip probe, issuer
+fuzzer with four properties. Reference issuer alone, seed 1, 4,000 exchanges,
+round trips through both verifiers: 82 property violations in two groups.
+
+| # | Finding | Class | Resolution |
+|---|---|---|---|
+| 9 | A statement could supply a binding in the `action-receipt:` namespace. With nothing advertised, the issuer produced a receipt carrying an advertisement commitment no verifier could evaluate | B | §6.2: the types this specification defines are added by the issuer and never supplied. Exchange `refuse_binding_reserved_type` |
+| 10 | An unpaired surrogate in a statement string produced a payload that cannot be serialized | A + B | §6.1: a value is "had" only if it is well-formed Unicode; step 8 requires well-formed strings. Exchange `refuse_scope_unpaired_surrogate` |
+| 11 | The issuer flip probe showed the network-grammar rule was tested only where a second rule gave the same reason; later the same for binding uniqueness | suite gap | Exchanges `refuse_network_not_caip2_either_side`, `refuse_binding_duplicate_type` |
+
+## Issuer cycle 2 — 2026-11-20
+
+A second issuer (`issuer.mjs`) was written by a separate agent session from the
+spec text and the 34 exchange inputs only. The exchanges were given opaque names
+and no expected outputs existed in its directory. Run unedited, it reproduced
+the spec's worked example byte for byte and agreed on all 34 exchanges. Its
+report listed 56 places where the text made it choose; these were real:
+
+| # | Finding | Class | Resolution |
+|---|---|---|---|
+| 12 | §5.8 said a verifier lowercases "ASCII `A-F`", while both verifiers lowercase all ASCII letters, and §6.2 added "a leading `0X` to `0x`". As written, a response spelling an address `0X...` would issue a receipt that then fails verification | B (text wrong) | One rule in both places: ASCII `A-Z` to `a-z`. The reference verifier now lowercases ASCII only |
+| 13 | `null` versus absent for `supersedes` and `bindings` was undecided; the two issuers split | B | §6.1: an absent optional member and a `null` one are the same. Exchange `issue_null_means_absent` |
+| 14 | "If the issuer advertised this extension" had no testable definition; the issuers split on an `info` that is not an object | B | §6.1 defines it: the extension entry is an object whose `info` is a JSON object. Exchange `issue_advertisement_info_not_object` |
+| 15 | Step 9 compared only string-valued advertised members while §4.5.2 requires equality for every member present. An `info` with `scope: 5` was issued and verified as `mismatched` by one verifier and `matched` by the other | B | Step 9 and §4.5.2 both say "present". Both issuers and the reference verifier changed. Exchange `refuse_advertised_scope_not_string`, vector `pos_binding_advertised_scope_not_string` |
+| 16 | The closing claim of §6.3, "passes with every check compared", was false for `network`, `payer` and `resourceUrl` in ordinary exchanges | B (text wrong) | Reworded to what holds |
+| 17 | Extra members of the statement's `action`, and a `transaction` of the wrong type, were unspecified | B | §6.1 conventions. Exchanges `issue_action_extra_member_ignored`, `issue_transaction_wrong_type_with_reference` |
+| 18 | The harness split adapter output with `str.splitlines()`, which also splits on U+2028; Node emits that character unescaped inside a JSON string | C | Split on LF only, in three places |
+| 19 | The fuzzer derived a verifier clock of 2^53 from the largest `issuedAt` | C | Clock capped to the safe range |
+
+The second issuer was then changed in five places to the settled text. Seed 1,
+5,000 exchanges: 0 disagreements, 0 violations. Issuer fuzzer power: 24 of 25,
+then 25 of 25 after operator `statement_unicode`.
+
+## Cycle 8 — 2026-11-20 (all eleven stages)
+
+Seeds 51 to 53, 5,000 each. Verifiers: 15,000 cases, 7,981 follow-ups, 0
+disagreements. Issuers: 15,000 exchanges, 10,064 round trips through both
+verifiers, 0 disagreements, 0 property violations. 94 vectors, 46 exchanges, 40
+verifier flips, 25 issuer flips, 101 requirements (77 tested).
+
 ## Known limits of this process
 
 - Both verifiers were written in one working session, one of them from the spec
@@ -105,8 +160,12 @@ Seeds 21 to 24 are spent.
   both share and that is wrong is invisible to it; only the properties (P1 to P6)
   and the hand-declared vector expectations stand against that.
 - The properties are few and all concern a passing receipt.
-- 30 of 80 requirements are not tested, 9 of them verifier requirements. They are
-  listed with reasons in `CONFORMANCE.md`. There is no issuer conformance class.
+- 24 of 101 requirements are not tested, 9 of them verifier requirements. They
+  are listed with reasons in `CONFORMANCE.md`.
+- Issuer conformance covers the payload an issuer builds and its refusals. It
+  does not cover signing, the randomness of `receiptId`, or key retention.
+- The scheme-payload payer is defined for one field,
+  `payload.authorization.from`; other schemes are untested.
 - Every settlement identifier is synthetic. Nothing here touches a payment rail,
   a DID document or DNS.
 - The flip probe patches source text. A refactor that changes a patched line

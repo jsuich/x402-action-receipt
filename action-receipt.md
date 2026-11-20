@@ -94,8 +94,8 @@ object:
 
 The client echoes `info` in `PaymentPayload.extensions` as core §5.1.2 requires.
 When the server advertised `actionType` or `scope`, the receipt it later issues
-MUST carry the same values, and the server SHOULD commit the advertisement with
-the `action-receipt:advertised-info` binding (§4.5.2). That is what lets a client
+MUST carry the same values, and the server commits the advertisement with the
+`action-receipt:advertised-info` binding (§4.5.2, §6.2). That is what lets a client
 show the scope it paid for was fixed before it paid. This is an issuer
 requirement: no step of §5 rejects on it. A verifier sees a violation as a
 `mismatched` binding, and only when the server included the binding.
@@ -237,7 +237,7 @@ receipt it replaces. Otherwise `supersedes` is `""`. A holder of an older receip
 cannot learn from that receipt that it was superseded; a consumer that needs the
 current state MUST obtain the latest receipt or resolve the settlement on the
 rail. When the reversal or refund has its own transaction, the server SHOULD
-carry it in the `action-receipt:reversal-transaction` binding (§4.5.2).
+carry it in the `action-receipt:reversal-transaction` binding (§4.5.2, §6.2).
 
 ### 4.4 `requirementsDigest`
 
@@ -574,7 +574,7 @@ Reject with `invalid_transaction_state` unless the `SettlementResponse` has
 
 Values from the `SettlementResponse` are unsigned. Before comparing, the verifier
 normalizes them: when the **receipt's** `network` begins `eip155:` it lowercases
-the response's `transaction` and `payer` (ASCII `A-F` to `a-f`). Nothing else is
+the response's `transaction` and `payer` (ASCII `A-Z` to `a-z`). Nothing else is
 normalized. Throughout §5.7 and §5.8 the response "has" a transaction, a
 settlement reference or a payer when the value is a non-empty string; an absent
 member, `null` and `""` all mean it has none. Reject with
@@ -718,18 +718,106 @@ amount of the accepted requirements from `payer` to `payTo`. It SHOULD NOT assum
 the transaction's submitter is the payee: under x402 the facilitator usually
 submits. This extension does not specify rail resolution further.
 
-## 6. Issuer requirements
+## 6. Issuing (normative)
 
-1. Sign only after settlement returns, and only with identifiers settlement
-   returned.
-2. Build each member from the source named in §4.1.
-3. Generate `receiptId` per §4.3.
-4. Keep every key that has signed a receipt resolvable for as long as receipts
+### 6.1 Inputs
+
+The issuer is the resource server. To issue a receipt it holds:
+
+- the `PaymentRequired` it sent, for `resource.url` and, when it advertised this
+  extension, `extensions["action-receipt"].info`;
+- the `PaymentPayload` it received, for `accepted` and the scheme payload;
+- the `SettlementResponse`, and the scheme's settlement reference when the
+  scheme has one (§4.3);
+- its **statement**: the four `action` members, `settlementStatus`, and
+  optionally `supersedes`, a reversal transaction and further bindings;
+- a fresh `receiptId` (§4.3) and its clock.
+
+Conventions for this section:
+
+- A value is **had** when it is a non-empty string of well-formed Unicode. A
+  string with an unpaired surrogate cannot be serialized (§4.6), so it is not
+  had. A value that is not had is treated as if it were not there: a
+  `transaction` of the wrong type is no transaction.
+- An optional member that is absent and one that is `null` are the same.
+- Members this section does not name are ignored. An `action` object in the
+  statement with further members contributes only its four.
+- The issuer **advertised** this extension when
+  `PaymentRequired.extensions["action-receipt"]` is an object whose `info` is a
+  JSON object. That `info` is "the advertised `info`". Anything else is no
+  advertisement.
+
+### 6.2 Procedure
+
+The issuer MUST perform these steps in order. At the first step that fails it
+MUST NOT issue a receipt. The refusal reasons are local names, used in logs and
+in conformance testing; they never appear on the wire.
+
+| Step | Refusal reason | The issuer refuses unless |
+|---|---|---|
+| 1 | `settlement_not_successful` | `SettlementResponse.success` is `true` |
+| 2 | `no_settlement_identifier` | the response has a `transaction`, or the issuer has a settlement reference |
+| 3 | `requirements_not_hashable` | `PaymentPayload.accepted` is a JSON object in the value domain of §4.6 |
+| 4 | `network_unusable` | `accepted.network` is a string in CAIP-2 form (§4.6); and, when `SettlementResponse.network` is also a string in CAIP-2 form, the two are equal |
+| 5 | `resource_unavailable` | it has `PaymentRequired.resource.url` |
+| 6 | `payer_unavailable` | it has a payer: `SettlementResponse.payer`, or failing that `PaymentPayload.payload.authorization.from`. A scheme that names its payer elsewhere defines its own second source; this document and its conformance suite use only these two |
+| 7 | `identifier_out_of_grammar` | it has `accepted.payTo`, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6 |
+| 8 | `invalid_statement` | the statement is well formed (below) |
+| 9 | `advertisement_conflict` | for each of `actionType` and `scope` present in the advertised `info`, it is a string equal to the statement's `action` member |
+| 10 | `invalid_bindings` | the assembled `bindings` satisfy §4.5 |
+
+**Lowercasing (step 7).** When `accepted.network` begins `eip155:` the issuer
+lowercases `payer`, `payTo` and `transaction` (ASCII `A-Z` to `a-z`, the rule a
+verifier applies in §5.8). On other networks they are copied verbatim. The
+settlement reference is never changed.
+
+**Well-formed statement (step 8).** `action.agent` and `action.actionType` are
+had; `action.scope` is a string of well-formed Unicode; `action.outcome` and
+`settlementStatus` are listed values; `receiptId` matches its grammar;
+`issuedAt` is a number with an integer value (§4.6) in `[0, 2^53 - 1]`;
+`supersedes` is absent, `""` or matches its grammar.
+
+**Assembling bindings (step 10).** Start from the further bindings in the
+statement (none if absent; a value that is not an array fails the step). A
+further binding whose `type` begins `action-receipt:` fails the step: the types
+this specification defines are added by the issuer below and are never supplied.
+Then:
+
+- if the issuer advertised this extension, add `action-receipt:advertised-info`
+  with the digest of the advertised `info` (§4.5.2). An advertised `info` that is
+  not in the value domain cannot be committed and fails the step;
+- if the statement has a reversal transaction, add
+  `action-receipt:reversal-transaction` with that value.
+
+Sort the entries in ascending order of `type`. Two entries with one `type`, an
+entry that breaks the grammar of §4.5, or more than 16 entries fails the step.
+
+### 6.3 The payload
+
+When no step refused, the payload is built from the sources of §4.1: `version`
+is `1`; `network` is `accepted.network`; `resourceUrl` is
+`PaymentRequired.resource.url`; `payer`, `payTo` and `transaction` are the values
+of steps 6 and 7 (`transaction` is `""` when the response has none);
+`settlementRef` is the settlement reference or `""`; `requirementsDigest` is
+computed per §4.4; `supersedes` is the statement's or `""`; `bindings` is the
+array of step 10. The issuer signs the JCS serialization of that object under the
+header of §3.
+
+A receipt issued by this procedure, verified by §5 in the context of the same
+exchange, passes, with the requirements matched and `payTo` compared, and with an
+`action-receipt:advertised-info` binding matched. `resourceUrl` is compared when
+the verifier made the payment; `network` and `payer` are compared when the
+`SettlementResponse` carries them.
+
+### 6.4 Standing requirements
+
+1. Sign only after settlement returns.
+2. Keep every key that has signed a receipt resolvable for as long as receipts
    signed by it may need to be verified, and never rebind a `kid` to a different
    key. A dedicated signing key separate from the `payTo` key is RECOMMENDED
    (base §4.5.1).
-5. When the lifecycle changes, issue a superseding receipt (§4.3).
-6. When both receipts are emitted, keep them consistent (§2.4).
+3. When the lifecycle changes, issue a superseding receipt (§4.3).
+4. When both receipts are emitted, keep them consistent (§2.4).
 
 ## 7. Conformance
 
@@ -739,7 +827,10 @@ for every vector the context to verify it in, the expected verdict, the reason
 code on `REJECT` and the report on `PASS`. A conformance claim cites the
 `vectorsDigest` in that manifest.
 
-An implementation conforms if it reproduces every entry of the manifest.
+A verifier conforms if it reproduces every entry of the manifest. An issuer
+conforms if, for every exchange under `exchanges/`, it produces exactly the
+expected payload or refuses with the expected reason
+(`exchanges/MANIFEST.json`).
 `CONFORMANCE.md` in that repository lists every requirement of this document
 with the vectors that test it, names the requirements the suite does not test,
 and defines the adapter protocol a verifier is driven through.

@@ -34,12 +34,13 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 SPEC = ROOT / "action-receipt.md"
 REQS = ROOT / "conformance" / "requirements.json"
 MANIFEST = ROOT / "vectors" / "MANIFEST.json"
+XMANIFEST = ROOT / "exchanges" / "MANIFEST.json"
 OUT = ROOT / "CONFORMANCE.md"
 
 NORMATIVE = re.compile(r"\b(MUST NOT|MUST|SHOULD NOT|SHOULD|MAY|RECOMMENDED)\b")
 ROLES = {"issuer", "verifier", "consumer", "client"}
 # how a requirement is established
-TESTED = {"vector", "matrix", "fuzz", "suite"}
+TESTED = {"vector", "exchange", "matrix", "fuzz", "suite"}
 UNTESTED_REASONS = {
     "issuer-behaviour": "binds how a receipt is produced; needs an issuer under test",
     "consumer-behaviour": "binds how a result is used after verification",
@@ -92,6 +93,7 @@ def normative_sentences():
 def load():
     reqs = json.loads(REQS.read_text())["requirements"]
     manifest = json.loads(MANIFEST.read_text())
+    manifest["_exchanges"] = json.loads(XMANIFEST.read_text())
     return reqs, manifest
 
 
@@ -119,10 +121,14 @@ def render(reqs, manifest) -> str:
         "on `PASS`, and the `receiptRef` relations. A claim cites the manifest's",
         f"`vectorsDigest` (currently `{manifest['vectorsDigest']}`).",
         "",
-        "**Issuer.** No issuer conformance class is defined yet. The requirements that",
-        "bind an issuer are listed in section 4 as untested, with the reason. A",
-        "verifier-side vector can show that a malformed receipt is rejected; it cannot",
-        "show that an issuer never produces one.",
+        "**Issuer.** An implementation conforms as an issuer if, driven through the",
+        "issuer adapter protocol of section 3, it handles every exchange in",
+        "`exchanges/MANIFEST.json` as stated there: it produces exactly the expected",
+        "payload (compared by RFC 8785 serialization) or refuses with the expected",
+        "reason. Signing is not part of this class; a payload is signed under the header",
+        "of spec section 3 and the result is a verifier input. Issuer requirements that",
+        "an exchange cannot show (randomness of `receiptId`, key retention) are listed in",
+        "section 4 as untested.",
         "",
         "**Consumer.** Requirements on how a verification result is used are listed for",
         "completeness. They are not testable through this suite.",
@@ -136,6 +142,7 @@ def render(reqs, manifest) -> str:
         L.append(f"  - {n} not tested, `{reason}`: {why}.")
     L += [
         f"- {len(vectors)} vectors, each named by at least one requirement.",
+        f"- {len(manifest['_exchanges']['exchanges'])} exchanges, each named by at least one requirement.",
         "",
         "## 3. Adapter protocol",
         "",
@@ -175,9 +182,35 @@ def render(reqs, manifest) -> str:
         "Two adapters are in `conformance/adapters/`: Python (the reference verifier)",
         "and Node (the second verifier, `verify.mjs`).",
         "",
+        "### Issuer adapter protocol",
+        "",
+        "An issuer under test reads exchanges and writes results, one JSON object per",
+        "line, with no arguments.",
+        "",
+        "```json",
+        '{"id": "any string", "exchange": {"paymentRequired": {...}, "paymentPayload": {...},',
+        '   "settlementResponse": {...}, "settlementReference": "..." or null,',
+        '   "statement": {"receiptId": "...", "issuedAt": 1703123456, "action": {...},',
+        '      "settlementStatus": "settled", "supersedes": "", "reversalTransaction": null,',
+        '      "bindings": []}}}',
+        "```",
+        "",
+        "```json",
+        '{"id": "same string", "issued": true, "payload": {...}}',
+        '{"id": "same string", "issued": false, "reason": "settlement_not_successful"}',
+        "```",
+        "",
+        "- `payload` is the receipt payload object of spec section 6.3, not signed and",
+        "  not serialized. `reason` is a refusal reason of spec section 6.2.",
+        "- Any part of an exchange may be missing or malformed; the issuer must answer",
+        "  every line with a payload or a refusal.",
+        "- `python3 issuer.py --batch` and `node issuer.mjs` are the two issuers here.",
+        "  `conformance/run_exchanges.py <command>` runs any issuer against the manifest.",
+        "",
         "## 4. Requirements",
         "",
-        "`Tested by`: `vector` = the named vectors; `matrix` = the suite's mutation",
+        "`Tested by`: `vector` = the named vectors; `exchange` = the named exchanges;",
+        "`matrix` = the suite's mutation",
         "matrix or `receiptRef` relations; `fuzz` = a property the fuzzer asserts on",
         "every case; `suite` = a structural check of the suite itself.",
         "",
@@ -191,6 +224,8 @@ def render(reqs, manifest) -> str:
         for r in by_role[role]:
             if r["tested_by"] == "vector":
                 how = ", ".join(f"`{v[:-5]}`" for v in r["vectors"])
+            elif r["tested_by"] == "exchange":
+                how = ", ".join(f"`{v[:-5]}`" for v in r["exchanges"])
             elif r["tested_by"] in TESTED:
                 how = f"{r['tested_by']}: {r['note']}"
             else:
@@ -214,6 +249,10 @@ def render(reqs, manifest) -> str:
           "| example | the second verifier reproduces the spec's worked example from the spec text |",
           "| flips | every check of the reference verifier, disabled, turns the suite red |",
           "| fuzz | the two verifiers agree on generated cases, and six oracle-free properties hold |",
+          "| issuer | the reference issuer reproduces the exchange manifest, and every receipt it issues verifies in the context of its own exchange |",
+          "| issuer-n | the second issuer reproduces the exchange manifest |",
+          "| issuer-fl | every step of the reference issuer, disabled, turns its suite red |",
+          "| issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |",
           "",
           "`python3 flip_probe.py . <scratch> --fuzz N` additionally measures the fuzzer:",
           "how many disabled checks it detects in N cases.",
@@ -230,7 +269,8 @@ def check(reqs, manifest) -> list[str]:
     if len(ids) != len(set(ids)):
         errs.append("T0 duplicate requirement ids")
     vectors = {v["file"] for v in manifest["vectors"]}
-    named = set()
+    named, xnamed = set(), set()
+    xfiles = {e["file"] for e in manifest["_exchanges"]["exchanges"]}
     anchors = []
     for r in reqs:
         a = squash(r["anchor"])
@@ -246,6 +286,13 @@ def check(reqs, manifest) -> list[str]:
                 named.add(v)
                 if v not in vectors:
                     errs.append(f"T3 {r['id']}: names a vector that does not exist: {v}")
+        elif r["tested_by"] == "exchange":
+            if not r.get("exchanges"):
+                errs.append(f"T3 {r['id']}: tested by exchanges but names none")
+            for v in r.get("exchanges", []):
+                xnamed.add(v)
+                if v not in xfiles:
+                    errs.append(f"T3 {r['id']}: names an exchange that does not exist: {v}")
         elif r["tested_by"] in TESTED:
             if not r.get("note"):
                 errs.append(f"T5 {r['id']}: tested by {r['tested_by']} but has no note saying how")
@@ -257,6 +304,8 @@ def check(reqs, manifest) -> list[str]:
             errs.append(f"T2 §{section}: normative sentence not covered: {s[:90]!r}")
     for v in sorted(vectors - named):
         errs.append(f"T4 vector named by no requirement: {v}")
+    for v in sorted(xfiles - xnamed):
+        errs.append(f"T4 exchange named by no requirement: {v}")
     if OUT.exists():
         if OUT.read_text() != render(reqs, manifest):
             errs.append("T7 CONFORMANCE.md is stale: run conformance/trace.py --render")
@@ -296,6 +345,7 @@ def main(argv=None) -> int:
     gaps = sum(1 for r in reqs if r["role"] == "verifier" and r["tested_by"] not in TESTED)
     print(f"trace: {len(reqs)} requirements ({tested} tested, {len(reqs) - tested} not tested, "
           f"{gaps} untested verifier requirements), {len(manifest['vectors'])} vectors, "
+          f"{len(manifest['_exchanges']['exchanges'])} exchanges, "
           f"{len(normative_sentences())} normative sentences, {len(errs)} errors")
     return 0 if not errs else 1
 

@@ -302,7 +302,7 @@ def _norm_unsigned(network: str, value):
     signed receipt field. Signed fields are never normalized: they are refused
     when out of grammar (spec §4.6)."""
     if _is_evm(network) and isinstance(value, str):
-        return value.lower()
+        return re.sub(r"[A-Z]", lambda m: m.group(0).lower(), value)   # ASCII only
     return value
 
 
@@ -528,7 +528,7 @@ def _verify(receipt, ctx, key_registry):
             info = ctx.advertised_info
             ok = b["value"] == sha256_tag(jcs(info))
             for member in ("scope", "actionType"):
-                if isinstance(info.get(member), str) and info[member] != payload["action"][member]:
+                if member in info and info[member] != payload["action"][member]:
                     ok = False
             status = "matched" if ok else "mismatched"
         binding_report.append({"type": b["type"], "status": status})
@@ -691,6 +691,8 @@ C_REQ_FLOAT, C_REQ_NONOBJ, C_PAYER_EMPTY = (
     "requirements_float_spelling", "requirements_not_object", "payer_empty_string")
 C_REQ_NET = "requirements_other_network"
 C_PAID, C_PAID_OTHER = "paid_this_resource", "paid_another_resource"
+C_ADVERT_NONSTRING = "advertised_scope_not_a_string"
+ADVERTISED_NONSTRING = {"willIssueReceipt": True, "scope": 5}
 ACCEPTED_OTHER_NETWORK = dict(ACCEPTED, network="eip155:1")
 
 CONTEXTS = {
@@ -734,6 +736,10 @@ CONTEXTS = {
     C_PAID_OTHER: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
                           accepted=ACCEPTED, now=VERIFIER_NOW,
                           paid_resource_url="https://api.example.com/v1/other"),
+    # the advertised info carries a scope that is not a string
+    C_ADVERT_NONSTRING: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
+                                accepted=ACCEPTED, advertised_info=ADVERTISED_NONSTRING,
+                                now=VERIFIER_NOW),
     # the verifier also holds the echoed extension info
     C_ADVERT: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
                       accepted=ACCEPTED, advertised_info=ADVERTISED_INFO, now=VERIFIER_NOW),
@@ -773,6 +779,7 @@ SUITE = [
     ("pos_bindings_unheld.json", PASS, None, C_OK),
     ("pos_binding_advertised_digest_differs.json", PASS, None, C_ADVERT),
     ("pos_binding_advertised_scope_differs.json", PASS, None, C_ADVERT),
+    ("pos_binding_advertised_scope_not_string.json", PASS, None, C_ADVERT_NONSTRING),
     ("pos_requirements_not_held.json", PASS, None, C_NOREQ),
     ("pos_response_casing.json", PASS, None, C_CASE),
     ("pos_payer_absent.json", PASS, None, C_NOPAYER),
@@ -906,6 +913,7 @@ EXPECT_REPORT = {
     "pos_bindings_unheld.json": {"bindings": _NOT_EVALUATED_ALL},
     "pos_binding_advertised_digest_differs.json": {"bindings": {BT_ADVERTISED: "mismatched"}},
     "pos_binding_advertised_scope_differs.json": {"bindings": {BT_ADVERTISED: "mismatched"}},
+    "pos_binding_advertised_scope_not_string.json": {"bindings": {BT_ADVERTISED: "mismatched"}},
     "pos_refunded_supersedes.json": {"settlementStatus": "refunded",
                                      "bindings": {BT_REVERSAL_TX: "not_evaluated"}},
     "pos_outcome_refused.json": {"outcome": "refused"},
@@ -1001,6 +1009,9 @@ def regenerate_vectors() -> None:
                   supersedes=sha256_tag(base_text.encode()),
                   bindings=[{"type": BT_REVERSAL_TX, "value": "0x" + "ef" * 32}])))
     w("pos_bindings_composed.json", signed(base(bindings=COMPOSED_BINDINGS)))
+    # the digest matches the info held; a present, non-string scope can never be equal
+    w("pos_binding_advertised_scope_not_string.json",
+      signed(base(bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_NONSTRING))}])))
     w("pos_bindings_unheld.json", signed(base(bindings=COMPOSED_BINDINGS)))
     w("pos_binding_advertised_digest_differs.json",
       signed(base(bindings=[{"type": BT_ADVERTISED, "value": "sha256:" + "77" * 32}])))
@@ -1237,6 +1248,7 @@ def write_vectors_md(manifest) -> None:
         C_REQ_NONOBJ: "what is held as accepted requirements is not a JSON object",
         C_PAYER_EMPTY: "response `payer` is the empty string",
         C_REQ_NET: "response `network` is not CAIP-2; accepted requirements name another network",
+        C_ADVERT_NONSTRING: "the advertised `info` held has a `scope` that is not a string",
         C_PAID: "the verifier made the payment and paid for this resource",
         C_PAID_OTHER: "the verifier made the payment and paid for a different resource",
     }

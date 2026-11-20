@@ -656,7 +656,7 @@ def run_adapter(name: str, cases: list) -> dict:
     if r.returncode != 0:
         sys.exit(f"adapter {name} failed (exit {r.returncode}):\n{r.stderr.decode()[-2000:]}")
     out = {}
-    for line in r.stdout.decode().splitlines():
+    for line in r.stdout.decode().split("\n"):
         if line.strip():
             o = json.loads(line)
             out[o["id"]] = (o["verdict"], o["reason"], o["report"])

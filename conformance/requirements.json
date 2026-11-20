@@ -334,7 +334,8 @@
       "vectors": [
         "pos_bindings_composed.json",
         "pos_binding_advertised_digest_differs.json",
-        "pos_binding_advertised_scope_differs.json"
+        "pos_binding_advertised_scope_differs.json",
+        "pos_binding_advertised_scope_not_string.json"
       ]
     },
     {
@@ -741,15 +742,6 @@
       "tested_by": "issuer-behaviour"
     },
     {
-      "id": "I-ADV-2",
-      "role": "issuer",
-      "section": "2.3",
-      "level": "MUST",
-      "text": "Carry the advertised `actionType` and `scope` in the receipt, and commit the advertisement with a binding.",
-      "anchor": "the receipt it later issues MUST carry the same values",
-      "tested_by": "issuer-behaviour"
-    },
-    {
       "id": "I-BAS-1",
       "role": "issuer",
       "section": "2.4",
@@ -768,66 +760,12 @@
       "tested_by": "issuer-behaviour"
     },
     {
-      "id": "I-SRC-1",
-      "role": "issuer",
-      "section": "4.1",
-      "level": "MUST",
-      "text": "Build each member from the source the table names.",
-      "anchor": "The Source column is normative for the issuer",
-      "tested_by": "issuer-behaviour"
-    },
-    {
       "id": "I-ID-1",
       "role": "issuer",
       "section": "4.3",
       "level": "MUST",
       "text": "Generate `receiptId` with at least 128 bits of secure randomness and never reuse one.",
       "anchor": "The issuer MUST generate at least 128 bits of it from a cryptographically secure source and MUST NOT reuse a value.",
-      "tested_by": "issuer-behaviour"
-    },
-    {
-      "id": "I-SET-1",
-      "role": "issuer",
-      "section": "4.3",
-      "level": "MUST NOT",
-      "text": "Carry no settlement identifier that settlement did not return.",
-      "anchor": "A receipt MUST NOT carry an identifier the server did not receive from settlement.",
-      "tested_by": "issuer-behaviour"
-    },
-    {
-      "id": "I-REV-1",
-      "role": "issuer",
-      "section": "4.3",
-      "level": "SHOULD",
-      "text": "Carry a reversal or refund transaction in the reversal binding.",
-      "anchor": "the server SHOULD carry it in the `action-receipt:reversal-transaction` binding",
-      "tested_by": "issuer-behaviour"
-    },
-    {
-      "id": "I-REQ-1",
-      "role": "issuer",
-      "section": "4.4",
-      "level": "MUST",
-      "text": "Hash only accepted requirements that lie in the value domain.",
-      "anchor": "`accepted` MUST lie in the value domain of §4.6.",
-      "tested_by": "issuer-behaviour"
-    },
-    {
-      "id": "I-REQ-2",
-      "role": "issuer",
-      "section": "4.4",
-      "level": "MUST NOT",
-      "text": "Issue no receipt when the digest cannot be computed.",
-      "anchor": "MUST NOT issue a receipt for that payment",
-      "tested_by": "issuer-behaviour"
-    },
-    {
-      "id": "I-BND-1",
-      "role": "issuer",
-      "section": "4.5.1",
-      "level": "MUST NOT",
-      "text": "A binding does not restate or contradict a core member.",
-      "anchor": "A binding MUST NOT restate or contradict a member of §4.1.",
       "tested_by": "issuer-behaviour"
     },
     {
@@ -928,6 +866,362 @@
       "text": "A requesting verifier supplies the URL it paid for.",
       "anchor": "MUST supply the URL it paid for",
       "tested_by": "caller-context"
+    },
+    {
+      "id": "I-ORD-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Perform the ten steps in order.",
+      "anchor": "The issuer MUST perform these steps in order.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_order_settlement_before_statement.json",
+        "refuse_order_statement_before_advertisement.json"
+      ]
+    },
+    {
+      "id": "I-ORD-2",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST NOT",
+      "text": "Issue nothing once a step fails.",
+      "anchor": "At the first step that fails it MUST NOT issue a receipt.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_settlement_failed.json",
+        "refuse_no_identifier.json"
+      ]
+    },
+    {
+      "id": "I-STP-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 1: refuse unless settlement succeeded (strictly `true`).",
+      "anchor": "`SettlementResponse.success` is `true`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_settlement_failed.json",
+        "refuse_settlement_truthy_string.json"
+      ]
+    },
+    {
+      "id": "I-STP-2",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 2: refuse without a transaction or a settlement reference.",
+      "anchor": "the response has a `transaction`, or the issuer has a settlement reference",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_no_identifier.json",
+        "issue_batch.json",
+        "issue_both_identifiers.json"
+      ]
+    },
+    {
+      "id": "I-STP-3",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 3: refuse unless the accepted requirements are an object in the value domain.",
+      "anchor": "`PaymentPayload.accepted` is a JSON object in the value domain of §4.6",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_requirements_non_integer.json",
+        "refuse_requirements_missing.json",
+        "issue_requirements_float_spelling.json"
+      ]
+    },
+    {
+      "id": "I-REQ-2",
+      "role": "issuer",
+      "section": "4.4",
+      "level": "MUST NOT",
+      "text": "Issue no receipt when the requirements digest cannot be computed.",
+      "anchor": "MUST NOT issue a receipt for that payment",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_requirements_non_integer.json"
+      ]
+    },
+    {
+      "id": "I-REQ-1",
+      "role": "issuer",
+      "section": "4.4",
+      "level": "MUST",
+      "text": "Hash only accepted requirements that lie in the value domain.",
+      "anchor": "`accepted` MUST lie in the value domain of §4.6.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_requirements_non_integer.json"
+      ]
+    },
+    {
+      "id": "I-STP-4",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 4: refuse unless the accepted network is CAIP-2 and does not conflict with a CAIP-2 response network.",
+      "anchor": "`accepted.network` is a string in CAIP-2 form (§4.6)",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_network_not_caip2.json",
+        "refuse_network_not_caip2_either_side.json",
+        "refuse_network_conflict.json",
+        "issue_response_network_not_caip2.json"
+      ]
+    },
+    {
+      "id": "I-STP-5",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 5: refuse without the resource URL.",
+      "anchor": "it has `PaymentRequired.resource.url`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_no_resource.json"
+      ]
+    },
+    {
+      "id": "I-STP-6",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 6: take the payer from the response, else from the scheme payload; refuse if neither.",
+      "anchor": "it has a payer: `SettlementResponse.payer`, or failing that `PaymentPayload.payload.authorization.from`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_no_payer.json",
+        "issue_payer_from_authorization.json"
+      ]
+    },
+    {
+      "id": "I-STP-7",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 7: refuse unless `payTo` is had and the identifiers satisfy the grammar after lowercasing.",
+      "anchor": "it has `accepted.payTo`, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_payto_role_constant.json",
+        "refuse_payto_missing.json",
+        "refuse_transaction_not_hex.json"
+      ]
+    },
+    {
+      "id": "I-STP-7L",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Lowercase EVM identifiers; copy others verbatim.",
+      "anchor": "lowercases `payer`, `payTo` and `transaction`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_response_uppercase_hex.json",
+        "issue_non_evm.json"
+      ]
+    },
+    {
+      "id": "I-STP-8",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 8: refuse a statement that is not well formed.",
+      "anchor": "**Well-formed statement (step 8).**",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_outcome_unknown.json",
+        "refuse_receiptid_short.json",
+        "refuse_issuedat_fraction.json",
+        "refuse_scope_unpaired_surrogate.json",
+        "issue_issuedat_float_spelling.json",
+        "issue_outcome_refused.json"
+      ]
+    },
+    {
+      "id": "I-STP-9",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 9: refuse when an advertised `actionType` or `scope` is not a string equal to the statement's.",
+      "anchor": "for each of `actionType` and `scope` present in the advertised `info`, it is a string equal to the statement's `action` member",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_advertised_scope_conflict.json",
+        "refuse_advertised_scope_not_string.json"
+      ]
+    },
+    {
+      "id": "I-ADV-2",
+      "role": "issuer",
+      "section": "2.3",
+      "level": "MUST",
+      "text": "Carry the advertised `actionType` and `scope` in the receipt and commit the advertisement.",
+      "anchor": "the receipt it later issues MUST carry the same values",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_advertised_scope_conflict.json",
+        "issue_advertised.json"
+      ]
+    },
+    {
+      "id": "I-STP-10",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 10: refuse bindings that break the shape, grammar, uniqueness or count.",
+      "anchor": "Two entries with one `type`, an entry that breaks the grammar of §4.5, or more than 16 entries fails the step.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_binding_duplicate_type.json",
+        "refuse_binding_grammar.json",
+        "refuse_seventeen_bindings.json",
+        "refuse_bindings_not_array.json",
+        "issue_sixteen_bindings.json"
+      ]
+    },
+    {
+      "id": "I-BND-2",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Add the advertisement binding when the extension was advertised.",
+      "anchor": "if the issuer advertised this extension, add `action-receipt:advertised-info`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_advertised.json",
+        "refuse_advertised_info_not_hashable.json"
+      ]
+    },
+    {
+      "id": "I-BND-3",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Add the reversal binding when the statement has a reversal transaction.",
+      "anchor": "if the statement has a reversal transaction, add",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json"
+      ]
+    },
+    {
+      "id": "I-REV-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "SHOULD",
+      "text": "Carry a reversal or refund transaction in the reversal binding.",
+      "anchor": "the server SHOULD carry it in the `action-receipt:reversal-transaction` binding",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json"
+      ]
+    },
+    {
+      "id": "I-BND-4",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Refuse a supplied binding in the `action-receipt:` namespace.",
+      "anchor": "A further binding whose `type` begins `action-receipt:` fails the step",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_binding_reserved_type.json",
+        "refuse_binding_duplicates_advertisement.json"
+      ]
+    },
+    {
+      "id": "I-BND-1",
+      "role": "issuer",
+      "section": "4.5.1",
+      "level": "MUST NOT",
+      "text": "A binding does not restate or contradict a core member.",
+      "anchor": "A binding MUST NOT restate or contradict a member of §4.1.",
+      "tested_by": "issuer-behaviour"
+    },
+    {
+      "id": "I-BND-5",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Emit bindings in ascending order of `type`.",
+      "anchor": "Sort the entries in ascending order of `type`.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_bindings_sorted.json",
+        "issue_sixteen_bindings.json"
+      ]
+    },
+    {
+      "id": "I-CNV-1",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "Treat absent and `null` optional members alike; ignore unnamed members; treat a value that is not had as not there.",
+      "anchor": "An optional member that is absent and one that is `null` are the same.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_null_means_absent.json",
+        "issue_action_extra_member_ignored.json",
+        "issue_transaction_wrong_type_with_reference.json"
+      ]
+    },
+    {
+      "id": "I-CNV-2",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "Treat the extension as advertised only when its `info` is a JSON object.",
+      "anchor": "The issuer **advertised** this extension when",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_advertisement_info_not_object.json",
+        "issue_advertised.json"
+      ]
+    },
+    {
+      "id": "I-SRC-1",
+      "role": "issuer",
+      "section": "4.1",
+      "level": "MUST",
+      "text": "Build each member from the source the table names.",
+      "anchor": "The Source column is normative for the issuer",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_batch.json",
+        "issue_both_identifiers.json",
+        "issue_refund.json",
+        "issue_non_evm.json"
+      ]
+    },
+    {
+      "id": "I-SET-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST NOT",
+      "text": "Carry no settlement identifier that settlement did not return.",
+      "anchor": "A receipt MUST NOT carry an identifier the server did not receive from settlement.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_batch.json",
+        "issue_transaction_wrong_type_with_reference.json"
+      ]
+    },
+    {
+      "id": "I-E2E-1",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "Every issued receipt verifies in the context of its own exchange.",
+      "anchor": "A receipt issued by this procedure, verified by §5 in the context of the same exchange, passes",
+      "tested_by": "suite",
+      "note": "issuer.py signs each issued payload and verifies it in the context derived from its exchange; fuzz_issuer.py property Q3 does the same through both verifiers for every generated exchange"
     }
   ]
 }

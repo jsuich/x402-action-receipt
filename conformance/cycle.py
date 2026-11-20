@@ -16,6 +16,12 @@ Stages, in order. A stage that cannot run is reported as VOID, never as PASS:
   4 example    second verifier reproduces the spec's worked example from its text
   5 flips      each check of the reference verifier, disabled, turns the suite red
   6 fuzz       differential + metamorphic fuzzing across both verifiers
+  7 issuer     reference issuer reproduces exchanges/MANIFEST.json, and every
+               receipt it issues verifies in the context of its own exchange
+    issuer-n   second issuer reproduces exchanges/MANIFEST.json
+    issuer-fl  each step of the reference issuer, disabled, turns its suite red
+    issuer-fz  the two issuers agree on generated exchanges, and every issued
+               receipt verifies through both verifiers
 
 Exit 0 iff every stage that ran passed and no stage was VOID.
 """
@@ -122,6 +128,48 @@ def main(argv=None) -> int:
                       f"seeds {a.seeds} x {a.n}: {total['generated']} cases + {total['followups']} "
                       f"follow-ups, {total['disagreements']} disagreements, "
                       f"{total['property_violations']} property violations"
+                      + (f"; not exercised: {sorted(never)}" if never else ""))
+
+    r = run([py, "-B", "issuer.py"])
+    stage("issuer", "PASS" if r.returncode == 0 else "FAIL", last(r.stdout) or last(r.stderr))
+    if node:
+        r = run([py, "-B", "conformance/run_exchanges.py", node, "issuer.mjs"])
+        stage("issuer-n", "PASS" if r.returncode == 0 else "FAIL", last(r.stdout) or last(r.stderr))
+    else:
+        stage("issuer-n", "VOID", "node not found")
+    if a.quick:
+        stage("issuer-fl", "VOID", "skipped (--quick)")
+        stage("issuer-fz", "VOID", "skipped (--quick)")
+    else:
+        r = run([py, "-B", "conformance/flip_issuer.py"])
+        stage("issuer-fl", "PASS" if r.returncode == 0 else "FAIL",
+              next((l for l in r.stdout.splitlines() if "flips caught" in l), last(r.stdout)))
+        if not node:
+            stage("issuer-fz", "VOID", "node not found: no second issuer or verifier")
+        else:
+            tot = {"generated": 0, "round_trips": 0, "disagreements": 0, "property_violations": 0}
+            never, bad = None, False
+            for seed in a.seeds.split(","):
+                cmd = [py, "-B", "conformance/fuzz_issuer.py", "--seed", seed, "--n", str(a.n), "--json"]
+                if a.save:
+                    cmd += ["--save", a.save]
+                r = run(cmd)
+                try:
+                    s = json.loads(r.stdout.strip().splitlines()[0])
+                except (ValueError, IndexError):
+                    stage("issuer-fz", "FAIL", f"seed {seed}: {last(r.stderr) or last(r.stdout)}")
+                    bad = True
+                    break
+                for k in tot:
+                    tot[k] += s[k]
+                miss = set(s["refusals_never_hit"])
+                never = miss if never is None else never & miss
+            if not bad:
+                ok = tot["disagreements"] == 0 and tot["property_violations"] == 0
+                stage("issuer-fz", "PASS" if ok else "FAIL",
+                      f"seeds {a.seeds} x {a.n}: {tot['generated']} exchanges, {tot['round_trips']} "
+                      f"round trips, {tot['disagreements']} disagreements, "
+                      f"{tot['property_violations']} property violations"
                       + (f"; not exercised: {sorted(never)}" if never else ""))
 
     failed = [n for n, s, _ in rows if s == "FAIL"]
