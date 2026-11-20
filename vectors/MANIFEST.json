@@ -3,7 +3,7 @@
   "version": 1,
   "specDraft": "0.3",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT, and the report on PASS. keys.json is a test fixture standing in for anchor and key resolution.",
-  "vectorsDigest": "sha256:30edefd1a53fb42bb337e4c74a0914451a559490b4a951307a6e41d0418a1238",
+  "vectorsDigest": "sha256:7f6d7b38e66060647b0a764698fee2801b896eb2703b18c984df4ae91b139fc7",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -744,6 +744,12 @@
       "context": "ok"
     },
     {
+      "file": "neg_base64url_trailing_bits.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
       "file": "neg_header_not_object.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
@@ -1009,6 +1015,12 @@
     },
     {
       "file": "neg_key_unresolved.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_unusable.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_key_unresolved",
       "context": "ok"

@@ -18,6 +18,8 @@ src = pathlib.Path(sys.argv[1]); work = pathlib.Path(sys.argv[2])
 code = (src/"action_receipt.py").read_text()
 # (label, exact source text, replacement) — each disables or weakens ONE check
 flips = [
+ ("base64url one spelling", 'if b64url(data) != s:', 'if False:'),
+ ("unusable key code",     '    if pub is None:\n        return REJECT, R_KEY_UNRESOLVED, {}', '    if pub is None:\n        return REJECT, R_SIG_INVALID, {}'),
  ("typ check",            'if header.get("typ") != TYP:', 'if False:'),
  ("alg allow-list",       'if header.get("alg") not in SUPPORTED_ALGS:', 'if False:'),
  ("header closed set",    'if set(header.keys()) != HEADER_KEYS or not isinstance(header.get("kid"), str):', 'if not isinstance(header.get("kid"), str):'),
@@ -31,7 +33,6 @@ flips = [
  ("binding order",        'if previous is not None and not previous < t:', 'if False:'),
  ("binding count",        'if len(bindings) > MAX_BINDINGS:', 'if False:'),
  ("signer authorization", 'if kid not in service_kids and kid not in payto_kids:', 'if False:'),
- ("key unresolved code",  'return REJECT, R_KEY_UNRESOLVED, {}', 'return REJECT, R_SIG_INVALID, {}'),
  ("low-s",                'if s > CURVE_ORDER[ALG_CURVE[alg]] // 2:', 'if False:'),
  ("curve bound to alg",   'if pub.curve.name != ALG_CURVE[alg]:', 'if False:'),
  ("settlement success",   'if ctx.success is not True or not (ctx.transaction or ctx.settlement_ref):', 'if False:'),

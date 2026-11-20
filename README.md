@@ -21,6 +21,7 @@ draft that this repository previously held; see the spec's version history.
 | `vectors/MANIFEST.json` | Language-neutral manifest: context, expected verdict, reason code and report per vector |
 | `VECTORS.md` | Vector index, generated from the same tables the suite runs |
 | `flip_probe.py` | Disables each verifier check in turn and requires the suite to go red |
+| `verify.mjs` | Second verifier, JavaScript (Node built-ins only), written from the spec text and the vectors without sight of `action_receipt.py` |
 | `requirements.txt` | Dependencies |
 | `LICENSE` | Apache-2.0 |
 
@@ -101,6 +102,23 @@ x402 repository around post-settlement evidence.
 reproduces every entry: verdict, reason on REJECT, report on PASS, and the
 `receiptRef` relations. Cite the manifest's `vectorsDigest` when reporting a
 result. Results from independent implementations are welcome here or on [#2906].
+
+`verify.mjs` is a second implementation with its own RFC 8785 canonicalizer:
+
+```bash
+node verify.mjs            # every vector in the manifest, plus the receiptRef relations
+node verify.mjs --example  # reproduce the spec's worked example from the printed text
+```
+
+What it is and is not evidence of. It was written by a separate AI agent session
+that was given only `action-receipt.md` and `vectors/`, was told not to read the
+Python, and wrote the whole verifier before looking at any expected result. Run
+unedited, it agreed with the manifest on its first run, and it agreed again on
+two vectors added afterwards. The choices it had to make where the text was
+unclear were then written into the spec. It is not a third-party implementation:
+the same author commissioned both, and the agent saw the vector file names, which
+hint at each negative's category. An implementation by someone else is still the
+result that matters.
 
 ## License and contributor
 

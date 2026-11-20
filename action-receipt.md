@@ -96,7 +96,9 @@ The client echoes `info` in `PaymentPayload.extensions` as core §5.1.2 requires
 When the server advertised `actionType` or `scope`, the receipt it later issues
 MUST carry the same values, and the server SHOULD commit the advertisement with
 the `action-receipt:advertised-info` binding (§4.5.2). That is what lets a client
-show the scope it paid for was fixed before it paid.
+show the scope it paid for was fixed before it paid. This is an issuer
+requirement: no step of §5 rejects on it. A verifier sees a violation as a
+`mismatched` binding, and only when the server included the binding.
 
 ### 2.4 Relationship to the base receipt
 
@@ -120,8 +122,14 @@ The receipt object has the base extension's JWS shape (base §3.1, §3.1.1):
 { "format": "jws", "signature": "<JWS Compact Serialization>" }
 ```
 
-`payload` is omitted; the compact string carries it. All base64url in this
-specification is unpadded (RFC 7515 §2).
+`payload` is omitted; the compact string carries it. Any other member of the
+receipt object is ignored and is not covered by the signature.
+
+All base64url in this specification is unpadded (RFC 7515 §2) and has one
+spelling per byte string: only the characters `A-Z a-z 0-9 - _`, and re-encoding
+the decoded bytes MUST reproduce the string. (A final character with non-zero
+padding bits decodes to the same bytes in a lenient decoder; it is rejected, so
+that one receipt does not have several compact strings.)
 
 The JWS protected header contains exactly three members:
 
@@ -132,7 +140,9 @@ The JWS protected header contains exactly three members:
 | `typ` | `x402-action-receipt+jws` |
 
 ECDSA signatures are the 64-byte `r || s` form of RFC 7518 §3.4 and MUST be
-low-`s` (`s <= n/2`).
+low-`s` (`s <= floor(n/2)`). `ES256K` is ECDSA over secp256k1 with SHA-256
+(RFC 8812). The header is parsed as JSON and checked as a parsed object; no
+canonical form is required of it.
 
 ## 4. Receipt payload
 
@@ -236,8 +246,8 @@ requirementsDigest = "sha256:" || lowercase-hex( SHA-256( JCS( accepted ) ) )
 ```
 
 `accepted` is the `PaymentRequirements` object the client selected, exactly as it
-appears in `PaymentPayload.accepted` (core §5.2). It is hashed as received: no
-member is added, removed, renamed or case-folded.
+appears in `PaymentPayload.accepted` (core §5.2). The parsed object is
+canonicalized as it stands: no member is added, removed, renamed or case-folded.
 
 This commits the receipt to the terms agreed before payment: `scheme`, `network`,
 `amount`, `asset`, `payTo`, `maxTimeoutSeconds` and `extra`. A verifier that
@@ -313,7 +323,11 @@ the RFC 8785 serialization of a JSON value in which:
 
 - every number is an integer in `[-(2^53 - 1), 2^53 - 1]`;
 - every string and member name is well-formed Unicode (no unpaired surrogate);
-- objects and arrays nest at most 8 levels deep.
+- objects and arrays nest at most 8 levels deep, counting the outermost object
+  or array as level 1; scalars do not count.
+
+`true`, `false` and `null` are in the domain. The receipt payload uses none of
+them, but an object hashed under §4.4 or §4.5.2 may.
 
 Over this domain RFC 8785 reduces to: members sorted by UTF-16 code units, no
 insignificant whitespace, strings escaped minimally (`\"`, `\\`, `\b`, `\f`,
@@ -478,9 +492,10 @@ Reject with the code shown, checking in this order:
    §4.1, and `version` is an integer.
 2. `invalid_actionreceipt_version` unless `version == 1`.
 3. `invalid_payload` unless `action` is an object with exactly the members of
-   §4.2, every string-typed member is a string, and every member except
-   `action.outcome`, `settlementStatus` and `bindings` matches its grammar in
-   §4.6.
+   §4.2; every string-typed member, including `action.outcome` and
+   `settlementStatus`, is a string; and every member except `action.outcome`,
+   `settlementStatus` and `bindings` satisfies every row of the grammar table in
+   §4.6 that names it, including "not both empty".
 4. `invalid_actionreceipt_outcome` unless `action.outcome` is a listed value.
 5. `invalid_actionreceipt_status` unless `settlementStatus` is a listed value.
 6. `invalid_payload` unless `bindings` is an array.
@@ -498,7 +513,10 @@ receipt's `resourceUrl` by at least one of:
   key identifier.
 
 Both anchors are scoped to the resource. A key that is authorized for a
-recipient address is not thereby authorized for every URL.
+recipient address is not thereby authorized for every URL. Anchor (b) is looked
+up with the receipt's own `payTo`, which is not yet bounded at this step (§5.9
+bounds it); that is safe only because the anchor is itself tied to
+`resourceUrl`.
 
 Authorization uses the mechanisms of base §4.5.1 (`did:web` at the resource's
 host, DNS TXT `_controllers.<host>`, or a registry the verifier trusts). Two
@@ -517,9 +535,10 @@ rules are specific to this extension:
 
 ### 5.5 Key resolution
 
-If `kid` is authorized but the verifier cannot obtain the key (the document is
-unreachable, or the key has been rotated out and no record of it is held),
-reject with `invalid_actionreceipt_key_unresolved`.
+If `kid` is authorized but the verifier cannot obtain a usable key (the document
+is unreachable, the key has been rotated out and no record of it is held, or
+what was obtained does not parse as a public key), reject with
+`invalid_actionreceipt_key_unresolved`.
 
 This code is **indeterminate**. It means the verifier could not check, not that
 the receipt is forged. A consumer MUST NOT treat it as a finding against the
@@ -542,8 +561,11 @@ Reject with `invalid_transaction_state` unless the `SettlementResponse` has
 ### 5.8 Settlement binding
 
 Values from the `SettlementResponse` are unsigned. Before comparing, the verifier
-normalizes them: on a network beginning `eip155:` it lowercases `transaction` and
-`payer`. Nothing else is normalized. Reject with
+normalizes them: when the **receipt's** `network` begins `eip155:` it lowercases
+the response's `transaction` and `payer` (ASCII `A-F` to `a-f`). Nothing else is
+normalized. Throughout §5.7 and §5.8 the response "has" a transaction, a
+settlement reference or a payer when the value is a non-empty string; an absent
+member, `null` and `""` all mean it has none. Reject with
 `invalid_actionreceipt_settlement_mismatch` if any of these fails:
 
 - If the response has a `transaction`, the receipt's `transaction` equals it.
@@ -569,9 +591,10 @@ unless:
 - `accepted.payTo`, lowercased on `eip155` networks, equals the receipt's
   `payTo`.
 
-If the verifier does not hold them, the report records
-`requirements: not_evaluated` and `payTo: not_compared`. In that case nothing
-bounds the receipt's `payTo` or the amount.
+If the verifier does not hold them, or holds an object outside the value domain
+(which no conforming issuer would have issued a receipt for, §4.4), the report
+records `requirements: not_evaluated` and `payTo: not_compared`. In that case
+nothing bounds the receipt's `payTo` or the amount.
 
 ### 5.10 Freshness
 
@@ -610,6 +633,28 @@ No binding status changes the verdict.
 | `checks.freshness` | `enforced` or `reported` |
 | `supersedes` | Copied from the receipt |
 | `bindings` | One `{type, status}` per entry |
+
+`checks.freshness` is `enforced` in `session` mode and `reported` in `archival`
+mode. `bindings` lists the entries in receipt order. In the conformance manifest
+the report has exactly this shape:
+
+```json
+{
+  "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+  "outcome": "delivered",
+  "settlementStatus": "settled",
+  "ageSeconds": 44,
+  "checks": {
+    "network": "compared",
+    "payer": "compared",
+    "requirements": "matched",
+    "payTo": "compared",
+    "freshness": "enforced"
+  },
+  "supersedes": "",
+  "bindings": []
+}
+```
 
 A consumer MUST NOT read `PASS` as covering anything the report marks
 `not_compared` or `not_evaluated`.
@@ -698,11 +743,16 @@ Properties of the suite:
   the vector index is generated from the tables the suite runs.
 - **Each check can fail.** `flip_probe.py` disables each check of the verifier
   in turn and requires the suite to go red.
+- **Implementable from this text.** A second verifier was written in JavaScript
+  from this file and the vectors alone, without sight of the reference code, and
+  reproduced the manifest. The places where that implementer had to choose
+  between readings were then closed in this text.
 
 `vectors/keys.json` is a test fixture. It stands in for the authorization and key
 resolution of §5.4 and §5.5: `"__service__:<resourceUrl>"` and
 `"__payTo__:<payTo>|<resourceUrl>"` list authorized key identifiers, and each key
-identifier maps to a PEM public key. It is not a wire format.
+identifier maps to a PEM public key. A key identifier that is authorized but has
+no entry, or whose entry does not parse, exercises §5.5. It is not a wire format.
 
 All settlement identifiers in the vectors are synthetic.
 
@@ -884,7 +934,7 @@ cross-checked as described in §7.
 ## References
 
 RFC 7515 (JWS) · RFC 7518 (JWA) · RFC 8259 (JSON) · RFC 8725 (JWT BCP) ·
-RFC 8785 (JCS) · CAIP-2 · x402 core specification v2 §5.1, §5.2, §5.3, §9 ·
+RFC 8785 (JCS) · RFC 8812 (ES256K) · CAIP-2 · x402 core specification v2 §5.1, §5.2, §5.3, §9 ·
 `specs/extensions/extension-offer-and-receipt.md` §3, §4.5.1, §5, §10, §11 ·
 x402 issues #2332, #2648, #2833, #3234 · x402 pull requests #3304, #3776, #3827,
 #4215.

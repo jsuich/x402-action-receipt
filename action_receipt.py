@@ -169,7 +169,10 @@ _B64URL_RE = re.compile(r"[A-Za-z0-9_-]*")
 def b64url_decode(s: str) -> bytes:
     if not isinstance(s, str) or not _B64URL_RE.fullmatch(s) or len(s) % 4 == 1:
         raise ValueError("not unpadded base64url")
-    return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+    data = base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+    if b64url(data) != s:                 # non-zero trailing bits: a second spelling
+        raise ValueError("non-canonical base64url")
+    return data
 
 
 def sha256_tag(data: bytes) -> str:
@@ -428,12 +431,12 @@ def _verify(receipt, ctx, key_registry):
         return REJECT, R_SIGNER_UNAUTH, {}
 
     # §5.5 key resolution — authorized, but the key could not be obtained.
-    pem = key_registry.get(kid)
-    if not isinstance(pem, str) or not pem:
+    pub = _load_key(key_registry.get(kid))
+    if pub is None:
         return REJECT, R_KEY_UNRESOLVED, {}
 
     # §5.6 signature (curve bound to alg; low-s for ECDSA) -----------------
-    if not _verify_jws_sig(alg, pem, f"{h_b64}.{p_b64}".encode(), raw_sig):
+    if not _verify_jws_sig(alg, pub, f"{h_b64}.{p_b64}".encode(), raw_sig):
         return REJECT, R_SIG_INVALID, {}
 
     # §5.7 settlement success ---------------------------------------------
@@ -521,11 +524,17 @@ def _verify(receipt, ctx, key_registry):
     return PASS, None, report
 
 
-def _verify_jws_sig(alg, pem, signing_input: bytes, raw_sig: bytes) -> bool:
+def _load_key(pem):
+    """The public key for a PEM string, or None when there is no usable key."""
+    if not isinstance(pem, str) or not pem:
+        return None
     try:
-        pub = load_pem_public_key(pem.encode())
+        return load_pem_public_key(pem.encode())
     except (ValueError, TypeError):
-        return False
+        return None
+
+
+def _verify_jws_sig(alg, pub, signing_input: bytes, raw_sig: bytes) -> bool:
     try:
         if alg in ("ES256", "ES256K"):
             if not isinstance(pub, ec.EllipticCurvePublicKey):
@@ -623,6 +632,7 @@ KID_ES256K = "did:web:api.example.com#es256k"
 KID_ED = "did:web:api.example.com#ed25519"
 KID_PAYTO = "did:web:api.example.com#payto"      # authorized via the payTo anchor only
 KID_ABSENT = "did:web:api.example.com#rotated"   # authorized, but no key can be resolved
+KID_UNUSABLE = "did:web:api.example.com#unusable"  # authorized, but the key does not parse
 KID_EVIL = "did:web:evil.example#k"              # has a key, authorized by no anchor
 
 
@@ -645,8 +655,8 @@ def _registry():
     evil = ec.derive_private_key(0x4444, ec.SECP256R1())
     return {
         KID_ES256: _pem(es), KID_ES256K: _pem(esk), KID_ED: _pem(ed),
-        KID_PAYTO: _pem(payto), KID_EVIL: _pem(evil),
-        "__service__:" + RESOURCE: [KID_ES256, KID_ES256K, KID_ED, KID_ABSENT],
+        KID_PAYTO: _pem(payto), KID_EVIL: _pem(evil), KID_UNUSABLE: "not a public key",
+        "__service__:" + RESOURCE: [KID_ES256, KID_ES256K, KID_ED, KID_ABSENT, KID_UNUSABLE],
         "__payTo__:" + PAY_TO + "|" + RESOURCE: [KID_PAYTO],
     }, {"ES256": es, "ES256K": esk, "EdDSA": ed, "PAYTO": payto, "EVIL": evil}
 
@@ -725,6 +735,7 @@ SUITE = [
     ("pos_non_ascii_nfd.json", PASS, None, C_OK),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_not_object.json", REJECT, R_MALFORMED, C_OK),
     ("neg_kid_not_string.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_extra_member.json", REJECT, R_MALFORMED, C_OK),
@@ -774,6 +785,7 @@ SUITE = [
     ("neg_signer_payto_wrong_resource.json", REJECT, R_SIGNER_UNAUTH, C_OK),
     # §5.5 key resolution
     ("neg_key_unresolved.json", REJECT, R_KEY_UNRESOLVED, C_OK),
+    ("neg_key_unusable.json", REJECT, R_KEY_UNRESOLVED, C_OK),
     # §5.6 signature
     ("neg_sig_tampered_payload.json", REJECT, R_SIG_INVALID, C_OK),
     ("neg_sig_high_s.json", REJECT, R_SIG_INVALID, C_OK),
@@ -945,6 +957,14 @@ def regenerate_vectors() -> None:
     good = _sign_jws("ES256", KID_ES256, es, base_text.encode())
     _, p_ok, s_ok = good.split(".")
     w("neg_not_jws_format.json", {"format": "eip712", "signature": good})
+    # Same signature bytes, second spelling: the last character of a 64-byte
+    # signature carries 2 data bits and 4 padding bits; set a padding bit. A lenient
+    # decoder returns identical bytes and would accept two strings for one receipt.
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    respelled = good[:-1] + alphabet[alphabet.index(good[-1]) | 1]
+    assert respelled != good
+    assert base64.urlsafe_b64decode(respelled.split(".")[2] + "==") == b64url_decode(s_ok)
+    w("neg_base64url_trailing_bits.json", {"format": "jws", "signature": respelled})
     w("neg_header_not_object.json",
       {"format": "jws", "signature": f"{b64url(_canon(['ES256', KID_ES256, TYP]).encode())}.{p_ok}.{s_ok}"})
     w("neg_kid_not_string.json",
@@ -1026,6 +1046,7 @@ def regenerate_vectors() -> None:
     w("neg_signer_payto_wrong_resource.json",
       signed(base(resourceUrl="https://other.example/x"), "ES256", KID_PAYTO, keys["PAYTO"]))
     w("neg_key_unresolved.json", signed(base(), "ES256", KID_ABSENT, es))
+    w("neg_key_unusable.json", signed(base(), "ES256", KID_UNUSABLE, es))
 
     # ---- §5.6 signature ----
     h_ok = good.split(".")[0]
