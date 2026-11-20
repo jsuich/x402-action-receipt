@@ -1,7 +1,7 @@
 # Extension: `action-receipt`
 
-Draft 0.3 (2026-11-19). Proposal for discussion; see the version history for what
-changed against the 0.2.1 draft. Where this file and the reference suite
+Draft 0.4 (2026-11-20). Proposal for discussion; see the version history for what
+changed against earlier drafts. Where this file and the reference suite
 disagree, this file governs.
 
 ## Summary
@@ -15,9 +15,18 @@ with what outcome**, bound to:
 - and, through signed **binding slots**, evidence defined by other extensions
   (a response hash, an authorization commitment, a refund transaction).
 
-A third party holding the receipt can check, without calling the server, that the
-statement is authentic, unmodified, signed by a key authorized for the resource,
-and consistent with the settlement and payment terms the verifier holds.
+A party holding the receipt can check that the statement is unmodified, was
+signed by a key authorized for the resource the receipt names, and is consistent
+with the settlement and payment terms that party holds. Checking the signature
+and the consistency needs no call to anyone. Learning which keys are authorized
+does: it uses the signer's own origin or a registry (§5.4), and for an old
+receipt it depends on evidence of authorization that someone kept (§9).
+
+**Coverage.** The payload is scheme-neutral, but its sources are not. This draft
+defines them for schemes whose `SettlementResponse` carries a transaction
+identifier, and names the settlement reference for one deferred scheme (§4.3).
+Where a scheme's settlement result carries neither, no receipt can be issued
+under this draft (§1.3).
 
 The receipt is a JWS (RFC 7515) over an RFC 8785 (JCS) payload, hashed with
 SHA-256. It introduces no new cryptographic primitive. It reuses the object shape,
@@ -38,18 +47,45 @@ the facts a dispute, an audit or an accounting system needs after settlement.
 
 ### 1.2 What a valid receipt establishes
 
-A receipt that passes §5 establishes exactly this:
+A receipt that passes §5 establishes this, and no more:
 
-- a key authorized for `resourceUrl` signed this statement, and it is unmodified;
-- the statement names the settlement and payment terms that the verifier holds.
+- a key that the verifier's authorization source lists for the receipt's
+  `resourceUrl` signed this statement, and it is unmodified;
+- the statement is consistent with each input the report (§5.12) marks
+  `compared` or `matched`. An input the verifier did not hold constrains
+  nothing, and the report says which those were.
+
+What that is worth depends on who the verifier is (§5.14). A verifier that made
+the payment knows the resource it paid and compares it. A verifier that did not
+learns only that the origin the receipt names signed it.
 
 ### 1.3 What it does not establish (non-goals)
 
-- **It is the signer's statement, and the signer is a party.** The resource
-  server is the paid counterparty. `action.outcome`, `action.scope`,
-  `action.agent`, `settlementStatus` and `issuedAt` are asserted by it. A receipt
-  is evidence of what the server said, not an independent finding. Section 7's
-  mutation matrix lists which members nothing the verifier holds can constrain.
+- **It is the signer's statement, and the signer is a party.** `action.outcome`,
+  `action.scope`, `action.agent`, `settlementStatus` and `issuedAt` are asserted
+  by it. A receipt is evidence of what the server said, not an independent
+  finding. Section 7's mutation matrix lists which members nothing the verifier
+  holds can constrain.
+- **It does not prove the signer was the party paid.** Authorization ties the
+  key to `resourceUrl`. Nothing in the receipt ties that resource to `payTo`,
+  except under anchor (b) of §5.4. An origin can sign a well-formed receipt over
+  a settlement that paid someone else for something else, and a verifier that
+  did not make the payment cannot tell from the receipt. Such a verifier
+  establishes the link another way: from the `PaymentRequired` the payer kept,
+  from anchor (b), or from its own knowledge of who operates the resource.
+- **It does not state the amount charged.** `requirementsDigest` commits the
+  accepted requirements. Under `exact` that is the amount paid. Under `upto`, a
+  batch scheme, or any settlement with fees or splits, it is a ceiling or a
+  term, and the amount that moved is in the scheme's settlement result, which
+  this receipt does not carry (§12).
+- **It does not identify a payment.** It carries the settlement's identifiers.
+  Where one settlement identifier covers several payments, the receipt
+  distinguishes the statements (`receiptId`) and not the payments (§4.7).
+- **It does not cover every scheme.** A settlement result with an empty
+  `transaction` and no settlement reference this draft names (§4.3) gives the
+  issuer nothing to bind to, and step 2 of §6.2 refuses. At the time of writing
+  that includes voucher-only responses of the EVM and Cloudflare
+  `batch-settlement` bindings and a zero-amount `upto` settlement.
 - **It does not prove funds moved.** The checks in §5.7 and §5.8 compare the
   receipt with a `SettlementResponse`, which is unsigned. Establishing that the
   settlement exists requires resolving the settlement identifier on the payment
@@ -97,14 +133,23 @@ When the server advertised `actionType` or `scope`, the receipt it later issues
 MUST carry the same values, and the server commits the advertisement with the
 `action-receipt:advertised-info` binding (§4.5.2, §6.2). That is what lets a client
 show the scope it paid for was fixed before it paid. This is an issuer
-requirement: no step of §5 rejects on it. A verifier sees a violation as a
-`mismatched` binding, and only when the server included the binding.
+requirement: no step of §5 rejects on it. A verifier that holds the advertised
+`info` reports `checks.advertisement` (§5.11): `matched`, `mismatched`, or
+`absent` when the server advertised and the receipt carries no such binding.
+
+The advertisement is a statement of intent, not an obligation another party can
+enforce: a server that advertised and then issues nothing has broken no rule a
+verifier can detect (§1.3, "Absence proves nothing").
 
 ### 2.4 Relationship to the base receipt
 
-A server MAY emit both a base receipt and an action receipt. When it does, the
-members the two have in common (`network`, `resourceUrl`, `payer`, `issuedAt`,
-and `transaction` when the base receipt carries one) MUST be equal.
+A server MAY emit both a base receipt and an action receipt for one settlement.
+When it does, `network` and `resourceUrl` MUST be equal in the two, and `payer`
+and `transaction` (when the base receipt carries one) MUST name the same account
+and transaction. On `eip155` networks this receipt writes them in lowercase
+(§4.6) and the base receipt may not, so they are compared after lowercasing the
+base receipt's values. `issuedAt` need not be equal: each receipt is stamped
+when it is signed.
 
 This is a separate extension, not a new payload version of the base receipt,
 because it makes a different statement. A base receipt is issued "only on success,
@@ -113,6 +158,9 @@ privacy-minimal by default (base §5.2, §11). An action receipt can state that 
 service failed or that the payment was reversed, and it is deliberately not
 minimal. A verifier MUST NOT verify an action receipt as a base receipt or the
 reverse; the `typ` header (§3) makes the two distinguishable under the signature.
+That protects this side only: §5.1 rejects a base receipt. The base extension
+does not require a `typ`, so whether a base verifier rejects an action receipt
+presented to it depends on that verifier (§9).
 
 ## 3. Envelope and JWS header
 
@@ -124,6 +172,10 @@ The receipt object has the base extension's JWS shape (base §3.1, §3.1.1):
 
 `payload` is omitted; the compact string carries it. Any other member of the
 receipt object is ignored and is not covered by the signature.
+
+The compact string is at most 65536 characters. A payload at the limits of §4
+fits several times over; the bound exists so that a verifier, which must parse
+before it can authenticate, parses a bounded input.
 
 All base64url in this specification is unpadded (RFC 7515 §2) and has one
 spelling per byte string: only the characters `A-Z a-z 0-9 - _`, and re-encoding
@@ -139,10 +191,16 @@ The JWS protected header contains exactly three members:
 | `kid` | string; the key identifier, normally a DID URL (base §3.3) |
 | `typ` | `x402-action-receipt+jws` |
 
+The header bytes are the RFC 8785 serialization of that object, so a header has
+one spelling: `{"alg":…,"kid":…,"typ":…}` with no whitespace. A header that
+repeats a member, reorders members or escapes a character needlessly is
+rejected (§5.1). Without this, a signer could produce one receipt that two
+parsers read differently.
+
 ECDSA signatures are the 64-byte `r || s` form of RFC 7518 §3.4 and MUST be
 low-`s` (`s <= floor(n/2)`). `ES256K` is ECDSA over secp256k1 with SHA-256
-(RFC 8812). The header is parsed as JSON and checked as a parsed object; no
-canonical form is required of it.
+(RFC 8812). Most ECDSA libraries produce a high-`s` signature about half the
+time, so a signer normalizes `s` after signing (§6.3).
 
 ## 4. Receipt payload
 
@@ -161,12 +219,12 @@ from, so that two implementations build the same payload from the same exchange.
 | `version` | integer | constant | `1` |
 | `receiptId` | string | issuer-generated | Unique per receipt (§4.3) |
 | `issuedAt` | integer | issuer clock | Unix seconds at signing |
-| `network` | string | `PaymentPayload.accepted.network` | CAIP-2 network identifier |
+| `network` | string | `PaymentPayload.accepted.network` | Network identifier, as x402 writes it |
 | `resourceUrl` | string | `PaymentRequired.resource.url`, verbatim | The paid resource |
-| `payer` | string | `SettlementResponse.payer`; if absent, the payer address in the scheme's payment payload | Who paid |
-| `payTo` | string | `PaymentPayload.accepted.payTo` | Who was paid |
+| `payer` | string | `SettlementResponse.payer`; failing that the scheme payload's payer (§4.3) | Who paid, or `""` when neither source has one |
+| `payTo` | string | `PaymentPayload.accepted.payTo` | The recipient the accepted requirements name |
 | `transaction` | string | `SettlementResponse.transaction` | Settlement transaction, or `""` |
-| `settlementRef` | string | the scheme's non-transaction settlement identifier | Or `""` (§4.3) |
+| `settlementRef` | string | the scheme's settlement reference (§4.3) | Or `""` |
 | `settlementStatus` | string | issuer | Payment lifecycle (§4.3) |
 | `requirementsDigest` | string | computed (§4.4) | Digest of the accepted payment requirements |
 | `supersedes` | string | `receiptRef` of an earlier receipt | Or `""` (§4.3) |
@@ -188,14 +246,19 @@ Exactly four string members:
 | `scope` | The authorization scope the action fell within. May be empty |
 | `outcome` | One of the values below |
 
-`outcome` describes service delivery. It is independent of whether the payment
-settled, which is `settlementStatus`.
+`agent`, `actionType` and `scope` are opaque strings. This extension gives them
+no grammar and no registry; their vocabulary belongs to the deployment or to
+another specification, and a verifier compares them only where §4.5.2 says so.
+
+`outcome` describes service delivery and nothing else. Whether and how the
+payment settled is `settlementStatus`. Every pairing of the two is a valid
+receipt.
 
 | `outcome` | Meaning |
 |---|---|
 | `delivered` | The service was performed and the result returned |
 | `partial` | Part of the service was performed |
-| `failed` | The payment settled and the service was not performed, whether the server could not or would not |
+| `failed` | The service was not performed, whether the server could not or would not |
 
 These are the three states the delivery-receipt proposal uses (§11), so the two
 receipts for one call cannot disagree in vocabulary. Two things are deliberately
@@ -203,43 +266,97 @@ not outcomes. A payment the server declined to accept is a different event and i
 out of scope (§11). A dispute is not something the paid party can declare about
 its own delivery; it belongs to whoever adjudicates (§11).
 
+`failed` needs a settlement to exist (§5.7). In the default x402 flow the server
+settles only after its handler succeeds, so a failed handler produces no
+settlement and no receipt. `failed` arises where settlement does not wait for
+the handler: a flow that settles first, or a deferred scheme whose commitment was
+accepted before the work was attempted.
+
 ### 4.3 Identity, settlement and lifecycle
 
 **`receiptId`** is 22 to 64 characters from the base64url alphabet. The issuer
 MUST generate at least 128 bits of it from a cryptographically secure source and
-MUST NOT reuse a value. It exists so that two payments which share every other
+MUST NOT reuse a value. It exists so that two statements which share every other
 member are still two receipts. That case is ordinary: two payments by one payer
-for one resource in the same second under one batch settlement.
+for one resource in the same second under one batch settlement. (The worked
+example in §4.7 uses a fixed, readable `receiptId` so that it reproduces; it is
+not a model for generating one.)
 
 **Settlement identifiers.** At least one of `transaction` and `settlementRef` is
-non-empty. `settlementRef` is this extension's name for a scheme's settlement
-identifier that is not a transaction hash, for example the commitment identifier
-of a batch-settlement scheme or an authorization identifier under auth-capture.
-Core defines no such field in `SettlementResponse`; the verifier obtains the value
-from the scheme-specific settlement result. A receipt MUST NOT carry an identifier
-the server did not receive from settlement.
+non-empty.
 
-**`settlementStatus`** is the payment lifecycle as the server observed it at
-`issuedAt`:
+`transaction` is `SettlementResponse.transaction`.
+
+`settlementRef` is the scheme's **settlement reference**: a value that the
+scheme's own specification places in its settlement result to identify what was
+settled when there is no transaction to name. Core defines no such field. The
+references this draft recognizes are:
+
+| Scheme and network | Settlement reference |
+|---|---|
+| `batch-settlement` on `solana:*` | `SettlementResponse.extra.commitmentId` |
+
+A scheme that later defines such a field adds a row; that needs no change to the
+payload. An issuer MUST NOT use as `settlementRef` a value the settlement result
+did not carry, and MUST NOT compute one. A scheme whose result has an empty
+`transaction` and no row here is not covered (§1.3).
+
+**`payer`.** The payer is `SettlementResponse.payer`. When the response has
+none, it is the payer the scheme's payment payload names: for the EVM `exact`
+scheme with an EIP-3009 authorization, `PaymentPayload.payload.authorization.from`.
+A scheme that names its payer elsewhere defines that source in its own
+specification. When neither source has one, `payer` is `""`. That is expected on
+a rail that reveals no stable payer (the Lightning binding of `exact` requires
+`SettlementResponse.payer` to be omitted), and it means the receipt says nothing
+about who paid.
+
+**`settlementStatus`** is the state of the payment as the server observed it at
+`issuedAt`. It describes the payment and nothing else:
 
 | Value | Meaning |
 |---|---|
-| `settled` | Funds captured |
-| `capturePending` | Service delivered under an authorization; capture not yet landed |
-| `reversed` | The authorization was voided |
-| `refunded` | Funds were captured and then returned |
+| `settled` | The settlement the identifiers name completed: the transfer was made |
+| `capturePending` | The payment was authorized or committed (an authorization, a voucher) and the transfer has not yet been made |
+| `reversed` | The authorization or commitment was released without a transfer |
+| `refunded` | The transfer was made and then returned |
 
 A verifier or consumer MUST NOT read a passing receipt as "paid": it MUST read
 `settlementStatus`. It MUST NOT read `settlementStatus` as evidence about
 delivery, or `outcome` as evidence about payment.
 
-**`supersedes`.** When the lifecycle moves on, the server issues a new receipt
-with a new `receiptId` and sets `supersedes` to the `receiptRef` (§4.7) of the
-receipt it replaces. Otherwise `supersedes` is `""`. A holder of an older receipt
-cannot learn from that receipt that it was superseded; a consumer that needs the
-current state MUST obtain the latest receipt or resolve the settlement on the
-rail. When the reversal or refund has its own transaction, the server SHOULD
-carry it in the `action-receipt:reversal-transaction` binding (§4.5.2, §6.2).
+These four values do not describe every event a rail has: a partial capture or
+refund, a claim that settles many payments in one transaction, or a reclaim the
+payer makes without the server. A receipt states the nearest value; the amounts
+and the detail are in the scheme's own records.
+
+**`supersedes`.** A server MAY issue a later receipt for the same settlement
+when the payment's state changes or it corrects an earlier statement. The later
+receipt has a new `receiptId` and sets `supersedes` to the `receiptRef` (§4.7)
+of the receipt it replaces. Otherwise `supersedes` is `""`. When a reversal or
+refund has its own transaction, the server SHOULD carry it in the
+`action-receipt:reversal-transaction` binding (§4.5.2, §6.2).
+
+`supersedes` is the signer's claim, and a hash anyone can compute. A consumer
+holding receipts `A` and `B` MUST treat `B` as superseding `A` only if all of
+these hold, and otherwise MUST treat the two as unrelated:
+
+- both pass §5 under authorization for the same `resourceUrl`;
+- `B.supersedes` equals the `receiptRef` of `A`;
+- `network`, `resourceUrl`, `payTo`, `payer`, `transaction`, `settlementRef` and
+  `requirementsDigest` are equal in the two;
+- the pair (`A.settlementStatus`, `B.settlementStatus`) is one of:
+  the same value twice; `capturePending` then `settled`; `capturePending` then
+  `reversed`; `settled` then `refunded`.
+
+Two receipts that each validly supersede the same receipt show that the signer
+issued inconsistent statements; a consumer MUST NOT pick one.
+
+This draft defines no channel for delivering a later receipt. The settlement
+response reaches the client once, and a reversal or refund usually happens with
+no request in flight. A holder of a receipt therefore cannot learn from it, or
+from this extension, that a later one exists. A consumer that needs the current
+state of a payment MUST NOT rely on a receipt for it and resolves the settlement
+on the rail (§5.14).
 
 ### 4.4 `requirementsDigest`
 
@@ -254,6 +371,10 @@ canonicalized as it stands: no member is added, removed, renamed or case-folded.
 This commits the receipt to the terms agreed before payment: `scheme`, `network`,
 `amount`, `asset`, `payTo`, `maxTimeoutSeconds` and `extra`. A verifier that
 holds the `PaymentPayload` recomputes it (§5.9).
+
+`PaymentPayload` is written by the client. The digest is worth something only if
+`accepted` is what the server offered, so the issuer checks that before it signs
+(§6.2 step 4).
 
 `accepted` MUST lie in the value domain of §4.6. If it does not (for example a
 scheme whose `extra` contains a non-integer number), the server cannot compute
@@ -279,7 +400,11 @@ bindings has one serialization.
 - **Who defines a type.** If `prefix` is an x402 extension key, the type is
   defined by that extension's specification. Otherwise `type` is a URI and is
   defined by whoever controls that URI. This specification defines only the types
-  in §4.5.2.
+  in §4.5.2, and that set is closed: a binding whose `type` begins
+  `action-receipt:` and is not listed there is rejected (§5.3), so that a later
+  draft of this document cannot give a new meaning to a receipt already issued.
+  The meaning of any other type is whatever its owner's specification said when
+  the receipt was issued; this extension does not pin it.
 - **Verbatim values.** `value` is the string exactly as the owning specification
   writes it. This extension does not re-encode, re-hash or interpret it.
 - **Unknown types are not errors.** A verifier MUST NOT reject a receipt because
@@ -288,7 +413,13 @@ bindings has one serialization.
 - **Bindings never change the verdict.** Each entry is reported with its own
   status. A consumer MUST NOT treat a `not_evaluated` or `mismatched` binding as
   verified.
-- **No overriding.** A binding MUST NOT restate or contradict a member of §4.1.
+- **No overriding.** The members of §4.1 govern. An issuer SHOULD NOT carry a
+  binding that restates or contradicts one, and a consumer MUST NOT let a
+  binding change how it reads a member of §4.1.
+- **Nothing here is critical.** A binding cannot be marked "must understand". A
+  value that every verifier has to understand for the receipt to be read
+  correctly does not belong in a binding; it needs a member, and so a new
+  payload version.
 
 What the signature gives a binding is carriage: the server committed to that
 value, in this receipt, for this settlement. Whether the value is true is decided
@@ -301,8 +432,8 @@ member, a new enumeration value or a changed grammar does.
 
 | `type` | `value` | Evaluated when |
 |---|---|---|
-| `action-receipt:advertised-info` | `"sha256:"` + hex of SHA-256 over the JCS form of the `info` object the server advertised (§2.3) | The verifier holds that `info` object. `matched` iff the digest is equal and, for each of `scope` and `actionType` present in `info`, the receipt's `action` member is equal. Otherwise `mismatched` |
-| `action-receipt:reversal-transaction` | The rail's identifier of the transaction that reversed or refunded the payment | Never offline. A verifier that resolves it on the rail reports the result itself |
+| `action-receipt:advertised-info` | `"sha256:"` + hex of SHA-256 over the JCS form of the `info` object the server advertised (§2.3) | The verifier holds that `info` object, as a JSON object in the value domain of §4.6. `matched` iff the digest is equal and, for each of `scope` and `actionType` that is a member of `info`, its value is a string equal to the receipt's `action` member. Otherwise `mismatched` |
+| `action-receipt:reversal-transaction` | The rail's identifier of the transaction that reversed or refunded the payment. On `eip155` networks, `0x[0-9a-f]{64}` | Never offline. A verifier that resolves it on the rail reports the result itself |
 
 #### 4.5.3 Types owned by other proposals (informative)
 
@@ -325,7 +456,11 @@ the RFC 8785 serialization of a JSON value in which:
 
 - every number is an integer in `[-(2^53 - 1), 2^53 - 1]`. The test is on the
   number's value, not its spelling: an object received as JSON text that spells
-  a member `60.0` holds the integer 60, is in the domain, and serializes as `60`;
+  a member `60.0` holds the integer 60, is in the domain, and serializes as `60`.
+  The value of a number is the IEEE 754 double nearest its JSON text (RFC 8785
+  §3.2.2.3; RFC 7493). An implementation whose parser keeps more precision
+  converts before testing, so that all implementations agree on texts such as
+  `9007199254740991.4`;
 - every string and member name is well-formed Unicode (no unpaired surrogate);
 - objects and arrays nest at most 8 levels deep, counting the outermost object
   or array as level 1; scalars do not count.
@@ -351,9 +486,11 @@ it is never repaired.
 | `version` | integer `1` |
 | `issuedAt` | integer in `[0, 2^53 - 1]` |
 | `receiptId` | `[A-Za-z0-9_-]{22,64}` |
-| `network` | CAIP-2: `[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}` |
-| `resourceUrl`, `payer`, `payTo` | non-empty string |
-| `payer`, `payTo` when `network` begins `eip155:` | `0x[0-9a-f]{40}` |
+| `network` | `[-a-z0-9]{3,32}:[-_a-zA-Z0-9]{1,32}` (below) |
+| `resourceUrl`, `payTo` | non-empty string |
+| `payer` | any string |
+| `payTo` when `network` begins `eip155:` | `0x[0-9a-f]{40}` |
+| `payer` when `network` begins `eip155:` and it is non-empty | `0x[0-9a-f]{40}` |
 | `transaction` | any string; when `network` begins `eip155:` and it is non-empty, `0x[0-9a-f]{64}` |
 | `settlementRef` | any string |
 | `transaction`, `settlementRef` | not both empty |
@@ -364,10 +501,29 @@ it is never repaired.
 | `action.outcome`, `settlementStatus` | one of the values in §4.2, §4.3 |
 | `bindings` | §4.5 |
 
+The `network` grammar is the CAIP-2 shape with a longer namespace. CAIP-2 limits
+the namespace to 8 characters; x402 network identifiers are not all CAIP-2 (the
+Cloudflare `batch-settlement` binding uses `cloudflare:402`), and this receipt
+has to be able to name any network x402 does. This document calls a string that
+matches the grammar a **network identifier**.
+
+`resourceUrl` has no URL grammar here: it is compared as a string (§5.4) and
+never parsed by this extension. A signed string can contain any Unicode,
+including control and bidirectional-formatting characters, so software that
+shows a receipt to a person escapes what it displays (§9).
+
 EVM identifiers are lowercase because EIP-55 checksum casing gives one address
 many spellings, and the receipt needs one. Values a verifier takes from
 **unsigned** inputs are normalized before comparison (§5.8, §5.9); signed values
 are not.
+
+**Present and absent (both procedures).** Where §5 or §6 reads a string from an
+unsigned x402 object or from the issuer's statement, the value is **present**
+when it is a non-empty string of well-formed Unicode. Anything else is absent:
+a missing member, `null`, `""`, a value of another type, and a string with an
+unpaired surrogate (which cannot be serialized, so it can never equal a signed
+value). The issuer and the verifier use this one definition, so they cannot
+disagree about whether a response carried a value.
 
 ### 4.7 `receiptRef`
 
@@ -383,10 +539,16 @@ signature, so the same statement signed under two keys has one `receiptRef`. It
 is the value `supersedes` carries, and the value a dispute record or an anchor
 should reference. As 32 bytes of hex it can be used directly as a `bytes32`.
 
-It is **not** a count of payments or of actions. A server can issue several
-receipts for one settlement (§4.3 requires it when the lifecycle moves). A
-consumer that counts payments MUST key on `(network, transaction)` or
-`(network, settlementRef)`, never on `receiptRef` or `receiptId`.
+It is **not** a count of payments or of actions, and neither is `receiptId`. A
+server can issue several receipts for one settlement (§4.3). A consumer MUST NOT
+count payments by `receiptRef` or `receiptId`.
+
+Nothing in the receipt identifies a payment as such. `(network, transaction)`
+and `(network, settlementRef)` identify a **settlement**. They count payments
+only under a scheme that settles each payment with its own identifier, as
+`exact` does. Where one settlement identifier covers several payments, two
+receipts that share it may be two payments or two statements about one, and the
+receipt cannot say which; the scheme's own records can.
 
 **Worked example (normative).** Accepted payment requirements, in JCS form (230
 bytes):
@@ -436,36 +598,61 @@ transaction.
 **Inputs.** The verifier holds the receipt and:
 
 - the `SettlementResponse` (core §5.3): `success`, `transaction`, `network`,
-  optionally `payer`, and where the scheme has one, its non-transaction
-  settlement identifier;
+  optionally `payer`, and the scheme's settlement reference where §4.3 names
+  one;
 - optionally the `PaymentRequirements` the client accepted;
 - optionally the `info` object the server advertised (§2.3);
-- if the verifier made the payment itself, the resource URL it paid for;
-- a clock, a maximum age, and a mode: `session` or `archival`;
+- if the verifier made the payment itself, **the resource URL it paid for**:
+  the `resource.url` of the `PaymentRequired` it answered, verbatim. That is the
+  value the issuer signs (§4.1), so the comparison in §5.4 is between two copies
+  of one string. It is not the URL the client typed or was redirected from;
+- a clock, a maximum age, and a mode;
 - a way to learn which keys are authorized for a resource (§5.4).
+
+The receipt and the x402 objects come from other parties, and no value in them
+makes the verifier fail: every malformed case has a step below that rejects it
+or treats it as absent. The remaining inputs are the verifier's own
+configuration and have a contract:
+
+| Input | Contract |
+|---|---|
+| mode | exactly `session` or `archival` |
+| clock (`now`) | an integer number of Unix seconds |
+| maximum age | absent, meaning 3600, or an integer `>= 0` |
+| resource URL paid for | absent, or a string |
+| authorized key | a public key (for example a SubjectPublicKeyInfo PEM). A private key or a certificate is not one |
+
+A verifier given configuration outside this contract returns `ERROR`. It MUST
+NOT substitute a default or the nearest valid value: a mode it does not
+recognize is not `archival`, and a maximum age it cannot read is not 3600.
 
 **Outcomes.** Verification yields one of:
 
 - `PASS`, with a report (§5.12);
 - `REJECT`, with exactly one reason code (§5.13);
-- `ERROR`, when the verifier itself failed (for example its canonicalizer
+- `ERROR`, when the verifier itself failed: its configuration was outside the
+  contract above, or it faulted internally (for example its canonicalizer
   disagreed with a second implementation). `ERROR` says nothing about the
   receipt and MUST NOT be reported as a rejection.
 
 The verifier MUST perform the steps below **in order** and MUST stop at the first
-failure. It MUST NOT raise on malformed input.
+failure. It MUST NOT raise, and MUST NOT return `ERROR`, because of anything in
+the receipt or in the x402 objects.
 
 ### 5.1 Envelope and header
 
 1. Reject with `invalid_payload` unless the receipt is an object with
-   `format == "jws"`; `signature` is a string of exactly three `.`-separated
-   segments; each segment is unpadded base64url; and the first decodes to UTF-8
-   text (no byte-order mark, no other encoding) that parses as a JSON object. A
-   parser that detects encodings from the bytes MUST NOT be given the bytes.
-2. Reject with `invalid_actionreceipt_typ` unless the header's `typ` is
-   `x402-action-receipt+jws`.
-3. Reject with `invalid_actionreceipt_alg` unless `alg` is `ES256`, `ES256K` or
-   `EdDSA`.
+   `format == "jws"`; `signature` is a string of at most 65536 characters and
+   exactly three `.`-separated segments; each segment is unpadded base64url
+   (§3); and the first decodes to bytes `H` that pass the test of §5.2 (valid
+   UTF-8, parses as JSON, in the value domain, and `JCS(parsed) == H`) and
+   parse to a JSON object. A header with a byte-order mark, in another
+   encoding, with a repeated member, with `NaN`, or with members out of order
+   fails here.
+2. Reject with `invalid_actionreceipt_typ` unless the header's `typ` is the
+   string `x402-action-receipt+jws`.
+3. Reject with `invalid_actionreceipt_alg` unless `alg` is one of the strings
+   `ES256`, `ES256K` or `EdDSA`. A value of any other type is rejected here.
 4. Reject with `invalid_payload` unless the header has exactly the members
    `alg`, `kid`, `typ` and `kid` is a string.
 
@@ -496,20 +683,27 @@ languages all land on one reason code. Implementation notes:
 
 Reject with the code shown, checking in this order:
 
-1. `invalid_payload` unless the value is an object with exactly the members of
-   §4.1, and `version` is an integer.
-2. `invalid_actionreceipt_version` unless `version == 1`.
-3. `invalid_payload` unless `action` is an object with exactly the members of
-   §4.2; every string-typed member, including `action.outcome` and
-   `settlementStatus`, is a string; and every member except `action.outcome`,
-   `settlementStatus` and `bindings` satisfies every row of the grammar table in
-   §4.6 that names it, including "not both empty".
+1. `invalid_payload` unless the value is an object that has a `version` member
+   whose value is an integer.
+2. `invalid_actionreceipt_version` unless `version == 1`. This comes before the
+   member set is checked, so that a receipt of a later version, which may have
+   other members, is reported as a version this verifier does not implement
+   and not as a malformed payload.
+3. `invalid_payload` unless the object has exactly the members of §4.1;
+   `action` is an object with exactly the members of §4.2; every string-typed
+   member, including `action.outcome` and `settlementStatus`, is a string; and
+   every member except `action.outcome`, `settlementStatus` and `bindings`
+   satisfies every row of the grammar table in §4.6 that names it, including
+   "not both empty".
 4. `invalid_actionreceipt_outcome` unless `action.outcome` is a listed value.
 5. `invalid_actionreceipt_status` unless `settlementStatus` is a listed value.
 6. `invalid_payload` unless `bindings` is an array.
 7. `invalid_actionreceipt_binding` unless `bindings` satisfies §4.5: at most 16
    entries, each an object with exactly `type` and `value`, both strings matching
-   their grammar, in strictly ascending order of `type`.
+   their grammar, in strictly ascending order of `type`; and every entry whose
+   `type` begins `action-receipt:` is one of the two types of §4.5.2 with a
+   `value` of that type's form (`sha256:[0-9a-f]{64}` for `advertised-info`;
+   for `reversal-transaction`, `0x[0-9a-f]{64}` when `network` begins `eip155:`).
 
 ### 5.4 Resource and signer authorization
 
@@ -519,40 +713,60 @@ equals, as an exact string, the resource URL it paid for. A verifier that did no
 make the payment has nothing to compare, and the report records
 `resourceUrl: not_compared`.
 
-Reject with `invalid_actionreceipt_signer` unless `kid` is authorized for the
-receipt's `resourceUrl` by at least one of:
+The verifier then asks its authorization source whether `kid` is authorized for
+the receipt's `resourceUrl`. `kid` is authorized when the source gives at least
+one of:
 
 - (a) **the service**: a binding from the resource to the key identifier;
 - (b) **the recipient**: a binding from the pair `(payTo, resourceUrl)` to the
-  key identifier.
+  key identifier, made by whoever controls `payTo`.
+
+The question has three answers, and they lead to different results:
+
+- **Authorized.** Continue with §5.5.
+- **Not authorized**: the source answered, and `kid` is not among the keys it
+  lists for the resource. Reject with `invalid_actionreceipt_signer`.
+- **No answer**: the source could not be consulted (the host is unreachable, the
+  origin no longer exists) or, in `archival` mode, the verifier has no evidence
+  either way of what was authorized at `issuedAt`. Reject with
+  `invalid_actionreceipt_key_unresolved` (§5.5). The verifier MUST NOT report
+  this as `invalid_actionreceipt_signer`: failing to reach a source is not a
+  finding against the signer.
 
 Both anchors are scoped to the resource. A key that is authorized for a
 recipient address is not thereby authorized for every URL. Anchor (b) is looked
 up with the receipt's own `payTo`, which is not yet bounded at this step (§5.9
 bounds it); that is safe only because the anchor is itself tied to
-`resourceUrl`.
+`resourceUrl`. Anchor (a) says the origin that serves the resource signed. Only
+anchor (b) also says the recipient vouches for that origin (§1.3).
 
 Authorization uses the mechanisms of base §4.5.1 (`did:web` at the resource's
-host, DNS TXT `_controllers.<host>`, or a registry the verifier trusts). Two
-rules are specific to this extension:
+host, DNS TXT `_controllers.<host>`, or a registry the verifier trusts). Those
+mechanisms speak for a host. A verifier using them treats a key the host lists
+as authorized for every resource on that host; a narrower scope needs a registry
+that records one. Two rules are specific to this extension:
 
-- **Authorization precedes any fetch.** The verifier locates authorization data
-  from context it already holds: the host of the `resourceUrl` it paid or is
-  auditing, or its configured registry. It MUST NOT dereference a location that
-  only the receipt names. A `did:web` `kid` whose host is not the host of
-  `resourceUrl` is not authorized under (a) unless a registry the verifier
-  trusts says so.
+- **The key identifier never chooses the source.** The verifier takes the
+  location of authorization data from the receipt's `resourceUrl` (its host) or
+  from its configured registry. It MUST NOT take it from `kid`: a `did:web`
+  `kid` whose host is not the host of `resourceUrl` is not authorized under (a)
+  unless a registry the verifier trusts says so. A requesting verifier has
+  already checked `resourceUrl` against what it paid. A non-requesting verifier
+  has not, so for it this step shows only that the origin the receipt names
+  vouches for the key (§1.3, §5.14).
 - **As of `issuedAt`.** In `archival` mode the question is whether the key was
   authorized when the receipt was issued (base §5.5). Removal of a key from a
   mutable source is prospective: it does not show the key was unauthorized at
-  `issuedAt`.
+  `issuedAt`. What the source says today is evidence about today. Evidence
+  about `issuedAt` is a record someone kept at the time (§9); a verifier without
+  one, facing a source that no longer lists the key, has no answer.
 
 ### 5.5 Key resolution
 
 If `kid` is authorized but the verifier cannot obtain a usable key (the document
 is unreachable, the key has been rotated out and no record of it is held, or
-what was obtained does not parse as a public key), reject with
-`invalid_actionreceipt_key_unresolved`.
+what was obtained is not a public key of a kind the verifier can use), reject
+with `invalid_actionreceipt_key_unresolved`.
 
 This code is **indeterminate**. It means the verifier could not check, not that
 the receipt is forged. A consumer MUST NOT treat it as a finding against the
@@ -578,21 +792,25 @@ Values from the `SettlementResponse` are unsigned. Before comparing, the verifie
 normalizes them: when the **receipt's** `network` begins `eip155:` it lowercases
 the response's `transaction` and `payer` (ASCII `A-Z` to `a-z`). Nothing else is
 normalized. Throughout §5.7 and §5.8 the response "has" a transaction, a
-settlement reference or a payer when the value is a non-empty string; an absent
-member, `null` and `""` all mean it has none. Reject with
-`invalid_actionreceipt_settlement_mismatch` if any of these fails:
+settlement reference or a payer when the value is present in the sense of §4.6.
+Reject with `invalid_actionreceipt_settlement_mismatch` if any of these fails:
 
 - If the response has a `transaction`, the receipt's `transaction` equals it.
   If the response has none, the receipt's `transaction` is `""`.
 - If the response has a settlement reference, the receipt's `settlementRef`
   equals it. If it has none, the receipt's `settlementRef` is `""`.
-- If the response's `network` is in CAIP-2 form, the receipt's `network` equals
-  it. Otherwise the report records `network: not_compared`.
+- If the response's `network` is a network identifier (§4.6), the receipt's
+  `network` equals it. Otherwise the report records `network: not_compared`.
 - If the response has a `payer`, the receipt's `payer` equals it. Otherwise the
-  report records `payer: not_compared`.
+  report records `payer: not_compared`, and the receipt's `payer` (which may be
+  `""`, or may come from the scheme payload) is not constrained here.
 
 The second half of the first two rules means a receipt cannot carry an identifier
 the response does not corroborate, and cannot silently drop one the response has.
+A verifier applies the settlement-reference rule with the reference §4.3 names
+for the scheme. A verifier that does not know the scheme's row has no settlement
+reference to supply, and correctly rejects a receipt that carries one: it cannot
+corroborate it.
 
 ### 5.9 Payment requirements
 
@@ -634,6 +852,17 @@ For each entry of `bindings` the verifier records a status:
 
 No binding status changes the verdict.
 
+A per-entry status cannot show an entry that is missing, so the report also
+carries `checks.advertisement`:
+
+- `not_evaluated` when the verifier does not hold the advertised `info`, or what
+  it holds is not a JSON object in the value domain;
+- `absent` when it holds one and the receipt has no
+  `action-receipt:advertised-info` binding. A conforming issuer that advertised
+  always includes it (§6.2), so `absent` means the server did not follow its
+  advertisement, or the `info` the verifier holds is not one this server sent;
+- otherwise the status of that binding, `matched` or `mismatched`.
+
 ### 5.12 The report
 
 `PASS` is returned with a report. A verifier MUST make at least this available:
@@ -645,6 +874,7 @@ No binding status changes the verdict.
 | `ageSeconds` | `now - issuedAt` |
 | `checks.resourceUrl`, `checks.network`, `checks.payer`, `checks.payTo` | `compared` or `not_compared` |
 | `checks.requirements` | `matched` or `not_evaluated` |
+| `checks.advertisement` | `matched`, `mismatched`, `absent` or `not_evaluated` (§5.11) |
 | `checks.freshness` | `enforced` or `reported` |
 | `supersedes` | Copied from the receipt |
 | `bindings` | One `{type, status}` per entry |
@@ -665,6 +895,7 @@ the report has exactly this shape:
     "payer": "compared",
     "requirements": "matched",
     "payTo": "compared",
+    "advertisement": "not_evaluated",
     "freshness": "enforced"
   },
   "supersedes": "",
@@ -690,8 +921,8 @@ Codes follow core §9 and the `invalid_<extension>_<check>` convention.
 | §5.3 `settlementStatus` | `invalid_actionreceipt_status` |
 | §5.3 `bindings` | `invalid_actionreceipt_binding` |
 | §5.4 resource | `invalid_actionreceipt_resource_mismatch` |
-| §5.4 signer | `invalid_actionreceipt_signer` |
-| §5.5 (indeterminate) | `invalid_actionreceipt_key_unresolved` |
+| §5.4 signer not authorized | `invalid_actionreceipt_signer` |
+| §5.4 no answer, §5.5 (indeterminate) | `invalid_actionreceipt_key_unresolved` |
 | §5.6 | `invalid_actionreceipt_signature` |
 | §5.7 | `invalid_transaction_state` |
 | §5.8 | `invalid_actionreceipt_settlement_mismatch` |
@@ -711,14 +942,21 @@ it paid for, so that §5.4 compares it with `resourceUrl`.
 
 A **non-requesting verifier** (an auditor, an arbiter) holds recorded copies. It
 MUST say so when it reports a result: everything it compared in §5.7 to §5.9
-came from the party presenting the receipt or from the signer.
+came from the party presenting the receipt or from the signer, and the resource
+is the one the receipt names, not one the verifier chose. Its `PASS` means that
+the origin of `resourceUrl` signed a statement consistent with the records
+presented. Whether that origin was the party paid is a separate question
+(§1.3), answered by anchor (b), by the payer's copy of the `PaymentRequired`
+(which ties `resource.url` to `payTo` before payment), or by the rail.
 
 Either can go further by resolving the settlement identifier on the payment rail.
 A verifier that does so SHOULD confirm that the node serves the chain named by
-`network`, that the transaction succeeded, and that it transferred the asset and
-amount of the accepted requirements from `payer` to `payTo`. It SHOULD NOT assume
-the transaction's submitter is the payee: under x402 the facilitator usually
-submits. This extension does not specify rail resolution further.
+`network`, that the transaction succeeded, and that it transferred the accepted
+asset from `payer` to `payTo` in an amount the scheme allows for the accepted
+requirements: equal under `exact`; at most the accepted amount under `upto`;
+whatever the scheme defines otherwise. It SHOULD NOT assume the transaction's
+submitter is the payee: under x402 the facilitator usually submits. This
+extension does not specify rail resolution further.
 
 ## 6. Issuing (normative)
 
@@ -726,28 +964,40 @@ submits. This extension does not specify rail resolution further.
 
 The issuer is the resource server. To issue a receipt it holds:
 
-- the `PaymentRequired` it sent, for `resource.url` and, when it advertised this
-  extension, `extensions["action-receipt"].info`;
+- the `PaymentRequired` it sent, for `resource.url`, `accepts` and, when it
+  advertised this extension, `extensions["action-receipt"].info`;
 - the `PaymentPayload` it received, for `accepted` and the scheme payload;
-- the `SettlementResponse`, and the scheme's settlement reference when the
-  scheme has one (§4.3);
+- the `SettlementResponse`, and the scheme's settlement reference where §4.3
+  names one;
 - its **statement**: the four `action` members, `settlementStatus`, and
   optionally `supersedes`, a reversal transaction and further bindings;
 - a fresh `receiptId` (§4.3) and its clock.
 
+The statement is the issuer's own: this document does not say how a server
+decides what it did. It says only what form the statement takes and what the
+issuer must refuse to sign.
+
 Conventions for this section:
 
-- A value is **had** when it is a non-empty string of well-formed Unicode. A
-  string with an unpaired surrogate cannot be serialized (§4.6), so it is not
-  had. A value that is not had is treated as if it were not there: a
-  `transaction` of the wrong type is no transaction.
-- An optional member that is absent and one that is `null` are the same.
-- Members this section does not name are ignored. An `action` object in the
-  statement with further members contributes only its four.
+- **x402 objects are read leniently.** A string read from the
+  `PaymentRequired`, the `PaymentPayload` or the `SettlementResponse` is
+  present or absent as §4.6 defines: a `transaction` of the wrong type is no
+  transaction. Those objects come from other parties, and the verifier reads
+  them the same way (§5.8).
+- **The statement is read strictly.** It is the issuer's own input, so a wrong
+  value is an error and is never dropped. An optional statement member
+  (`supersedes`, the reversal transaction, the further bindings) is not given
+  when it is missing or `null`. Given, it MUST be well formed (steps 8 and 10),
+  and the issuer refuses if it is not.
+- Members of the statement, and of its `action` object, that this section does
+  not name are ignored. That applies at those two levels only: a binding entry
+  has exactly two members (§4.5).
 - The issuer **advertised** this extension when
   `PaymentRequired.extensions["action-receipt"]` is an object whose `info` is a
   JSON object. That `info` is "the advertised `info`". Anything else is no
-  advertisement.
+  advertisement. The advertised `info` is hashed as it stands (§4.5.2), so
+  nothing in it is read leniently: a member of it whose value is `null` is a
+  member, not an absence.
 
 ### 6.2 Procedure
 
@@ -758,57 +1008,88 @@ in conformance testing; they never appear on the wire.
 | Step | Refusal reason | The issuer refuses unless |
 |---|---|---|
 | 1 | `settlement_not_successful` | `SettlementResponse.success` is `true` |
-| 2 | `no_settlement_identifier` | the response has a `transaction`, or the issuer has a settlement reference |
+| 2 | `no_settlement_identifier` | the response has a `transaction`, or the issuer has a settlement reference (§4.3) |
 | 3 | `requirements_not_hashable` | `PaymentPayload.accepted` is a JSON object in the value domain of §4.6 |
-| 4 | `network_unusable` | `accepted.network` is a string in CAIP-2 form (§4.6); and, when `SettlementResponse.network` is also a string in CAIP-2 form, the two are equal |
-| 5 | `resource_unavailable` | it has `PaymentRequired.resource.url` |
-| 6 | `payer_unavailable` | it has a payer: `SettlementResponse.payer`, or failing that `PaymentPayload.payload.authorization.from`. A scheme that names its payer elsewhere defines its own second source; this document and its conformance suite use only these two |
-| 7 | `identifier_out_of_grammar` | it has `accepted.payTo`, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6 |
+| 4 | `requirements_not_offered` | `PaymentRequired.accepts` is an array, and `accepted` equals one of its entries (below) |
+| 5 | `network_unusable` | `accepted.network` is a network identifier (§4.6); and, when `SettlementResponse.network` is also one, the two are equal |
+| 6 | `resource_unavailable` | `PaymentRequired.resource.url` is present |
+| 7 | `identifier_out_of_grammar` | `accepted.payTo` is present, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6 |
 | 8 | `invalid_statement` | the statement is well formed (below) |
-| 9 | `advertisement_conflict` | for each of `actionType` and `scope` present in the advertised `info`, it is a string equal to the statement's `action` member |
+| 9 | `advertisement_conflict` | for each of `actionType` and `scope` that is a member of the advertised `info`, its value is a string equal to the statement's `action` member |
 | 10 | `invalid_bindings` | the assembled `bindings` satisfy §4.5 |
 
-**Lowercasing (step 7).** When `accepted.network` begins `eip155:` the issuer
+**Offered requirements (step 4).** `accepted` equals an entry of `accepts` when
+both are in the value domain and their JCS serializations are the same bytes.
+Core already requires a server to match the client's choice against what it
+offered before it settles; this step makes the receipt depend on it. Without
+it, a client could have the server sign a digest over terms the server never
+offered, and a verifier that holds the same `PaymentPayload` would report those
+terms as matched.
+
+**Payer and lowercasing (step 7).** `payer` is `SettlementResponse.payer` when
+present; failing that the scheme payload's payer when present (§4.3; this
+document and its suite read only `PaymentPayload.payload.authorization.from`);
+failing that `""`. When `accepted.network` begins `eip155:` the issuer
 lowercases `payer`, `payTo` and `transaction` (ASCII `A-Z` to `a-z`, the rule a
 verifier applies in §5.8). On other networks they are copied verbatim. The
 settlement reference is never changed.
 
 **Well-formed statement (step 8).** `action.agent` and `action.actionType` are
-had; `action.scope` is a string of well-formed Unicode; `action.outcome` and
-`settlementStatus` are listed values; `receiptId` matches its grammar;
-`issuedAt` is a number with an integer value (§4.6) in `[0, 2^53 - 1]`;
-`supersedes` is absent, `""` or matches its grammar.
+present (§4.6); `action.scope` is a string of well-formed Unicode;
+`action.outcome` and `settlementStatus` are listed values; `receiptId` matches
+its grammar; `issuedAt` is a number with an integer value (§4.6) in
+`[0, 2^53 - 1]`; `supersedes`, when given, is `""` or matches its grammar; the
+reversal transaction, when given, is a string; the further bindings, when
+given, are an array.
 
 **Assembling bindings (step 10).** Start from the further bindings in the
-statement (none if absent; a value that is not an array fails the step). A
-further binding whose `type` begins `action-receipt:` fails the step: the types
-this specification defines are added by the issuer below and are never supplied.
-Then:
+statement. A further binding whose `type` begins `action-receipt:` fails the
+step: the types this specification defines are added by the issuer below and are
+never supplied. Then:
 
 - if the issuer advertised this extension, add `action-receipt:advertised-info`
   with the digest of the advertised `info` (§4.5.2). An advertised `info` that is
   not in the value domain cannot be committed and fails the step;
-- if the statement has a reversal transaction, add
-  `action-receipt:reversal-transaction` with that value.
+- if the statement gives a reversal transaction, add
+  `action-receipt:reversal-transaction` with that value, lowercased when
+  `accepted.network` begins `eip155:`.
 
 Sort the entries in ascending order of `type`. Two entries with one `type`, an
-entry that breaks the grammar of §4.5, or more than 16 entries fails the step.
+entry that breaks the grammar of §4.5 or the value form of §4.5.2, or more than
+16 entries fails the step.
 
 ### 6.3 The payload
 
 When no step refused, the payload is built from the sources of §4.1: `version`
 is `1`; `network` is `accepted.network`; `resourceUrl` is
 `PaymentRequired.resource.url`; `payer`, `payTo` and `transaction` are the values
-of steps 6 and 7 (`transaction` is `""` when the response has none);
+of step 7 (`transaction` is `""` when the response has none);
 `settlementRef` is the settlement reference or `""`; `requirementsDigest` is
 computed per §4.4; `supersedes` is the statement's or `""`; `bindings` is the
-array of step 10. The issuer signs the JCS serialization of that object under the
-header of §3.
+array of step 10.
 
-A receipt issued by this procedure, verified by §5 in the context of the same
-exchange, passes, with the requirements matched and `payTo` compared, and with an
-`action-receipt:advertised-info` binding matched. `resourceUrl` is compared when
-the verifier made the payment; `network` and `payer` are compared when the
+The steps above are sufficient: a payload built this way satisfies §5.2 and
+§5.3. An implementation SHOULD nevertheless run those two checks on the payload
+it built and refuse if either fails, so that a defect in the issuer shows up as
+a refusal and not as a receipt nobody can verify.
+
+**Signing.** The issuer signs the JCS serialization of the payload under a
+header that is the JCS serialization of the three members of §3. It MUST:
+
+- use a key whose `kid` its own authorization source lists for `resourceUrl`
+  (§5.4), and whose type matches `alg`;
+- for `ES256` and `ES256K`, emit the 64-byte `r || s` form with `s <= n/2`,
+  replacing `s` by `n - s` when the library returns the high form;
+- emit a compact string within the bound of §3.
+
+**What a conforming issuer can rely on.** Take a receipt built and signed as
+above, and a verifier following §5 that is given the same `SettlementResponse`
+and settlement reference, the same `accepted`, the same advertised `info` if
+there was one, a clock within the freshness bounds, and an authorization source
+that answers for the key. That verifier returns `PASS` with requirements
+`matched`, `payTo` `compared`, and, if the issuer advertised,
+`checks.advertisement` `matched`. `resourceUrl` is compared when the verifier
+made the payment; `network` and `payer` are compared when the
 `SettlementResponse` carries them.
 
 ### 6.4 Standing requirements
@@ -816,9 +1097,11 @@ the verifier made the payment; `network` and `payer` are compared when the
 1. Sign only after settlement returns.
 2. Keep every key that has signed a receipt resolvable for as long as receipts
    signed by it may need to be verified, and never rebind a `kid` to a different
-   key. A dedicated signing key separate from the `payTo` key is RECOMMENDED
-   (base §4.5.1).
-3. When the lifecycle changes, issue a superseding receipt (§4.3).
+   key: a verifier that resolves a rebound `kid` sees a genuine receipt fail its
+   signature check, which reads as forgery. A dedicated signing key separate
+   from the `payTo` key is RECOMMENDED (base §4.5.1).
+3. A later receipt for the same settlement follows §4.3: same settlement
+   members, `supersedes` set, a permitted status pair.
 4. When both receipts are emitted, keep them consistent (§2.4).
 
 ## 7. Conformance
@@ -861,9 +1144,25 @@ Properties of the suite:
 
 `vectors/keys.json` is a test fixture. It stands in for the authorization and key
 resolution of §5.4 and §5.5: `"__service__:<resourceUrl>"` and
-`"__payTo__:<payTo>|<resourceUrl>"` list authorized key identifiers, and each key
-identifier maps to a PEM public key. A key identifier that is authorized but has
-no entry, or whose entry does not parse, exercises §5.5. It is not a wire format.
+`"__payTo__:<payTo>|<resourceUrl>"` each map to an array of authorized key
+identifiers (a value that is not an array of strings authorizes nothing);
+`"__unavailable__:<resourceUrl>"` set to `true` says the authorization source
+gave no answer for that resource; and each key identifier maps to a
+SubjectPublicKeyInfo PEM public key. A key identifier that is authorized but has
+no entry, or whose entry is not such a key, exercises §5.5. It is not a wire
+format.
+
+What conformance does and does not show:
+
+- Reproducing the manifests shows agreement with this text on the cases they
+  contain. It does not show a verifier's authorization source is sound, that an
+  issuer signs correctly (the issuer exchanges compare payloads, not
+  signatures), or that `receiptId` values are unpredictable.
+- Every implementation in the repository came from one working session. Their
+  agreement with each other is weaker evidence than agreement with an
+  implementation written elsewhere.
+- The exchanges and vectors are `exact`-shaped messages. Networks other than
+  `eip155` appear, but no vector was produced by another scheme's SDK.
 
 All settlement identifiers in the vectors are synthetic.
 
@@ -955,14 +1254,45 @@ A `bindings` array carrying an advertisement commitment and a response hash:
   for one settlement. A holder can present the one that reads best. `supersedes`
   lets an honest signer order them; it cannot stop a holder withholding the
   later one.
-- **Key lifetime.** If the signer's origin disappears, or a key is rotated out
-  with no record kept, old receipts become unverifiable
+- **The signer and the payee** (§1.3). Authorization shows the origin of
+  `resourceUrl` signed. It does not show that origin was paid. A receipt over a
+  real settlement between two other parties verifies for an auditor who takes
+  the resource from the receipt.
+- **Requirements the client wrote.** `accepted` comes from the client. The
+  digest means what it should only because the issuer checked `accepted`
+  against what it offered (§6.2 step 4). A verifier cannot see whether an
+  issuer did.
+- **Key lifetime and old receipts.** If the signer's origin disappears, or a
+  key is rotated out with no record kept, old receipts become unverifiable
   (`invalid_actionreceipt_key_unresolved`), not invalid. Verifiers that retain
   receipts SHOULD retain the key and the authorization evidence they relied on,
-  with the time they resolved it.
+  with the time they resolved it. That evidence convinces the party that kept
+  it. It is not transferable: a third party shown a copy is trusting whoever
+  kept it. This extension has no mechanism by which a party who was not there
+  can establish what was authorized at `issuedAt`.
+- **Backdating.** `issuedAt` is asserted by the signer and nothing bounds it
+  from below in `archival` mode. Whoever holds a key, including a key since
+  retired, can sign a receipt with any earlier `issuedAt`. Removal of a key is
+  treated as prospective (§5.4), so such a receipt is judged against the time
+  it claims.
+- **Rebinding a key identifier.** If a `kid` is pointed at a different key, a
+  genuine old receipt fails §5.6 with `invalid_actionreceipt_signature`. A
+  consumer SHOULD NOT read a signature failure on an old receipt as proof the
+  presenter forged it unless it knows the key it resolved is the key that was
+  bound at `issuedAt`.
 - **Algorithm and type confusion.** The key's type and curve are bound to `alg`
-  (§5.6; RFC 8725 §3.1), and `typ` is required, so a receipt cannot be replayed
-  as a different JWS-based artifact.
+  (§5.6; RFC 8725 §3.1), the header has one spelling (§3), and `typ` is
+  required, so this verifier does not accept a different JWS-based artifact.
+  The reverse is not in this extension's hands: an action receipt payload
+  contains every member a base receipt payload requires, and the base extension
+  requires no `typ`, so a base verifier that tolerates unknown members and
+  headers could accept one as a base receipt.
+- **Parsing before authentication.** Every step before §5.6 runs on bytes
+  nobody has authenticated. The size bound (§3), the depth bound (§4.6) and the
+  binding limits (§4.5) keep that work bounded.
+- **Display.** Signed strings can contain control and bidirectional-formatting
+  characters, and `resourceUrl` is not checked to be a URL. Software that shows
+  receipt fields to a person escapes them.
 - **Client-chosen identifiers.** An identifier the client chooses (for example a
   `payment-identifier` id) MUST NOT be used as the sole link between a receipt
   and a settlement: an unrelated payment can reuse it.
@@ -1028,6 +1358,18 @@ a salted commitment and keep the salt with the receipt.
    it cannot be confused with the base receipt's typed data.
 4. Whether this belongs under `specs/extensions/` as its own extension or as an
    optional profile of the base extension.
+5. Should the payload carry the amount the settlement charged
+   (`SettlementResponse.amount`, or a scheme's `extra.chargedAmount`)? Without
+   it the receipt commits only the accepted terms, which under `upto` and the
+   batch schemes are a ceiling (§1.3). It would be a new member.
+6. Should the lifecycle stay? `reversed`, `refunded` and `supersedes` describe
+   events for which this draft has no delivery channel (§4.3). The alternative
+   is a receipt that states only what was true when the response was sent, and
+   leaves later events to the rail.
+7. A settlement reference for the deferred schemes that return neither a
+   transaction nor an identifier (§1.3). That is for those schemes to define.
+8. A payment identifier. Core PR #3776 concerns one; if it lands, a receipt
+   could carry it and §4.7's limit would go.
 
 ## Version history
 
@@ -1036,8 +1378,12 @@ a salted commitment and keep the salt with the receipt.
 | 0.1 – 0.2.1 | 2026-07-19 | Initial drafts: JWS profile, settlement binding by transaction or settlement reference, payment lifecycle, reason codes, `actionRef` over a 13-field tuple. | Josh Suich |
 | 0.3 | 2026-11-19 | Breaking. `actionRef` removed from the payload; `receiptRef` is the hash of the signed payload bytes, in `sha256:` hex form. Added `receiptId`, `requirementsDigest`, `supersedes`, `bindings`. Required `typ` header and a closed header. Canonical-bytes check moved ahead of schema typing. EVM identifiers lowercase; comparison semantics stated. Authorization before key resolution; unresolved keys reported separately. Session and archival freshness. Verification report. Non-goals stated. Circularity code removed (covered by the closed schema). `outcome` is `delivered`, `partial` or `failed`; `refused` and `disputed` are retired. §6 is a ten-step issuing procedure with refusal reasons. A verifier that paid checks the URL it paid for. | Josh Suich |
 
+| 0.4 | 2026-11-20 | Breaking, after an independent review of 0.3 (six reviewers; `conformance/REVIEW-0.4.md`). The header has one spelling (JCS). `payer` may be `""`; the network grammar admits x402's non-CAIP-2 identifiers; `settlementRef` has a named source per scheme. The issuer refuses requirements it did not offer (`requirements_not_offered`); `payer_unavailable` is retired. One definition of a present value for issuer and verifier. `version` is checked before the member set. The `action-receipt:` binding namespace is closed and its values have a form. An authorization source that gives no answer is `key_unresolved`, not `signer`. The verifier's own inputs have a contract; outside it the result is `ERROR`. `checks.advertisement` added to the report. Supersession has consumer rules and no promised delivery. Signing requirements moved into §6.3. A 65536-character bound. Claims narrowed: what a non-requesting verifier learns, the signer is not shown to be the payee, the amount charged is not stated, a payment is not identified, schemes without an identifier are not covered. | Josh Suich |
+
 Payload `version` remains `1`: no earlier draft was adopted, and a 0.2.x receipt
-fails §5.1 (no `typ`) under this text, so the two cannot be confused.
+fails §5.1 (no `typ`) under this text, so the two cannot be confused. A 0.3
+receipt is a valid 0.4 receipt unless it relied on something 0.4 removed (a
+header that was not in JCS form, an unlisted `action-receipt:` binding).
 
 Prepared with AI assistance; the reference verifier and vectors were run and
 cross-checked as described in §7.
