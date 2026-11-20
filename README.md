@@ -180,5 +180,5 @@ result that matters.
 
 ## License and contributor
 
-Apache-2.0. Contributed openly by Holological LLC (`jsuich`). Prepared with AI
+Apache-2.0. Contributed openly by Holological System LLC (`jsuich`). Prepared with AI
 assistance.
