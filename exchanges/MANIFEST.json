@@ -289,14 +289,14 @@
       }
     },
     {
-      "file": "issue_outcome_refused.json",
+      "file": "issue_outcome_failed.json",
       "issued": true,
       "payload": {
         "action": {
           "agent": "did:web:agent.example",
           "actionType": "inference.completion",
           "scope": "read:model-x",
-          "outcome": "refused"
+          "outcome": "failed"
         },
         "bindings": [],
         "issuedAt": 1703123456,
@@ -620,6 +620,11 @@
     },
     {
       "file": "refuse_outcome_unknown.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_outcome_retired_value.json",
       "issued": false,
       "reason": "invalid_statement"
     },

@@ -200,7 +200,7 @@ ACTION_KEYS = {"agent", "actionType", "scope", "outcome"}
 BINDING_KEYS = {"type", "value"}
 STRING_TOP_FIELDS = {"receiptId", "network", "resourceUrl", "payer", "payTo", "transaction",
                      "settlementRef", "settlementStatus", "requirementsDigest", "supersedes"}
-OUTCOMES = {"delivered", "refused", "partial", "disputed"}                   # SERVICE delivery
+OUTCOMES = {"delivered", "partial", "failed"}                                # SERVICE delivery
 SETTLEMENT_STATUSES = {"settled", "capturePending", "reversed", "refunded"}  # PAYMENT lifecycle
 MAX_BINDINGS = 16
 
@@ -767,9 +767,8 @@ SUITE = [
     ("pos_es256k_valid.json", PASS, None, C_OK),
     ("pos_eddsa_valid.json", PASS, None, C_OK),
     ("pos_payto_signer.json", PASS, None, C_OK),
-    ("pos_outcome_refused.json", PASS, None, C_OK),
+    ("pos_outcome_failed.json", PASS, None, C_OK),
     ("pos_outcome_partial.json", PASS, None, C_OK),
-    ("pos_outcome_disputed.json", PASS, None, C_OK),
     ("pos_batch_settled.json", PASS, None, C_BATCH),
     ("pos_batch_second_payment.json", PASS, None, C_BATCH),
     ("pos_capture_pending.json", PASS, None, C_BATCH),
@@ -832,6 +831,8 @@ SUITE = [
     ("neg_schema_supersedes_grammar.json", REJECT, R_MALFORMED, C_OK),
     ("neg_unsupported_version.json", REJECT, R_UNSUPPORTED_VERSION, C_OK),
     ("neg_invalid_outcome.json", REJECT, R_INVALID_OUTCOME, C_OK),
+    ("neg_outcome_retired_refused.json", REJECT, R_INVALID_OUTCOME, C_OK),
+    ("neg_outcome_retired_disputed.json", REJECT, R_INVALID_OUTCOME, C_OK),
     ("neg_invalid_status.json", REJECT, R_INVALID_STATUS, C_OK),
     ("neg_binding_unsorted.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_duplicate_type.json", REJECT, R_BINDING, C_OK),
@@ -875,7 +876,7 @@ DISTINCT = [
      "two payments under one batch root in the same second"),
     ("pos_non_ascii_nfc.json", "pos_non_ascii_nfd.json",
      "no Unicode normalization is applied: NFC and NFD are different receipts"),
-    ("pos_es256_valid.json", "pos_outcome_refused.json",
+    ("pos_es256_valid.json", "pos_outcome_failed.json",
      "a different statement about the same settlement"),
 ]
 # Groups of positives that MUST share one receiptRef: the identifier names the
@@ -916,7 +917,7 @@ EXPECT_REPORT = {
     "pos_binding_advertised_scope_not_string.json": {"bindings": {BT_ADVERTISED: "mismatched"}},
     "pos_refunded_supersedes.json": {"settlementStatus": "refunded",
                                      "bindings": {BT_REVERSAL_TX: "not_evaluated"}},
-    "pos_outcome_refused.json": {"outcome": "refused"},
+    "pos_outcome_failed.json": {"outcome": "failed"},
 }
 
 
@@ -990,9 +991,8 @@ def regenerate_vectors() -> None:
     w("pos_es256k_valid.json", signed(base(), "ES256K", KID_ES256K))
     w("pos_eddsa_valid.json", signed(base(), "EdDSA", KID_ED))
     w("pos_payto_signer.json", signed(base(), "ES256", KID_PAYTO, keys["PAYTO"]))
-    w("pos_outcome_refused.json", signed(base(action={"outcome": "refused"})))
+    w("pos_outcome_failed.json", signed(base(action={"outcome": "failed"})))
     w("pos_outcome_partial.json", signed(base(action={"outcome": "partial"})))
-    w("pos_outcome_disputed.json", signed(base(action={"outcome": "disputed"})))
     w("pos_batch_settled.json", signed(base(transaction="", settlementRef=BATCH_REF)))
     w("pos_batch_second_payment.json",
       signed(base(transaction="", settlementRef=BATCH_REF, receiptId=RECEIPT_ID_2)))
@@ -1121,6 +1121,9 @@ def regenerate_vectors() -> None:
     w("neg_schema_supersedes_grammar.json", signed(base(supersedes="previous-receipt")))
     w("neg_unsupported_version.json", signed(base(version=99)))
     w("neg_invalid_outcome.json", signed(base(action={"outcome": "shipped"})))
+    # values earlier drafts allowed and this one does not
+    w("neg_outcome_retired_refused.json", signed(base(action={"outcome": "refused"})))
+    w("neg_outcome_retired_disputed.json", signed(base(action={"outcome": "disputed"})))
     w("neg_invalid_status.json", signed(base(settlementStatus="pending")))
     two = [{"type": "a:one", "value": "1"}, {"type": "b:two", "value": "2"}]
     w("neg_binding_unsorted.json", signed(base(bindings=list(reversed(two)))))
@@ -1141,7 +1144,7 @@ def regenerate_vectors() -> None:
 
     # ---- §5.6 signature ----
     h_ok = good.split(".")[0]
-    tampered = _canon(base(action={"outcome": "refused"})).encode()
+    tampered = _canon(base(action={"outcome": "failed"})).encode()
     w("neg_sig_tampered_payload.json", {"format": "jws", "signature": f"{h_ok}.{b64url(tampered)}.{s_ok}"})
     w("neg_sig_high_s.json", signed(base(), force_high_s=True))
     w("neg_sig_wrong_curve.json",

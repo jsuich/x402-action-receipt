@@ -128,7 +128,7 @@ const PAYLOAD_MEMBERS = [
   'supersedes', 'action', 'bindings',
 ];
 const ACTION_MEMBERS = ['agent', 'actionType', 'scope', 'outcome'];
-const OUTCOMES = ['delivered', 'partial', 'refused', 'disputed'];
+const OUTCOMES = ['delivered', 'partial', 'failed'];
 const STATUSES = ['settled', 'capturePending', 'reversed', 'refunded'];
 const ALGS = ['ES256', 'ES256K', 'EdDSA'];
 const TYP = 'x402-action-receipt+jws';

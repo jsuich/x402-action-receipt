@@ -6,8 +6,7 @@ harness changes. A cycle that finds nothing is recorded in one line.
 
 How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --save <dir>`.
 Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
-31 to 33, 41 to 43, 51 to 53, 61 to 64 (the last on an export of the committed
-tree: all eleven stages passed).
+31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
@@ -151,6 +150,16 @@ Seeds 51 to 53, 5,000 each. Verifiers: 15,000 cases, 7,981 follow-ups, 0
 disagreements. Issuers: 15,000 exchanges, 10,064 round trips through both
 verifiers, 0 disagreements, 0 property violations. 94 vectors, 46 exchanges, 40
 verifier flips, 25 issuer flips, 101 requirements (77 tested).
+
+## Cycle 9 — 2026-11-20 (outcome values)
+
+| # | Finding | Class | Resolution |
+|---|---|---|---|
+| 20 | `outcome` allowed `refused` and `disputed`. A survey of the x402 threads found no proposal or implementation that uses either as an outcome value, while the delivery-receipt proposal (#2833) implements exactly `delivered`, `failed`, `partial`, and five authors use `failed` | B | `outcome` is `delivered`, `partial` or `failed`. The retired values are pinned as rejections: vectors `neg_outcome_retired_refused`, `neg_outcome_retired_disputed`, exchange `refuse_outcome_retired_value` |
+
+Seeds 61 to 64 ran on an export of the committed tree before this change; seeds
+71 to 73 after it: 15,000 cases and 15,000 exchanges, 0 disagreements, all eleven
+stages passed. 95 vectors, 47 exchanges.
 
 ## Known limits of this process
 

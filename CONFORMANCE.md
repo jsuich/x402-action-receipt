@@ -12,7 +12,7 @@ requirements the suite tests, and which it does not.
 adapter protocol of section 3, it reproduces every entry of
 `vectors/MANIFEST.json`: the verdict, the reason code on `REJECT`, the report
 on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
-`vectorsDigest` (currently `sha256:ca6a6374e8cf0a7a20ae9b95a2b73302e980540e48e5608fd36fc65eb19ae511`).
+`vectorsDigest` (currently `sha256:299cb37197fbe4352a5f1bc216eb5f84e9c0143f5ca0196a3ea4caacbf3fbc58`).
 
 **Issuer.** An implementation conforms as an issuer if, driven through the
 issuer adapter protocol of section 3, it handles every exchange in
@@ -35,8 +35,8 @@ completeness. They are not testable through this suite.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 1 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
-- 94 vectors, each named by at least one requirement.
-- 46 exchanges, each named by at least one requirement.
+- 95 vectors, each named by at least one requirement.
+- 47 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -131,7 +131,7 @@ every case; `suite` = a structural check of the suite itself.
 | V-SCH-3 | §5.3 | MUST | Reject a member of the wrong type or outside its grammar. | `neg_schema_action_scalar`, `neg_schema_issuedat_string`, `neg_schema_issuedat_negative`, `neg_schema_no_settlement_id`, `neg_schema_receiptid_short`, `neg_schema_network_not_caip2`, `neg_schema_digest_base64url`, `neg_schema_supersedes_grammar` |
 | V-SCH-4 | §4.6 | MUST | Reject a signed member that is out of grammar; never repair it (EVM identifiers must already be lowercase). | `neg_schema_payer_checksum_case`, `neg_schema_transaction_uppercase` |
 | V-SCH-5 | §4.6 | MUST | Compare strings as exact code-point sequences; apply no normalization to signed members. | `pos_non_ascii_nfc`, `pos_non_ascii_nfd` |
-| V-SCH-6 | §5.3 | MUST | Accept each listed `outcome` and reject any other. | `neg_invalid_outcome`, `pos_outcome_refused`, `pos_outcome_partial`, `pos_outcome_disputed` |
+| V-SCH-6 | §5.3 | MUST | Accept each listed `outcome` and reject any other. | `neg_invalid_outcome`, `neg_outcome_retired_refused`, `neg_outcome_retired_disputed`, `pos_outcome_failed`, `pos_outcome_partial` |
 | V-SCH-7 | §5.3 | MUST | Accept each listed `settlementStatus` and reject any other. | `neg_invalid_status`, `pos_capture_pending`, `pos_reversed`, `pos_refunded_supersedes` |
 | V-BND-1 | §5.3 | MUST | Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count. | `neg_binding_unsorted`, `neg_binding_duplicate_type`, `neg_binding_extra_member`, `neg_binding_type_grammar`, `neg_binding_value_non_ascii`, `neg_binding_too_many` |
 | V-BND-2 | §4.5.1 | MUST NOT | Do not reject a receipt for an unrecognized binding type; report it as not evaluated. | `pos_bindings_unheld`, `pos_bindings_composed` |
@@ -195,7 +195,7 @@ every case; `suite` = a structural check of the suite itself.
 | I-STP-6 | §6.2 | MUST | Step 6: take the payer from the response, else from the scheme payload; refuse if neither. | `refuse_no_payer`, `issue_payer_from_authorization` |
 | I-STP-7 | §6.2 | MUST | Step 7: refuse unless `payTo` is had and the identifiers satisfy the grammar after lowercasing. | `refuse_payto_role_constant`, `refuse_payto_missing`, `refuse_transaction_not_hex` |
 | I-STP-7L | §6.2 | MUST | Lowercase EVM identifiers; copy others verbatim. | `issue_basic`, `issue_response_uppercase_hex`, `issue_non_evm` |
-| I-STP-8 | §6.2 | MUST | Step 8: refuse a statement that is not well formed. | `refuse_outcome_unknown`, `refuse_receiptid_short`, `refuse_issuedat_fraction`, `refuse_scope_unpaired_surrogate`, `issue_issuedat_float_spelling`, `issue_outcome_refused` |
+| I-STP-8 | §6.2 | MUST | Step 8: refuse a statement that is not well formed. | `refuse_outcome_unknown`, `refuse_receiptid_short`, `refuse_issuedat_fraction`, `refuse_scope_unpaired_surrogate`, `issue_issuedat_float_spelling`, `issue_outcome_failed`, `refuse_outcome_retired_value` |
 | I-STP-9 | §6.2 | MUST | Step 9: refuse when an advertised `actionType` or `scope` is not a string equal to the statement's. | `refuse_advertised_scope_conflict`, `refuse_advertised_scope_not_string` |
 | I-ADV-2 | §2.3 | MUST | Carry the advertised `actionType` and `scope` in the receipt and commit the advertisement. | `refuse_advertised_scope_conflict`, `issue_advertised` |
 | I-STP-10 | §6.2 | MUST | Step 10: refuse bindings that break the shape, grammar, uniqueness or count. | `refuse_binding_duplicate_type`, `refuse_binding_grammar`, `refuse_seventeen_bindings`, `refuse_bindings_not_array`, `issue_sixteen_bindings` |

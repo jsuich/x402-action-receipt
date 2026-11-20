@@ -222,7 +222,7 @@ def op_resource(c):
 def op_enum(c):
     if c.rng.random() < 0.5:
         c.payload["action"]["outcome"] = c.rng.choice(
-            sorted(A.OUTCOMES) + ["Delivered", "failed", "", " delivered", 1, None])
+            sorted(A.OUTCOMES) + ["Delivered", "refused", "disputed", "", " delivered", 1, None])
     else:
         c.payload["settlementStatus"] = c.rng.choice(
             sorted(A.SETTLEMENT_STATUSES) + ["Settled", "pending", "", "capturepending", 0, None])

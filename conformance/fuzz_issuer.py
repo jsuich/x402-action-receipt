@@ -173,7 +173,7 @@ def x_statement_action(r, x):
     elif c == 3:
         st["settlementStatus"] = r.choice(sorted(A.SETTLEMENT_STATUSES) + ["Settled", "", None, 1])
     else:
-        st["action"]["outcome"] = r.choice(sorted(A.OUTCOMES) + ["Delivered", "failed"])
+        st["action"]["outcome"] = r.choice(sorted(A.OUTCOMES) + ["Delivered", "refused", "disputed"])
         st["action"]["extra"] = 1
 
 

@@ -52,7 +52,7 @@ const RE_RID = /^[A-Za-z0-9_-]{22,64}$/;
 const RE_REF = /^sha256:[0-9a-f]{64}$/;
 const RE_BTYPE = /^[a-z][a-z0-9+.-]{0,63}:[\x21-\x7e]{1,191}$/;
 const RE_BVALUE = /^[\x21-\x7e]{1,1024}$/;
-const OUTCOMES = ['delivered', 'partial', 'refused', 'disputed'];
+const OUTCOMES = ['delivered', 'partial', 'failed'];
 const STATUSES = ['settled', 'capturePending', 'reversed', 'refunded'];
 
 // ASCII A-Z -> a-z, the rule a verifier applies in section 5.8. Nothing else.

@@ -3,7 +3,7 @@
   "version": 1,
   "specDraft": "0.3",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT, and the report on PASS. keys.json is a test fixture standing in for anchor and key resolution.",
-  "vectorsDigest": "sha256:ca6a6374e8cf0a7a20ae9b95a2b73302e980540e48e5608fd36fc65eb19ae511",
+  "vectorsDigest": "sha256:299cb37197fbe4352a5f1bc216eb5f84e9c0143f5ca0196a3ea4caacbf3fbc58",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -468,13 +468,13 @@
       }
     },
     {
-      "file": "pos_outcome_refused.json",
+      "file": "pos_outcome_failed.json",
       "expect": "PASS",
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:e1891d3a97e6c7f786b956a8d490ee04fce6c53d6f6c5d1dd0aff56c992c0188",
-        "outcome": "refused",
+        "receiptRef": "sha256:f6e3956487bf0a1d00cf58a787eaa48d8a493e84d6d1ed19b74404fb3bafff7f",
+        "outcome": "failed",
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
@@ -497,28 +497,6 @@
       "report": {
         "receiptRef": "sha256:ed054f645aefd8b1f343f7500f897d049c9282bf0a182ce43e131ea1be56cea7",
         "outcome": "partial",
-        "settlementStatus": "settled",
-        "ageSeconds": 44,
-        "checks": {
-          "resourceUrl": "not_compared",
-          "network": "compared",
-          "payer": "compared",
-          "requirements": "matched",
-          "payTo": "compared",
-          "freshness": "enforced"
-        },
-        "supersedes": "",
-        "bindings": []
-      }
-    },
-    {
-      "file": "pos_outcome_disputed.json",
-      "expect": "PASS",
-      "reason": null,
-      "context": "ok",
-      "report": {
-        "receiptRef": "sha256:d299db423672ec65cb0477c7711a3e5501d132213c8626eb6d63fd5e407ac983",
-        "outcome": "disputed",
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
@@ -1278,6 +1256,18 @@
       "context": "ok"
     },
     {
+      "file": "neg_outcome_retired_refused.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "context": "ok"
+    },
+    {
+      "file": "neg_outcome_retired_disputed.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "context": "ok"
+    },
+    {
       "file": "neg_invalid_status.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_status",
@@ -1459,7 +1449,7 @@
     },
     {
       "a": "pos_es256_valid.json",
-      "b": "pos_outcome_refused.json",
+      "b": "pos_outcome_failed.json",
       "why": "a different statement about the same settlement"
     }
   ],

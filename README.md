@@ -85,7 +85,7 @@ many disabled checks the fuzzer detects.
 
 When the fuzzer finds a disagreement, it is triaged as an implementation bug, a
 spec gap or a harness bug, fixed at the right place, and pinned with a vector.
-`conformance/CYCLES.md` has the rule and the history: nineteen findings so far,
+`conformance/CYCLES.md` has the rule and the history: twenty findings so far,
 among them defects in the reference verifier, in the reference issuer, in the
 spec text and in the harness itself.
 

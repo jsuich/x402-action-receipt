@@ -260,9 +260,10 @@
       "tested_by": "vector",
       "vectors": [
         "neg_invalid_outcome.json",
-        "pos_outcome_refused.json",
-        "pos_outcome_partial.json",
-        "pos_outcome_disputed.json"
+        "neg_outcome_retired_refused.json",
+        "neg_outcome_retired_disputed.json",
+        "pos_outcome_failed.json",
+        "pos_outcome_partial.json"
       ]
     },
     {
@@ -1040,7 +1041,8 @@
         "refuse_issuedat_fraction.json",
         "refuse_scope_unpaired_surrogate.json",
         "issue_issuedat_float_spelling.json",
-        "issue_outcome_refused.json"
+        "issue_outcome_failed.json",
+        "refuse_outcome_retired_value.json"
       ]
     },
     {

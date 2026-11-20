@@ -110,7 +110,7 @@ This is a separate extension, not a new payload version of the base receipt,
 because it makes a different statement. A base receipt is issued "only on success,
 confirming that payment was received and service was delivered" (base §5) and is
 privacy-minimal by default (base §5.2, §11). An action receipt can state that the
-service was refused or that the payment was reversed, and it is deliberately not
+service failed or that the payment was reversed, and it is deliberately not
 minimal. A verifier MUST NOT verify an action receipt as a base receipt or the
 reverse; the `typ` header (§3) makes the two distinguishable under the signature.
 
@@ -195,11 +195,13 @@ settled, which is `settlementStatus`.
 |---|---|
 | `delivered` | The service was performed and the result returned |
 | `partial` | Part of the service was performed |
-| `refused` | The payment settled and the server did not perform the service |
-| `disputed` | The server records that the payer contests delivery |
+| `failed` | The payment settled and the service was not performed, whether the server could not or would not |
 
-`refused` here means "paid, not delivered". A payment the server declined to
-accept is a different event and is out of scope (§11).
+These are the three states the delivery-receipt proposal uses (§11), so the two
+receipts for one call cannot disagree in vocabulary. Two things are deliberately
+not outcomes. A payment the server declined to accept is a different event and is
+out of scope (§11). A dispute is not something the paid party can declare about
+its own delivery; it belongs to whoever adjudicates (§11).
 
 ### 4.3 Identity, settlement and lifecycle
 
@@ -1017,9 +1019,9 @@ a salted commitment and keep the salt with the receipt.
 
 ## 12. Open questions
 
-1. Should `outcome` gain `failed` (the service was attempted and did not achieve
-   its result), distinct from `refused`? Should `disputed` remain, given that the
-   signer is the paid counterparty?
+1. Should `outcome` distinguish a service the server declined to perform from one
+   it attempted and could not complete? Draft 0.3 does not: no implementation or
+   proposal reviewed for it draws that line.
 2. Should the payload carry a per-signer sequence number, so that a gap in a
    server's receipts is detectable?
 3. An EIP-712 format. It would need its own domain name or primary type, so that
@@ -1032,7 +1034,7 @@ a salted commitment and keep the salt with the receipt.
 | Version | Date | Changes | Author |
 |---|---|---|---|
 | 0.1 – 0.2.1 | 2026-07-19 | Initial drafts: JWS profile, settlement binding by transaction or settlement reference, payment lifecycle, reason codes, `actionRef` over a 13-field tuple. | Josh Suich |
-| 0.3 | 2026-11-19 | Breaking. `actionRef` removed from the payload; `receiptRef` is the hash of the signed payload bytes, in `sha256:` hex form. Added `receiptId`, `requirementsDigest`, `supersedes`, `bindings`. Required `typ` header and a closed header. Canonical-bytes check moved ahead of schema typing. EVM identifiers lowercase; comparison semantics stated. Authorization before key resolution; unresolved keys reported separately. Session and archival freshness. Verification report. Non-goals stated. Circularity code removed (covered by the closed schema). | Josh Suich |
+| 0.3 | 2026-11-19 | Breaking. `actionRef` removed from the payload; `receiptRef` is the hash of the signed payload bytes, in `sha256:` hex form. Added `receiptId`, `requirementsDigest`, `supersedes`, `bindings`. Required `typ` header and a closed header. Canonical-bytes check moved ahead of schema typing. EVM identifiers lowercase; comparison semantics stated. Authorization before key resolution; unresolved keys reported separately. Session and archival freshness. Verification report. Non-goals stated. Circularity code removed (covered by the closed schema). `outcome` is `delivered`, `partial` or `failed`; `refused` and `disputed` are retired. §6 is a ten-step issuing procedure with refusal reasons. A verifier that paid checks the URL it paid for. | Josh Suich |
 
 Payload `version` remains `1`: no earlier draft was adopted, and a 0.2.x receipt
 fails §5.1 (no `typ`) under this text, so the two cannot be confused.
