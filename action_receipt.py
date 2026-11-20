@@ -87,6 +87,8 @@ def _canon(v) -> str:
         return "true" if v else "false"
     if isinstance(v, int):
         return str(v)
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))               # the VALUE is an integer (spec §4.6)
     if v is None:
         return "null"
     if isinstance(v, dict):
@@ -124,7 +126,10 @@ def in_domain(v, depth: int = 0) -> bool:
     if isinstance(v, int):
         return -SAFE_INT_MAX <= v <= SAFE_INT_MAX
     if isinstance(v, float):
-        return False
+        # The domain is defined on values, not spellings: JSON text "60.0" holds
+        # the integer 60, and a parser that keeps it as a float must agree with
+        # one that does not.
+        return v.is_integer() and -SAFE_INT_MAX <= v <= SAFE_INT_MAX
     if isinstance(v, dict):
         return depth < MAX_DEPTH and all(
             in_domain(k, depth + 1) and in_domain(x, depth + 1) for k, x in v.items())
@@ -133,9 +138,12 @@ def in_domain(v, depth: int = 0) -> bool:
     return False
 
 
+NOT_CANONICAL = object()   # sentinel: `None` is a legitimate parsed value (JSON null)
+
+
 def parse_canonical(data: bytes):
     """Return the value iff `data` is the JCS serialization of a value in the
-    admitted domain; otherwise None. Everything a JSON parser could paper over
+    admitted domain; otherwise NOT_CANONICAL. Everything a JSON parser could paper over
     lands here: bad UTF-8, non-JSON, lone surrogates, non-integer or out-of-range
     numbers, and any non-canonical byte form. Duplicate member names need no
     separate guard: a parser keeps one of them, so re-serializing never
@@ -143,7 +151,7 @@ def parse_canonical(data: bytes):
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
-        return None
+        return NOT_CANONICAL
 
     def no_constants(_):
         raise ValueError("non-finite number")
@@ -151,11 +159,11 @@ def parse_canonical(data: bytes):
     try:
         value = json.loads(text, parse_constant=no_constants)
     except (ValueError, RecursionError):
-        return None
+        return NOT_CANONICAL
     if not in_domain(value):
-        return None
+        return NOT_CANONICAL
     if jcs(value) != data:
-        return None
+        return NOT_CANONICAL
     return value
 
 
@@ -277,6 +285,11 @@ class Context:
         self.mode = mode
 
 
+def _has(value) -> bool:
+    """An unsigned input "has" a value iff it is a non-empty string (spec §5.8)."""
+    return isinstance(value, str) and value != ""
+
+
 def _is_evm(network: str) -> bool:
     return isinstance(network, str) and network.startswith("eip155:")
 
@@ -395,7 +408,7 @@ def _verify(receipt, ctx, key_registry):
         return REJECT, R_MALFORMED, {}
     h_b64, p_b64, s_b64 = compact.split(".")
     try:
-        header = json.loads(b64url_decode(h_b64))
+        header = json.loads(b64url_decode(h_b64).decode("utf-8"))   # str: no encoding sniffing
         payload_bytes = b64url_decode(p_b64)
         raw_sig = b64url_decode(s_b64)
     except (ValueError, RecursionError):
@@ -413,7 +426,7 @@ def _verify(receipt, ctx, key_registry):
     # §5.2 canonical bytes — before any typing, so every parser-level
     # difference between languages lands on one reason code.
     payload = parse_canonical(payload_bytes)
-    if payload is None:
+    if payload is NOT_CANONICAL:
         return REJECT, R_NONCANONICAL, {}
 
     # §5.3 closed schema and field grammar --------------------------------
@@ -440,7 +453,7 @@ def _verify(receipt, ctx, key_registry):
         return REJECT, R_SIG_INVALID, {}
 
     # §5.7 settlement success ---------------------------------------------
-    if ctx.success is not True or not (ctx.transaction or ctx.settlement_ref):
+    if ctx.success is not True or not (_has(ctx.transaction) or _has(ctx.settlement_ref)):
         return REJECT, R_SETTLEMENT_FAILED, {}
 
     # §5.8 settlement binding. Every identifier the SettlementResponse provides
@@ -448,13 +461,12 @@ def _verify(receipt, ctx, key_registry):
     # does not provide.
     network = payload["network"]
     checks = {}
-    resp_tx = _norm_unsigned(network, ctx.transaction)
-    if resp_tx:
-        if payload["transaction"] != resp_tx:
+    if _has(ctx.transaction):
+        if payload["transaction"] != _norm_unsigned(network, ctx.transaction):
             return REJECT, R_SETTLEMENT, {}
     elif payload["transaction"]:
         return REJECT, R_SETTLEMENT, {}
-    if ctx.settlement_ref:
+    if _has(ctx.settlement_ref):
         if payload["settlementRef"] != ctx.settlement_ref:
             return REJECT, R_SETTLEMENT, {}
     elif payload["settlementRef"]:
@@ -465,7 +477,7 @@ def _verify(receipt, ctx, key_registry):
         checks["network"] = "compared"
     else:
         checks["network"] = "not_compared"
-    if ctx.payer is not None:
+    if _has(ctx.payer):
         if payload["payer"] != _norm_unsigned(network, ctx.payer):
             return REJECT, R_SETTLEMENT, {}
         checks["payer"] = "compared"
@@ -666,6 +678,10 @@ def _registry():
 C_OK, C_FAILED, C_BATCH, C_BOTH = "ok", "failed", "batch", "both"
 C_NOREQ, C_CASE, C_NOPAYER, C_ARCHIVAL, C_ADVERT = (
     "no_requirements", "response_casing", "no_payer", "archival", "advertised")
+C_REQ_FLOAT, C_REQ_NONOBJ, C_PAYER_EMPTY = (
+    "requirements_float_spelling", "requirements_not_object", "payer_empty_string")
+C_REQ_NET = "requirements_other_network"
+ACCEPTED_OTHER_NETWORK = dict(ACCEPTED, network="eip155:1")
 
 CONTEXTS = {
     C_OK: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
@@ -688,6 +704,20 @@ CONTEXTS = {
     # an auditor, 180 days later
     C_ARCHIVAL: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
                         accepted=ACCEPTED, now=ISSUED_AT + 180 * 86400, mode="archival"),
+    # found by fuzz cycle 1 ------------------------------------------------
+    # the requirements arrived as JSON text spelling an integer "60.0"
+    C_REQ_FLOAT: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
+                         accepted=dict(ACCEPTED, maxTimeoutSeconds=60.0), now=VERIFIER_NOW),
+    # what the verifier holds as "requirements" is not a JSON object
+    C_REQ_NONOBJ: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
+                          accepted=[], now=VERIFIER_NOW),
+    # the response carries payer as an empty string
+    C_PAYER_EMPTY: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer="",
+                           accepted=ACCEPTED, now=VERIFIER_NOW),
+    # found by the requirements trace: the response's network is not in CAIP-2
+    # form (so §5.8 cannot compare it) and the accepted requirements name another
+    C_REQ_NET: Context(True, transaction=SETTLEMENT_TX, network="base", payer=PAYER,
+                       accepted=ACCEPTED_OTHER_NETWORK, now=VERIFIER_NOW),
     # the verifier also holds the echoed extension info
     C_ADVERT: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
                       accepted=ACCEPTED, advertised_info=ADVERTISED_INFO, now=VERIFIER_NOW),
@@ -733,10 +763,15 @@ SUITE = [
     ("pos_archival_180d.json", PASS, None, C_ARCHIVAL),
     ("pos_non_ascii_nfc.json", PASS, None, C_OK),
     ("pos_non_ascii_nfd.json", PASS, None, C_OK),
+    ("pos_requirements_float_spelling.json", PASS, None, C_REQ_FLOAT),
+    ("pos_requirements_not_object.json", PASS, None, C_REQ_NONOBJ),
+    ("pos_payer_empty_string.json", PASS, None, C_PAYER_EMPTY),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_not_object.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_header_bom.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_header_utf16.json", REJECT, R_MALFORMED, C_OK),
     ("neg_kid_not_string.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_extra_member.json", REJECT, R_MALFORMED, C_OK),
     ("neg_typ_missing.json", REJECT, R_TYP, C_OK),
@@ -757,6 +792,7 @@ SUITE = [
     ("neg_canon_invalid_utf8.json", REJECT, R_NONCANONICAL, C_OK),
     # §5.3 closed schema and field grammar
     ("neg_schema_not_object.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_schema_null.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_unknown_member.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_missing_member.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_action_scalar.json", REJECT, R_MALFORMED, C_OK),
@@ -802,6 +838,7 @@ SUITE = [
     # §5.9 payment requirements
     ("neg_requirements_amount_changed.json", REJECT, R_REQUIREMENTS, C_OK),
     ("neg_requirements_payto_mismatch.json", REJECT, R_REQUIREMENTS, C_OK),
+    ("neg_requirements_network_mismatch.json", REJECT, R_REQUIREMENTS, C_REQ_NET),
     # §5.10 freshness
     ("neg_freshness_stale.json", REJECT, R_STALE, C_OK),
     ("neg_freshness_future_archival.json", REJECT, R_STALE, C_ARCHIVAL),
@@ -821,8 +858,10 @@ DISTINCT = [
 SAME = [
     (["pos_es256_valid.json", "pos_es256k_valid.json", "pos_eddsa_valid.json",
       "pos_payto_signer.json", "pos_response_casing.json", "pos_payer_absent.json",
-      "pos_requirements_not_held.json", "pos_archival_180d.json"],
-     "one statement signed under four keys and verified in five contexts"),
+      "pos_requirements_not_held.json", "pos_archival_180d.json",
+      "pos_requirements_float_spelling.json", "pos_requirements_not_object.json",
+      "pos_payer_empty_string.json"],
+     "one statement signed under four keys and verified in eight contexts"),
 ]
 
 # Hand-declared report expectations (subset match). MANIFEST.json pins the full
@@ -837,6 +876,11 @@ EXPECT_REPORT = {
     "pos_requirements_not_held.json": {"checks": {"requirements": "not_evaluated",
                                                   "payTo": "not_compared"}},
     "pos_payer_absent.json": {"checks": {"payer": "not_compared"}},
+    "pos_payer_empty_string.json": {"checks": {"payer": "not_compared"}},
+    "pos_requirements_float_spelling.json": {"checks": {"requirements": "matched",
+                                                        "payTo": "compared"}},
+    "pos_requirements_not_object.json": {"checks": {"requirements": "not_evaluated",
+                                                    "payTo": "not_compared"}},
     "pos_archival_180d.json": {"checks": {"freshness": "reported"}, "ageSeconds": 180 * 86400},
     "pos_bindings_composed.json": {"bindings": dict(_NOT_EVALUATED_ALL, **{BT_ADVERTISED: "matched"})},
     "pos_bindings_unheld.json": {"bindings": _NOT_EVALUATED_ALL},
@@ -944,7 +988,9 @@ def regenerate_vectors() -> None:
       signed(base(action={"scope": "write:model-x"},
                   bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_INFO))}])))
     for name in ("pos_requirements_not_held.json", "pos_response_casing.json",
-                 "pos_payer_absent.json", "pos_archival_180d.json"):
+                 "pos_payer_absent.json", "pos_archival_180d.json",
+                 "pos_requirements_float_spelling.json", "pos_requirements_not_object.json",
+                 "pos_payer_empty_string.json"):
         w(name, signed(base()))
     nfc = unicodedata.normalize("NFC", "did:web:café.example")
     nfd = unicodedata.normalize("NFD", "did:web:café.example")
@@ -967,6 +1013,17 @@ def regenerate_vectors() -> None:
     w("neg_base64url_trailing_bits.json", {"format": "jws", "signature": respelled})
     w("neg_header_not_object.json",
       {"format": "jws", "signature": f"{b64url(_canon(['ES256', KID_ES256, TYP]).encode())}.{p_ok}.{s_ok}"})
+    # found by fuzz cycle 2: a parser that sniffs encodings accepts these headers
+    hdr_text = _canon({"alg": "ES256", "kid": KID_ES256, "typ": TYP})
+    for name, hdr_bytes in (("neg_header_bom.json", b"\xef\xbb\xbf" + hdr_text.encode()),
+                            ("neg_header_utf16.json", hdr_text.encode("utf-16"))):
+        h_b = b64url(hdr_bytes)
+        sig = _sign_jws("ES256", KID_ES256, es, base_text.encode()).split(".")
+        raw_sig = es.sign(f"{h_b}.{sig[1]}".encode(), ec.ECDSA(hashes.SHA256()))
+        r_, s_ = asym_utils.decode_dss_signature(raw_sig)
+        s_ = min(s_, CURVE_ORDER["secp256r1"] - s_)
+        w(name, {"format": "jws", "signature":
+                 f"{h_b}.{sig[1]}.{b64url(r_.to_bytes(32, 'big') + s_.to_bytes(32, 'big'))}"})
     w("neg_kid_not_string.json",
       signed_raw(base_text.encode(), header={"alg": "ES256", "kid": 123, "typ": TYP}))
     w("neg_header_extra_member.json",
@@ -1012,6 +1069,8 @@ def regenerate_vectors() -> None:
 
     # ---- §5.3 closed schema and field grammar (canonical bytes, one fault each) ----
     w("neg_schema_not_object.json", signed([base()]))
+    # found by fuzz cycle 2: canonical, in the value domain, and not an object
+    w("neg_schema_null.json", signed_raw(b"null"))
     unknown = base(); unknown["signature"] = "0xdead"
     w("neg_schema_unknown_member.json", signed(unknown))
     missing = base(); del missing["receiptId"]
@@ -1071,6 +1130,9 @@ def regenerate_vectors() -> None:
     w("neg_requirements_amount_changed.json",
       signed(base(requirementsDigest=requirements_digest(dict(ACCEPTED, amount="1")))))
     w("neg_requirements_payto_mismatch.json", signed(base(payTo=_OTHER_ADDR)))
+    # the digest matches what the verifier holds; only the network differs
+    w("neg_requirements_network_mismatch.json",
+      signed(base(requirementsDigest=requirements_digest(ACCEPTED_OTHER_NETWORK))))
 
     # ---- §5.10 freshness ----
     w("neg_freshness_stale.json", signed(base(issuedAt=ISSUED_AT - 10_000)))
@@ -1149,6 +1211,10 @@ def write_vectors_md(manifest) -> None:
         C_NOPAYER: "response carries no `payer`",
         C_ARCHIVAL: "archival mode, 180 days after issue",
         C_ADVERT: "the echoed extension `info` is also held",
+        C_REQ_FLOAT: "accepted requirements spell an integer as `60.0`",
+        C_REQ_NONOBJ: "what is held as accepted requirements is not a JSON object",
+        C_PAYER_EMPTY: "response `payer` is the empty string",
+        C_REQ_NET: "response `network` is not CAIP-2; accepted requirements name another network",
     }
     for k in manifest["contexts"]:
         lines.append(f"| `{k}` | {notes[k]} |")

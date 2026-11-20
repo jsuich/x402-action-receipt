@@ -321,7 +321,9 @@ same way, under a URI type.
 **Value domain.** The payload bytes, and any object this extension hashes, are
 the RFC 8785 serialization of a JSON value in which:
 
-- every number is an integer in `[-(2^53 - 1), 2^53 - 1]`;
+- every number is an integer in `[-(2^53 - 1), 2^53 - 1]`. The test is on the
+  number's value, not its spelling: an object received as JSON text that spells
+  a member `60.0` holds the integer 60, is in the domain, and serializes as `60`;
 - every string and member name is well-formed Unicode (no unpaired surrogate);
 - objects and arrays nest at most 8 levels deep, counting the outermost object
   or array as level 1; scalars do not count.
@@ -447,15 +449,16 @@ transaction.
   disagreed with a second implementation). `ERROR` says nothing about the
   receipt and MUST NOT be reported as a rejection.
 
-The verifier performs the steps below **in order** and stops at the first
+The verifier MUST perform the steps below **in order** and MUST stop at the first
 failure. It MUST NOT raise on malformed input.
 
 ### 5.1 Envelope and header
 
 1. Reject with `invalid_payload` unless the receipt is an object with
    `format == "jws"`; `signature` is a string of exactly three `.`-separated
-   segments; each segment is unpadded base64url; and the first decodes to a JSON
-   object.
+   segments; each segment is unpadded base64url; and the first decodes to UTF-8
+   text (no byte-order mark, no other encoding) that parses as a JSON object. A
+   parser that detects encodings from the bytes MUST NOT be given the bytes.
 2. Reject with `invalid_actionreceipt_typ` unless the header's `typ` is
    `x402-action-receipt+jws`.
 3. Reject with `invalid_actionreceipt_alg` unless `alg` is `ES256`, `ES256K` or
@@ -468,7 +471,9 @@ failure. It MUST NOT raise on malformed input.
 Let `B` be the decoded payload segment. Reject with
 `invalid_actionreceipt_canonicalization` unless all of these hold:
 
-- `B` is valid UTF-8 and parses as JSON (RFC 8259);
+- `B` is valid UTF-8 and parses as JSON (RFC 8259). Any JSON value can pass
+  this step: a payload of `null`, `[]` or `1` is canonical and is rejected by
+  §5.3, not here;
 - the parsed value lies in the value domain of §4.6;
 - `JCS(parsed value) == B`, byte for byte.
 
@@ -582,7 +587,7 @@ the response does not corroborate, and cannot silently drop one the response has
 
 ### 5.9 Payment requirements
 
-If the verifier holds the accepted `PaymentRequirements` and they lie in the
+If the verifier holds the accepted `PaymentRequirements`, as a JSON object in the
 value domain of §4.6, reject with `invalid_actionreceipt_requirements_mismatch`
 unless:
 
@@ -591,8 +596,9 @@ unless:
 - `accepted.payTo`, lowercased on `eip155` networks, equals the receipt's
   `payTo`.
 
-If the verifier does not hold them, or holds an object outside the value domain
-(which no conforming issuer would have issued a receipt for, §4.4), the report
+If the verifier does not hold them, or what it holds is not a JSON object or lies
+outside the value domain (which no conforming issuer would have issued a receipt
+for, §4.4), the report
 records `requirements: not_evaluated` and `payTo: not_compared`. In that case
 nothing bounds the receipt's `payTo` or the amount.
 
@@ -725,6 +731,9 @@ code on `REJECT` and the report on `PASS`. A conformance claim cites the
 `vectorsDigest` in that manifest.
 
 An implementation conforms if it reproduces every entry of the manifest.
+`CONFORMANCE.md` in that repository lists every requirement of this document
+with the vectors that test it, names the requirements the suite does not test,
+and defines the adapter protocol a verifier is driven through.
 
 Properties of the suite:
 

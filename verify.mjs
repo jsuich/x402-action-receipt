@@ -336,7 +336,7 @@ function verifyInner(receipt, ctx, resolver) {
   // ---- 5.9 payment requirements
   {
     const acc = sr.accepted;
-    if (acc !== null && acc !== undefined && inDomain(acc)) {
+    if (isObj(acc) && inDomain(acc)) {
       const digest = 'sha256:' + sha256hex(jcs(acc));
       const accPayTo = isObj(acc) && isStr(acc.payTo) ? (evm ? asciiLower(acc.payTo) : acc.payTo) : null;
       const accNet = isObj(acc) ? acc.network : undefined;

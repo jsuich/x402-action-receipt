@@ -22,6 +22,13 @@ draft that this repository previously held; see the spec's version history.
 | `VECTORS.md` | Vector index, generated from the same tables the suite runs |
 | `flip_probe.py` | Disables each verifier check in turn and requires the suite to go red |
 | `verify.mjs` | Second verifier, JavaScript (Node built-ins only), written from the spec text and the vectors without sight of `action_receipt.py` |
+| `CONFORMANCE.md` | What conformance means: classes, the adapter protocol, and every requirement with the vectors that test it. Generated |
+| `conformance/requirements.json` | The requirements catalogue `CONFORMANCE.md` is rendered from |
+| `conformance/trace.py` | Checks the catalogue against the spec and the suite; `trace_selftest.py` checks the checker |
+| `conformance/fuzz.py` | Differential and metamorphic fuzzer across verifiers |
+| `conformance/adapters/` | Batch adapters that put a verifier behind the adapter protocol |
+| `conformance/cycle.py` | One full test cycle, one exit code |
+| `conformance/CYCLES.md` | What each test cycle found and what changed |
 | `requirements.txt` | Dependencies |
 | `LICENSE` | Apache-2.0 |
 
@@ -40,6 +47,40 @@ The suite exits 0 only if every vector gives its expected verdict, reason and
 report; both verdicts were observed; every reason code was exercised; the
 mutation matrix and the identifier relations hold; and the reason codes in the
 spec match the code.
+
+## Test process
+
+```bash
+.venv/bin/python conformance/cycle.py                       # full cycle, about a minute
+.venv/bin/python conformance/cycle.py --seeds 21,22 --n 5000 --save out/
+.venv/bin/python flip_probe.py . /tmp/flip-scratch --fuzz 3000   # also measure the fuzzer
+```
+
+A cycle runs seven stages and returns one exit code. A stage that cannot run is
+reported as VOID and fails the cycle; it is never counted as a pass.
+
+| Stage | Establishes |
+|---|---|
+| trace | every normative sentence of the spec is covered by a requirement, every vector by a requirement, and `CONFORMANCE.md` is current |
+| trace-st | the trace reports each kind of planted defect |
+| python | the reference verifier reproduces the manifest, cross-checked against an independent RFC 8785 library |
+| node | the second verifier reproduces the manifest |
+| example | the second verifier reproduces the spec's worked example from the spec text |
+| flips | each check of the reference verifier, disabled, turns the suite red |
+| fuzz | the two verifiers agree on generated cases, and six oracle-free properties hold |
+
+Each instrument has a control: the flip probe ends with an unpatched run that
+must pass, the trace has a self-test, and `flip_probe.py --fuzz` measures how
+many disabled checks the fuzzer detects.
+
+When the fuzzer finds a disagreement, it is triaged as an implementation bug, a
+spec gap or a harness bug, fixed at the right place, and pinned with a vector.
+`conformance/CYCLES.md` has the rule and the history. The first two cycles found
+five defects, four of them in the reference verifier.
+
+To test another verifier, put it behind the adapter protocol in `CONFORMANCE.md`
+section 3, add it to `ADAPTERS` in `conformance/fuzz.py`, and run
+`conformance/fuzz.py --adapters python,<yours>`.
 
 ### Dependencies
 
@@ -115,7 +156,9 @@ that was given only `action-receipt.md` and `vectors/`, was told not to read the
 Python, and wrote the whole verifier before looking at any expected result. Run
 unedited, it agreed with the manifest on its first run, and it agreed again on
 two vectors added afterwards. The choices it had to make where the text was
-unclear were then written into the spec. It is not a third-party implementation:
+unclear were then written into the spec. It has since been changed once, in one
+line, when fuzzing exposed a case the spec had not decided
+(`conformance/CYCLES.md`, cycle 1). It is not a third-party implementation:
 the same author commissioned both, and the agent saw the vector file names, which
 hint at each negative's category. An implementation by someone else is still the
 result that matters.
