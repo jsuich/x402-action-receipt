@@ -83,6 +83,19 @@ rendered to `CONFORMANCE.md`), with its own self-test.
 Seeds 11 to 18, 5,000 cases each: 40,000 cases, 20,237 follow-ups. 0
 disagreements, 0 property violations. Flip probe 39 of 39.
 
+## Cycle 6 — 2026-11-20
+
+Run on an export of the committed tree. Seeds 21 to 24, 5,000 cases each: 20,000
+cases, 10,483 follow-ups. 0 disagreements, 0 property violations. All seven
+stages passed.
+
+Fuzzer power: 38 of 39. The miss was the flip added in cycle 5 (requirements
+network): no operator produced a receipt that commits to the held requirements
+while those requirements name another network. Operator
+`ctx_requirements_network` added; power is 39 of 39 from one 3,000-case seed.
+
+Seeds 21 to 24 are spent.
+
 ## Known limits of this process
 
 - Both verifiers were written in one working session, one of them from the spec
