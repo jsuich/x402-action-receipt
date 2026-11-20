@@ -1,34 +1,381 @@
 {
   "profile": "action-receipt",
   "version": 1,
-  "note": "Expected verdicts for the Action-Bound Receipt conformance vectors. A conformant verifier loads keys.json, each vector, and the named settlement, and MUST reproduce the verdict and (on REJECT) the reason.",
-  "settlements": {
+  "specDraft": "0.3",
+  "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT, and the report on PASS. keys.json is a test fixture standing in for anchor and key resolution.",
+  "vectorsDigest": "sha256:299cb37197fbe4352a5f1bc216eb5f84e9c0143f5ca0196a3ea4caacbf3fbc58",
+  "indeterminateReasons": [
+    "invalid_actionreceipt_key_unresolved"
+  ],
+  "contexts": {
     "ok": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
       "network": "eip155:8453",
-      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
       "now": 1703123500,
-      "maxAgeSeconds": 3600
+      "maxAgeSeconds": 3600,
+      "mode": "session"
     },
     "failed": {
+      "paidResourceUrl": null,
       "success": false,
       "transaction": "",
       "settlementRef": "",
       "network": "eip155:8453",
-      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
       "now": 1703123500,
-      "maxAgeSeconds": 3600
+      "maxAgeSeconds": 3600,
+      "mode": "session"
     },
     "batch": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "",
       "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
       "network": "eip155:8453",
-      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
       "now": 1703123500,
-      "maxAgeSeconds": 3600
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "both": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "no_requirements": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": null,
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_casing": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "no_payer": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": null,
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "archival": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1718675456,
+      "maxAgeSeconds": 3600,
+      "mode": "archival"
+    },
+    "requirements_float_spelling": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60.0,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "requirements_not_object": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": [],
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "payer_empty_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "requirements_other_network": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "base",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:1",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "paid_this_resource": {
+      "paidResourceUrl": "https://api.example.com/v1/complete",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "paid_another_resource": {
+      "paidResourceUrl": "https://api.example.com/v1/other",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised_scope_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "scope": 5
+      },
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "actionType": "inference.completion",
+        "scope": "read:model-x"
+      },
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
     }
   },
   "vectors": [
@@ -36,217 +383,1093 @@
       "file": "pos_es256_valid.json",
       "expect": "PASS",
       "reason": null,
-      "settlement": "ok"
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
       "file": "pos_es256k_valid.json",
       "expect": "PASS",
       "reason": null,
-      "settlement": "ok"
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
       "file": "pos_eddsa_valid.json",
       "expect": "PASS",
       "reason": null,
-      "settlement": "ok"
-    },
-    {
-      "file": "pos_outcome_refused.json",
-      "expect": "PASS",
-      "reason": null,
-      "settlement": "ok"
-    },
-    {
-      "file": "pos_batch_settled.json",
-      "expect": "PASS",
-      "reason": null,
-      "settlement": "batch"
-    },
-    {
-      "file": "pos_refunded.json",
-      "expect": "PASS",
-      "reason": null,
-      "settlement": "ok"
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
       "file": "pos_payto_signer.json",
       "expect": "PASS",
       "reason": null,
-      "settlement": "ok"
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_unknown_alg.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_alg",
-      "settlement": "ok"
+      "file": "pos_outcome_failed.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:f6e3956487bf0a1d00cf58a787eaa48d8a493e84d6d1ed19b74404fb3bafff7f",
+        "outcome": "failed",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_unsupported_version.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_version",
-      "settlement": "ok"
+      "file": "pos_outcome_partial.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:ed054f645aefd8b1f343f7500f897d049c9282bf0a182ce43e131ea1be56cea7",
+        "outcome": "partial",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_invalid_outcome.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_outcome",
-      "settlement": "ok"
+      "file": "pos_batch_settled.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch",
+      "report": {
+        "receiptRef": "sha256:a4394c372a34485e3d96a358172877d4bcdca87d1401d9bcc2cb9f0514ed47f7",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_invalid_status.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_status",
-      "settlement": "ok"
+      "file": "pos_batch_second_payment.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch",
+      "report": {
+        "receiptRef": "sha256:5e8fb0d82452f8f23336c93ec0b19026f21e589c2d9bfdd533184cd891af0693",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_signature_in_payload.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_circularity",
-      "settlement": "ok"
+      "file": "pos_capture_pending.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch",
+      "report": {
+        "receiptRef": "sha256:b24330db0498aea67b02a2c2e3bf395f8af1c24166bea3db527e6087c667a2e1",
+        "outcome": "delivered",
+        "settlementStatus": "capturePending",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_noncanonical_payload.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_canonicalization",
-      "settlement": "ok"
+      "file": "pos_reversed.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch",
+      "report": {
+        "receiptRef": "sha256:53f813148b4079915cd6d416ffed6d46cd715a0a1bd15c6da60817953601c751",
+        "outcome": "delivered",
+        "settlementStatus": "reversed",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "sha256:b24330db0498aea67b02a2c2e3bf395f8af1c24166bea3db527e6087c667a2e1",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_forged_actionref.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_actionref",
-      "settlement": "ok"
+      "file": "pos_refunded_supersedes.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:95859f85938652a0ad0c0fca7f5763c30e6da7cb30599848d1c56953ca72ce0d",
+        "outcome": "delivered",
+        "settlementStatus": "refunded",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "bindings": [
+          {
+            "type": "action-receipt:reversal-transaction",
+            "status": "not_evaluated"
+          }
+        ]
+      }
     },
     {
-      "file": "neg_tampered_payload.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_signature",
-      "settlement": "ok"
+      "file": "pos_bindings_composed.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised",
+      "report": {
+        "receiptRef": "sha256:f3c3828f3d3f693cf755038e66da8bc50bab55bdf8e1a5998917411cd89bcf6a",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "matched"
+          },
+          {
+            "type": "https://example.org/specs/custom-evidence#digest",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "offer-receipt:authorizationCommitment",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "offer-receipt:authorizationMethod",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "response-provenance:fixedPointVersion",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "response-provenance:responseHash",
+            "status": "not_evaluated"
+          }
+        ]
+      }
     },
     {
-      "file": "neg_high_s.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_signature",
-      "settlement": "ok"
+      "file": "pos_bindings_unheld.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:f3c3828f3d3f693cf755038e66da8bc50bab55bdf8e1a5998917411cd89bcf6a",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "https://example.org/specs/custom-evidence#digest",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "offer-receipt:authorizationCommitment",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "offer-receipt:authorizationMethod",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "response-provenance:fixedPointVersion",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "response-provenance:responseHash",
+            "status": "not_evaluated"
+          }
+        ]
+      }
     },
     {
-      "file": "neg_wrong_signer.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_signer",
-      "settlement": "ok"
+      "file": "pos_binding_advertised_digest_differs.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised",
+      "report": {
+        "receiptRef": "sha256:6e2cf6e26f9c7473d4d02a4a8e06fd810776f59461e5b1738695a78179dd68cc",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
     },
     {
-      "file": "neg_settlement_failed.json",
-      "expect": "REJECT",
-      "reason": "invalid_transaction_state",
-      "settlement": "failed"
+      "file": "pos_binding_advertised_scope_differs.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised",
+      "report": {
+        "receiptRef": "sha256:56ffe4b810da2ec560bf6f30fc14c57776edf8a918da31a73205922768b0ecf5",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
     },
     {
-      "file": "neg_settlement_mismatch.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_settlement_mismatch",
-      "settlement": "ok"
+      "file": "pos_binding_advertised_scope_not_string.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_scope_not_a_string",
+      "report": {
+        "receiptRef": "sha256:fe664fd35fa59acda82dd588f2af62d089e076caadf9a14202868691bb4a593c",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
     },
     {
-      "file": "neg_settlementref_mismatch.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_settlement_mismatch",
-      "settlement": "batch"
+      "file": "pos_requirements_not_held.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "no_requirements",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_network_mismatch.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_settlement_mismatch",
-      "settlement": "ok"
+      "file": "pos_response_casing.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_casing",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_payer_mismatch.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_settlement_mismatch",
-      "settlement": "ok"
+      "file": "pos_payer_absent.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "no_payer",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_uncorroborated_transaction.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_settlement_mismatch",
-      "settlement": "batch"
+      "file": "pos_archival_180d.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "archival",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 15552000,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "reported"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_payto_wrong_resource.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_signer",
-      "settlement": "ok"
+      "file": "pos_non_ascii_nfc.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:ac97f20be6976a1f16c95269258b6fe54dfc17712d1b963847ed24233f19617d",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_wrong_curve.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_signature",
-      "settlement": "ok"
+      "file": "pos_non_ascii_nfd.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:a6b4629e2fe5083a79444b35feceb08885a8f0474f39f1072a49499850687a9c",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_unregistered_kid.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_signature",
-      "settlement": "ok"
+      "file": "pos_requirements_float_spelling.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_float_spelling",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_stale_issuedat.json",
-      "expect": "REJECT",
-      "reason": "invalid_actionreceipt_freshness",
-      "settlement": "ok"
+      "file": "pos_requirements_not_object.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_not_object",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_malformed_action_scalar.json",
-      "expect": "REJECT",
-      "reason": "invalid_payload",
-      "settlement": "ok"
+      "file": "pos_payer_empty_string.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "payer_empty_string",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
-      "file": "neg_malformed_issuedat_type.json",
-      "expect": "REJECT",
-      "reason": "invalid_payload",
-      "settlement": "ok"
-    },
-    {
-      "file": "neg_malformed_unknown_field.json",
-      "expect": "REJECT",
-      "reason": "invalid_payload",
-      "settlement": "ok"
-    },
-    {
-      "file": "neg_malformed_no_settlement_id.json",
-      "expect": "REJECT",
-      "reason": "invalid_payload",
-      "settlement": "ok"
+      "file": "pos_resource_paid.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "paid_this_resource",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
     },
     {
       "file": "neg_not_jws_format.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
-      "settlement": "ok"
+      "context": "ok"
     },
     {
-      "file": "neg_header_not_dict.json",
+      "file": "neg_base64url_trailing_bits.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
-      "settlement": "ok"
+      "context": "ok"
     },
     {
-      "file": "neg_kid_not_str.json",
+      "file": "neg_header_not_object.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
-      "settlement": "ok"
+      "context": "ok"
     },
     {
-      "file": "neg_version_not_int.json",
+      "file": "neg_header_bom.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
-      "settlement": "ok"
+      "context": "ok"
     },
     {
-      "file": "neg_issuedat_overflow.json",
+      "file": "neg_header_utf16.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
-      "settlement": "ok"
+      "context": "ok"
+    },
+    {
+      "file": "neg_kid_not_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_header_extra_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_typ_missing.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_typ",
+      "context": "ok"
+    },
+    {
+      "file": "neg_typ_wrong.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_typ",
+      "context": "ok"
+    },
+    {
+      "file": "neg_unknown_alg.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_member_order.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_whitespace.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_number_float.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_number_exponent.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_number_negative_zero.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_number_unsafe_integer.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_duplicate_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_lone_surrogate.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_escaped_ascii.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_not_json.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_nesting_depth.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_canon_invalid_utf8.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_not_object.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_null.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_unknown_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_missing_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_action_scalar.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_issuedat_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_issuedat_negative.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_version_boolean.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_no_settlement_id.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_receiptid_short.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_network_not_caip2.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_payer_checksum_case.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_transaction_uppercase.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_digest_base64url.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_supersedes_grammar.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_unsupported_version.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_version",
+      "context": "ok"
+    },
+    {
+      "file": "neg_invalid_outcome.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "context": "ok"
+    },
+    {
+      "file": "neg_outcome_retired_refused.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "context": "ok"
+    },
+    {
+      "file": "neg_outcome_retired_disputed.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "context": "ok"
+    },
+    {
+      "file": "neg_invalid_status.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_status",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_unsorted.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_duplicate_type.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_extra_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_type_grammar.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_value_non_ascii.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_too_many.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_resource_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_resource_mismatch",
+      "context": "paid_another_resource"
+    },
+    {
+      "file": "neg_signer_unauthorized.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signer_unknown_kid.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signer_payto_wrong_resource.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_unresolved.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_unusable.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_sig_tampered_payload.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
+      "file": "neg_sig_high_s.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
+      "file": "neg_sig_wrong_curve.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_failed.json",
+      "expect": "REJECT",
+      "reason": "invalid_transaction_state",
+      "context": "failed"
+    },
+    {
+      "file": "neg_settlement_transaction_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_ref_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch"
+    },
+    {
+      "file": "neg_settlement_network_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_payer_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_uncorroborated_transaction.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch"
+    },
+    {
+      "file": "neg_settlement_dropped_transaction.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "both"
+    },
+    {
+      "file": "neg_requirements_amount_changed.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_requirements_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_requirements_payto_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_requirements_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_requirements_network_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_requirements_mismatch",
+      "context": "requirements_other_network"
+    },
+    {
+      "file": "neg_freshness_stale.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "ok"
+    },
+    {
+      "file": "neg_freshness_future_archival.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "archival"
+    }
+  ],
+  "distinctReceiptRef": [
+    {
+      "a": "pos_batch_settled.json",
+      "b": "pos_batch_second_payment.json",
+      "why": "two payments under one batch root in the same second"
+    },
+    {
+      "a": "pos_non_ascii_nfc.json",
+      "b": "pos_non_ascii_nfd.json",
+      "why": "no Unicode normalization is applied: NFC and NFD are different receipts"
+    },
+    {
+      "a": "pos_es256_valid.json",
+      "b": "pos_outcome_failed.json",
+      "why": "a different statement about the same settlement"
+    }
+  ],
+  "sameReceiptRef": [
+    {
+      "files": [
+        "pos_es256_valid.json",
+        "pos_es256k_valid.json",
+        "pos_eddsa_valid.json",
+        "pos_payto_signer.json",
+        "pos_response_casing.json",
+        "pos_payer_absent.json",
+        "pos_requirements_not_held.json",
+        "pos_archival_180d.json",
+        "pos_requirements_float_spelling.json",
+        "pos_requirements_not_object.json",
+        "pos_payer_empty_string.json",
+        "pos_resource_paid.json"
+      ],
+      "why": "one statement signed under four keys and verified in nine contexts"
     }
   ]
 }
