@@ -6,7 +6,8 @@ harness changes. A cycle that finds nothing is recorded in one line.
 
 How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --save <dir>`.
 Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
-31 to 33, 41 to 43, 51 to 53.
+31 to 33, 41 to 43, 51 to 53, 61 to 64 (the last on an export of the committed
+tree: all eleven stages passed).
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
