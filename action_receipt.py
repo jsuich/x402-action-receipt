@@ -237,6 +237,7 @@ R_UNSUPPORTED_VERSION = "invalid_actionreceipt_version"
 R_INVALID_OUTCOME = "invalid_actionreceipt_outcome"
 R_INVALID_STATUS = "invalid_actionreceipt_status"
 R_BINDING = "invalid_actionreceipt_binding"
+R_RESOURCE = "invalid_actionreceipt_resource_mismatch"
 R_SIGNER_UNAUTH = "invalid_actionreceipt_signer"
 R_KEY_UNRESOLVED = "invalid_actionreceipt_key_unresolved"
 R_SIG_INVALID = "invalid_actionreceipt_signature"
@@ -246,7 +247,7 @@ R_REQUIREMENTS = "invalid_actionreceipt_requirements_mismatch"
 R_STALE = "invalid_actionreceipt_freshness"
 
 ALL_REASONS = {R_MALFORMED, R_TYP, R_UNKNOWN_ALG, R_NONCANONICAL, R_UNSUPPORTED_VERSION,
-               R_INVALID_OUTCOME, R_INVALID_STATUS, R_BINDING, R_SIGNER_UNAUTH,
+               R_INVALID_OUTCOME, R_INVALID_STATUS, R_BINDING, R_RESOURCE, R_SIGNER_UNAUTH,
                R_KEY_UNRESOLVED, R_SIG_INVALID, R_SETTLEMENT_FAILED, R_SETTLEMENT,
                R_REQUIREMENTS, R_STALE}
 # Codes that mean "the verifier could not obtain what it needed", not "the
@@ -272,7 +273,9 @@ class Context:
     """
     def __init__(self, success: bool, transaction: str = "", settlement_ref: str = "",
                  network=None, payer=None, accepted=None, advertised_info=None,
-                 now: int = 0, max_age_s: int = 3600, mode: str = "session"):
+                 now: int = 0, max_age_s: int = 3600, mode: str = "session",
+                 paid_resource_url=None):
+        self.paid_resource_url = paid_resource_url   # set only by a verifier that paid
         self.success = success
         self.transaction = transaction
         self.settlement_ref = settlement_ref
@@ -437,6 +440,13 @@ def _verify(receipt, ctx, key_registry):
     # §5.4 signer authorization, BEFORE any key material is used. Both anchors
     # are scoped to the resource. A kid that no anchor authorizes is refused
     # without dereferencing anything the receipt names.
+    checks = {}
+    if _has(ctx.paid_resource_url):
+        if payload["resourceUrl"] != ctx.paid_resource_url:
+            return REJECT, R_RESOURCE, {}
+        checks["resourceUrl"] = "compared"
+    else:
+        checks["resourceUrl"] = "not_compared"
     service_kids = key_registry.get("__service__:" + payload["resourceUrl"]) or []
     payto_kids = key_registry.get(
         "__payTo__:" + payload["payTo"] + "|" + payload["resourceUrl"]) or []
@@ -460,7 +470,6 @@ def _verify(receipt, ctx, key_registry):
     # must equal the receipt's, and the receipt must not carry one the response
     # does not provide.
     network = payload["network"]
-    checks = {}
     if _has(ctx.transaction):
         if payload["transaction"] != _norm_unsigned(network, ctx.transaction):
             return REJECT, R_SETTLEMENT, {}
@@ -681,6 +690,7 @@ C_NOREQ, C_CASE, C_NOPAYER, C_ARCHIVAL, C_ADVERT = (
 C_REQ_FLOAT, C_REQ_NONOBJ, C_PAYER_EMPTY = (
     "requirements_float_spelling", "requirements_not_object", "payer_empty_string")
 C_REQ_NET = "requirements_other_network"
+C_PAID, C_PAID_OTHER = "paid_this_resource", "paid_another_resource"
 ACCEPTED_OTHER_NETWORK = dict(ACCEPTED, network="eip155:1")
 
 CONTEXTS = {
@@ -718,6 +728,12 @@ CONTEXTS = {
     # form (so §5.8 cannot compare it) and the accepted requirements name another
     C_REQ_NET: Context(True, transaction=SETTLEMENT_TX, network="base", payer=PAYER,
                        accepted=ACCEPTED_OTHER_NETWORK, now=VERIFIER_NOW),
+    # the verifier made the payment itself and knows the URL it paid for
+    C_PAID: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
+                    accepted=ACCEPTED, now=VERIFIER_NOW, paid_resource_url=RESOURCE),
+    C_PAID_OTHER: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
+                          accepted=ACCEPTED, now=VERIFIER_NOW,
+                          paid_resource_url="https://api.example.com/v1/other"),
     # the verifier also holds the echoed extension info
     C_ADVERT: Context(True, transaction=SETTLEMENT_TX, network=NETWORK, payer=PAYER,
                       accepted=ACCEPTED, advertised_info=ADVERTISED_INFO, now=VERIFIER_NOW),
@@ -766,6 +782,7 @@ SUITE = [
     ("pos_requirements_float_spelling.json", PASS, None, C_REQ_FLOAT),
     ("pos_requirements_not_object.json", PASS, None, C_REQ_NONOBJ),
     ("pos_payer_empty_string.json", PASS, None, C_PAYER_EMPTY),
+    ("pos_resource_paid.json", PASS, None, C_PAID),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
@@ -815,7 +832,8 @@ SUITE = [
     ("neg_binding_type_grammar.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_value_non_ascii.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_too_many.json", REJECT, R_BINDING, C_OK),
-    # §5.4 signer authorization
+    # §5.4 resource and signer authorization
+    ("neg_resource_mismatch.json", REJECT, R_RESOURCE, C_PAID_OTHER),
     ("neg_signer_unauthorized.json", REJECT, R_SIGNER_UNAUTH, C_OK),
     ("neg_signer_unknown_kid.json", REJECT, R_SIGNER_UNAUTH, C_OK),
     ("neg_signer_payto_wrong_resource.json", REJECT, R_SIGNER_UNAUTH, C_OK),
@@ -860,8 +878,8 @@ SAME = [
       "pos_payto_signer.json", "pos_response_casing.json", "pos_payer_absent.json",
       "pos_requirements_not_held.json", "pos_archival_180d.json",
       "pos_requirements_float_spelling.json", "pos_requirements_not_object.json",
-      "pos_payer_empty_string.json"],
-     "one statement signed under four keys and verified in eight contexts"),
+      "pos_payer_empty_string.json", "pos_resource_paid.json"],
+     "one statement signed under four keys and verified in nine contexts"),
 ]
 
 # Hand-declared report expectations (subset match). MANIFEST.json pins the full
@@ -869,7 +887,9 @@ SAME = [
 # these are the independent statement of what each report must say.
 _NOT_EVALUATED_ALL = {b["type"]: "not_evaluated" for b in COMPOSED_BINDINGS}
 EXPECT_REPORT = {
-    "pos_es256_valid.json": {"checks": {"network": "compared", "payer": "compared",
+    "pos_resource_paid.json": {"checks": {"resourceUrl": "compared"}},
+    "pos_es256_valid.json": {"checks": {"resourceUrl": "not_compared",
+                                        "network": "compared", "payer": "compared",
                                         "requirements": "matched", "payTo": "compared",
                                         "freshness": "enforced"},
                              "ageSeconds": VERIFIER_NOW - ISSUED_AT, "bindings": {}},
@@ -990,7 +1010,8 @@ def regenerate_vectors() -> None:
     for name in ("pos_requirements_not_held.json", "pos_response_casing.json",
                  "pos_payer_absent.json", "pos_archival_180d.json",
                  "pos_requirements_float_spelling.json", "pos_requirements_not_object.json",
-                 "pos_payer_empty_string.json"):
+                 "pos_payer_empty_string.json", "pos_resource_paid.json",
+                 "neg_resource_mismatch.json"):
         w(name, signed(base()))
     nfc = unicodedata.normalize("NFC", "did:web:café.example")
     nfd = unicodedata.normalize("NFD", "did:web:café.example")
@@ -1141,7 +1162,8 @@ def regenerate_vectors() -> None:
     (VECTORS / "keys.json").write_text(json.dumps(registry, indent=2) + "\n")
 
     def ctx_json(c):
-        return {"success": c.success, "transaction": c.transaction,
+        return {"paidResourceUrl": c.paid_resource_url,
+                "success": c.success, "transaction": c.transaction,
                 "settlementRef": c.settlement_ref, "network": c.network, "payer": c.payer,
                 "accepted": c.accepted, "advertisedInfo": c.advertised_info,
                 "now": c.now, "maxAgeSeconds": c.max_age_s, "mode": c.mode}
@@ -1215,6 +1237,8 @@ def write_vectors_md(manifest) -> None:
         C_REQ_NONOBJ: "what is held as accepted requirements is not a JSON object",
         C_PAYER_EMPTY: "response `payer` is the empty string",
         C_REQ_NET: "response `network` is not CAIP-2; accepted requirements name another network",
+        C_PAID: "the verifier made the payment and paid for this resource",
+        C_PAID_OTHER: "the verifier made the payment and paid for a different resource",
     }
     for k in manifest["contexts"]:
         lines.append(f"| `{k}` | {notes[k]} |")

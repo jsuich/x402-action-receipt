@@ -29,6 +29,7 @@ def context_from_json(c: dict) -> A.Context:
         now=c["now"],
         max_age_s=c.get("maxAgeSeconds", 3600),
         mode=c["mode"],
+        paid_resource_url=c.get("paidResourceUrl"),
     )
 
 

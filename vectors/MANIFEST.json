@@ -3,12 +3,13 @@
   "version": 1,
   "specDraft": "0.3",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT, and the report on PASS. keys.json is a test fixture standing in for anchor and key resolution.",
-  "vectorsDigest": "sha256:902a1a50710e91eafb91096c7beb3f68a9b68b5d28798b9dc7f3ac29751f4f5c",
+  "vectorsDigest": "sha256:e01eb636a1ee203aecb645a754ef1ad14af3dbab2d7d51505ef27f9456a14ed4",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
   "contexts": {
     "ok": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -32,6 +33,7 @@
       "mode": "session"
     },
     "failed": {
+      "paidResourceUrl": null,
       "success": false,
       "transaction": "",
       "settlementRef": "",
@@ -55,6 +57,7 @@
       "mode": "session"
     },
     "batch": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "",
       "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
@@ -78,6 +81,7 @@
       "mode": "session"
     },
     "both": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
@@ -101,6 +105,7 @@
       "mode": "session"
     },
     "no_requirements": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -113,6 +118,7 @@
       "mode": "session"
     },
     "response_casing": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
       "settlementRef": "",
@@ -136,6 +142,7 @@
       "mode": "session"
     },
     "no_payer": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -159,6 +166,7 @@
       "mode": "session"
     },
     "archival": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -182,6 +190,7 @@
       "mode": "archival"
     },
     "requirements_float_spelling": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -205,6 +214,7 @@
       "mode": "session"
     },
     "requirements_not_object": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -217,6 +227,7 @@
       "mode": "session"
     },
     "payer_empty_string": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -240,6 +251,7 @@
       "mode": "session"
     },
     "requirements_other_network": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -262,7 +274,56 @@
       "maxAgeSeconds": 3600,
       "mode": "session"
     },
+    "paid_this_resource": {
+      "paidResourceUrl": "https://api.example.com/v1/complete",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "paid_another_resource": {
+      "paidResourceUrl": "https://api.example.com/v1/other",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
     "advertised": {
+      "paidResourceUrl": null,
       "success": true,
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
@@ -302,6 +363,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -323,6 +385,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -344,6 +407,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -365,6 +429,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -386,6 +451,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -407,6 +473,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -428,6 +495,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -449,6 +517,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -470,6 +539,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -491,6 +561,7 @@
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -512,6 +583,7 @@
         "settlementStatus": "reversed",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -533,6 +605,7 @@
         "settlementStatus": "refunded",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -559,6 +632,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -605,6 +679,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -651,6 +726,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -677,6 +753,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -703,6 +780,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "not_evaluated",
@@ -724,6 +802,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -745,6 +824,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "not_compared",
           "requirements": "matched",
@@ -766,6 +846,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 15552000,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -787,6 +868,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -808,6 +890,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -829,6 +912,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "matched",
@@ -850,6 +934,7 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "compared",
           "requirements": "not_evaluated",
@@ -871,8 +956,31 @@
         "settlementStatus": "settled",
         "ageSeconds": 44,
         "checks": {
+          "resourceUrl": "not_compared",
           "network": "compared",
           "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_resource_paid.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "paid_this_resource",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "compared",
+          "network": "compared",
+          "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
           "freshness": "enforced"
@@ -1158,6 +1266,12 @@
       "context": "ok"
     },
     {
+      "file": "neg_resource_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_resource_mismatch",
+      "context": "paid_another_resource"
+    },
+    {
       "file": "neg_signer_unauthorized.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_signer",
@@ -1308,9 +1422,10 @@
         "pos_archival_180d.json",
         "pos_requirements_float_spelling.json",
         "pos_requirements_not_object.json",
-        "pos_payer_empty_string.json"
+        "pos_payer_empty_string.json",
+        "pos_resource_paid.json"
       ],
-      "why": "one statement signed under four keys and verified in eight contexts"
+      "why": "one statement signed under four keys and verified in nine contexts"
     }
   ]
 }

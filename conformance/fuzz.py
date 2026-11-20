@@ -585,6 +585,12 @@ def op_ctx_requirements_network(c):
         c.context["network"] = c.rng.choice(["base", None, "Base Mainnet"])
 
 
+def op_ctx_paid_resource(c):
+    c.context["paidResourceUrl"] = c.rng.choice(
+        [A.RESOURCE, A.RESOURCE, A.RESOURCE + "/", A.RESOURCE.upper(), "", None, 1,
+         "https://api.example.com/v1/other"])
+
+
 def op_ctx_time(c):
     x = c.context
     r = c.rng.randrange(6)
@@ -613,7 +619,7 @@ OPERATORS = [
     (op_ctx_settlement, 6), (op_ctx_requirements, 7), (op_ctx_time, 4),
     (op_alg_swap, 3), (op_header_encoding, 2), (op_payload_scalar, 2),
     (op_bindings_wellformed, 3), (op_ctx_number_spelling, 2),
-    (op_ctx_requirements_network, 2),
+    (op_ctx_requirements_network, 2), (op_ctx_paid_resource, 3),
 ]
 RAW_OPS = {op_raw_whitespace, op_raw_number, op_raw_escape, op_raw_structure, op_raw_bytes,
            op_payload_scalar}

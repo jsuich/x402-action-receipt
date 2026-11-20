@@ -267,6 +267,13 @@ function verifyInner(receipt, ctx, resolver) {
     }
   }
 
+  // ---- 5.4 a verifier that paid compares the URL it paid for
+  let resourceCheck = 'not_compared';
+  const paid = isObj(ctx) ? ctx.paidResourceUrl : undefined;
+  if (isStr(paid) && paid !== '') {
+    if (p.resourceUrl !== paid) return reject('invalid_actionreceipt_resource_mismatch');
+    resourceCheck = 'compared';
+  }
   // ---- 5.4 signer authorization
   if (!resolver.isAuthorized(kid, p.resourceUrl, p.payTo)) {
     return reject('invalid_actionreceipt_signer');
@@ -309,7 +316,7 @@ function verifyInner(receipt, ctx, resolver) {
   if (sr.success !== true || !(hasTx || hasRef)) return reject('invalid_transaction_state');
 
   // ---- 5.8 settlement binding
-  const checks = {};
+  const checks = { resourceUrl: resourceCheck };
   {
     const norm = (v) => (evm ? asciiLower(v) : v);
     const txOk = hasTx ? p.transaction === norm(sr.transaction) : p.transaction === '';
@@ -386,6 +393,7 @@ function verifyInner(receipt, ctx, resolver) {
       settlementStatus: p.settlementStatus,
       ageSeconds: age,
       checks: {
+        resourceUrl: checks.resourceUrl,
         network: checks.network,
         payer: checks.payer,
         payTo: checks.payTo,

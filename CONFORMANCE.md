@@ -12,7 +12,7 @@ requirements the suite tests, and which it does not.
 adapter protocol of section 3, it reproduces every entry of
 `vectors/MANIFEST.json`: the verdict, the reason code on `REJECT`, the report
 on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
-`vectorsDigest` (currently `sha256:902a1a50710e91eafb91096c7beb3f68a9b68b5d28798b9dc7f3ac29751f4f5c`).
+`vectorsDigest` (currently `sha256:e01eb636a1ee203aecb645a754ef1ad14af3dbab2d7d51505ef27f9456a14ed4`).
 
 **Issuer.** No issuer conformance class is defined yet. The requirements that
 bind an issuer are listed in section 4 as untested, with the reason. A
@@ -24,14 +24,14 @@ completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 80 requirements: 50 tested, 30 not tested.
+- 81 requirements: 51 tested, 30 not tested.
   - 10 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
   - 9 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 1 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
-- 91 vectors, each named by at least one requirement.
+- 93 vectors, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -43,6 +43,7 @@ Input line:
 
 ```json
 {"id": "any string", "receipt": <any JSON value>, "context": {
+   "paidResourceUrl": "https://..." or null,
    "success": true, "transaction": "0x...", "settlementRef": "",
    "network": "eip155:8453", "payer": "0x...", "accepted": {...} or null,
    "advertisedInfo": {...} or null, "now": 1703123500,
@@ -56,8 +57,9 @@ Output line:
 {"id": "same string", "verdict": "REJECT", "reason": "invalid_...", "report": null}
 ```
 
-- `context` is the verifier input of spec §5: the first five members come from
-  the `SettlementResponse` and are unsigned. Any of them may be absent, `null`
+- `context` is the verifier input of spec §5. `paidResourceUrl` is present only
+  when the verifier made the payment. The next five members come from the
+  `SettlementResponse` and are unsigned. Any of these six may be absent, `null`
   or of the wrong type; the verifier must not fail on that.
 - `mode` is `session` or `archival`, `now` is an integer and `maxAgeSeconds`,
   when present, is a non-negative integer. The harness never sends anything
@@ -132,12 +134,13 @@ every case; `suite` = a structural check of the suite itself.
 | V-RPT-2 | §4.7 | MUST | `receiptRef` is the hash of the payload bytes and covers neither header nor signature. | matrix: sameReceiptRef and distinctReceiptRef relations in the manifest; fuzz property P1 |
 | V-RPT-3 | §4.3 | MUST | Two payments that differ only in `receiptId` are two receipts. | `pos_batch_settled`, `pos_batch_second_payment` |
 | V-RPT-4 | §7 | MUST | Every signed member is covered: changing any one changes `receiptRef`, and the members the context constrains are rejected. | matrix: the 17-member mutation matrix, with a guard that fails a mutation that changes nothing |
-| V-ROL-1 | §5.14 | MUST | A requesting verifier also checks that `resourceUrl` is the URL it paid for. | not tested (`caller-context`) |
+| V-ROL-1 | §5.4 | MUST | A verifier that made the payment rejects a receipt whose `resourceUrl` is not the URL it paid for. | `neg_resource_mismatch`, `pos_resource_paid` |
 | V-ROL-2 | §5.14 | MUST | A non-requesting verifier says that its inputs were recorded copies. | not tested (`consumer-behaviour`) |
 | V-ROL-3 | §5.14 | SHOULD | When resolving on the rail, confirm the chain, success, asset, amount, payer and recipient. | not tested (`needs-network`) |
 | V-ROL-4 | §5.14 | SHOULD NOT | Do not assume the transaction's submitter is the payee. | not tested (`needs-network`) |
 | V-ROL-5 | §5.13 | SHOULD | Pass the conformance suite before reporting a canonicalization rejection against an issuer. | not tested (`informative`) |
 | V-ROL-6 | §9 | SHOULD | Retain the key and authorization evidence relied on, with the resolution time. | not tested (`informative`) |
+| V-ROL-7 | §5.14 | MUST | A requesting verifier supplies the URL it paid for. | not tested (`caller-context`) |
 
 ### Issuer
 
@@ -177,12 +180,12 @@ every case; `suite` = a structural check of the suite itself.
 - V-ERR-2 (§5): Do not report a verifier fault as a rejection. Reason: `not-observable`.
 - V-AUT-3 (§5.4): Do not dereference a location that only the receipt names. Reason: `needs-network`.
 - V-AUT-4 (§5.4): In archival mode, judge authorization as of `issuedAt`. Reason: `needs-network`.
-- V-ROL-1 (§5.14): A requesting verifier also checks that `resourceUrl` is the URL it paid for. Reason: `caller-context`.
 - V-ROL-2 (§5.14): A non-requesting verifier says that its inputs were recorded copies. Reason: `consumer-behaviour`.
 - V-ROL-3 (§5.14): When resolving on the rail, confirm the chain, success, asset, amount, payer and recipient. Reason: `needs-network`.
 - V-ROL-4 (§5.14): Do not assume the transaction's submitter is the payee. Reason: `needs-network`.
 - V-ROL-5 (§5.13): Pass the conformance suite before reporting a canonicalization rejection against an issuer. Reason: `informative`.
 - V-ROL-6 (§9): Retain the key and authorization evidence relied on, with the resolution time. Reason: `informative`.
+- V-ROL-7 (§5.14): A requesting verifier supplies the URL it paid for. Reason: `caller-context`.
 
 ## 6. Test cycle
 

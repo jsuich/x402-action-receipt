@@ -438,6 +438,7 @@ transaction.
   settlement identifier;
 - optionally the `PaymentRequirements` the client accepted;
 - optionally the `info` object the server advertised (§2.3);
+- if the verifier made the payment itself, the resource URL it paid for;
 - a clock, a maximum age, and a mode: `session` or `archival`;
 - a way to learn which keys are authorized for a resource (§5.4).
 
@@ -508,7 +509,13 @@ Reject with the code shown, checking in this order:
    entries, each an object with exactly `type` and `value`, both strings matching
    their grammar, in strictly ascending order of `type`.
 
-### 5.4 Signer authorization
+### 5.4 Resource and signer authorization
+
+A verifier that made the payment itself first rejects with
+`invalid_actionreceipt_resource_mismatch` unless the receipt's `resourceUrl`
+equals, as an exact string, the resource URL it paid for. A verifier that did not
+make the payment has nothing to compare, and the report records
+`resourceUrl: not_compared`.
 
 Reject with `invalid_actionreceipt_signer` unless `kid` is authorized for the
 receipt's `resourceUrl` by at least one of:
@@ -634,7 +641,7 @@ No binding status changes the verdict.
 | `receiptRef` | §4.7 |
 | `outcome`, `settlementStatus` | Copied from the receipt |
 | `ageSeconds` | `now - issuedAt` |
-| `checks.network`, `checks.payer`, `checks.payTo` | `compared` or `not_compared` |
+| `checks.resourceUrl`, `checks.network`, `checks.payer`, `checks.payTo` | `compared` or `not_compared` |
 | `checks.requirements` | `matched` or `not_evaluated` |
 | `checks.freshness` | `enforced` or `reported` |
 | `supersedes` | Copied from the receipt |
@@ -651,6 +658,7 @@ the report has exactly this shape:
   "settlementStatus": "settled",
   "ageSeconds": 44,
   "checks": {
+    "resourceUrl": "not_compared",
     "network": "compared",
     "payer": "compared",
     "requirements": "matched",
@@ -679,7 +687,8 @@ Codes follow core §9 and the `invalid_<extension>_<check>` convention.
 | §5.3 `outcome` | `invalid_actionreceipt_outcome` |
 | §5.3 `settlementStatus` | `invalid_actionreceipt_status` |
 | §5.3 `bindings` | `invalid_actionreceipt_binding` |
-| §5.4 | `invalid_actionreceipt_signer` |
+| §5.4 resource | `invalid_actionreceipt_resource_mismatch` |
+| §5.4 signer | `invalid_actionreceipt_signer` |
 | §5.5 (indeterminate) | `invalid_actionreceipt_key_unresolved` |
 | §5.6 | `invalid_actionreceipt_signature` |
 | §5.7 | `invalid_transaction_state` |
@@ -695,8 +704,8 @@ SHOULD pass the conformance suite (§7) before reporting one against an issuer.
 ### 5.14 Verifier roles and grounding on the rail
 
 A **requesting verifier** made the payment. It holds the request, the
-`PaymentPayload` and the `SettlementResponse` first-hand, and MUST additionally
-check that `resourceUrl` is the URL it paid for.
+`PaymentPayload` and the `SettlementResponse` first-hand, and MUST supply the URL
+it paid for, so that §5.4 compares it with `resourceUrl`.
 
 A **non-requesting verifier** (an auditor, an arbiter) holds recorded copies. It
 MUST say so when it reports a result: everything it compared in §5.7 to §5.9

@@ -44,6 +44,7 @@ flips = [
  ("digest grammar",       'if not RE_DIGEST.fullmatch(payload["requirementsDigest"]):', 'if False:'),
  ("binding order",        'if previous is not None and not previous < t:', 'if False:'),
  ("binding count",        'if len(bindings) > MAX_BINDINGS:', 'if False:'),
+ ("resource paid for",    '        if payload["resourceUrl"] != ctx.paid_resource_url:', '        if False:'),
  ("signer authorization", 'if kid not in service_kids and kid not in payto_kids:', 'if False:'),
  ("low-s",                'if s > CURVE_ORDER[ALG_CURVE[alg]] // 2:', 'if False:'),
  ("curve bound to alg",   'if pub.curve.name != ALG_CURVE[alg]:', 'if False:'),

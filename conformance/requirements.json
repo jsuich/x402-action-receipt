@@ -676,11 +676,15 @@
     {
       "id": "V-ROL-1",
       "role": "verifier",
-      "section": "5.14",
+      "section": "5.4",
       "level": "MUST",
-      "text": "A requesting verifier also checks that `resourceUrl` is the URL it paid for.",
-      "anchor": "MUST additionally check that `resourceUrl` is the URL it paid for",
-      "tested_by": "caller-context"
+      "text": "A verifier that made the payment rejects a receipt whose `resourceUrl` is not the URL it paid for.",
+      "anchor": "`invalid_actionreceipt_resource_mismatch` unless the receipt's `resourceUrl` equals, as an exact string, the resource URL it paid for",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_resource_mismatch.json",
+        "pos_resource_paid.json"
+      ]
     },
     {
       "id": "V-ROL-2",
@@ -915,6 +919,15 @@
       "text": "Do not use a client-chosen identifier as the sole link between receipt and settlement.",
       "anchor": "MUST NOT be used as the sole link between a receipt and a settlement",
       "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "V-ROL-7",
+      "role": "verifier",
+      "section": "5.14",
+      "level": "MUST",
+      "text": "A requesting verifier supplies the URL it paid for.",
+      "anchor": "MUST supply the URL it paid for",
+      "tested_by": "caller-context"
     }
   ]
 }
