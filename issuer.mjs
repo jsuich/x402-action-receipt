@@ -1,18 +1,24 @@
-// Second issuer for the `action-receipt` extension, spec section 6.
-// Written from the spec text alone; later changed in five places where the spec
-// settled a reading it had left open (conformance/CYCLES.md, issuer cycle 2).
-// Adapter protocol: JSON lines in on stdin, JSON lines out on stdout.
+// Second issuer for the `action-receipt` extension, spec section 6 (draft 0.4).
+// Written from the spec text; brought to 0.4 from the 0.4 text of section 6.
+// Adapter protocol: JSON lines in on stdin, JSON lines out on stdout
+// (CONFORMANCE.md, issuer adapter protocol). Besides a payload or a section 6.2
+// refusal, an answer may be `invalid_input` (the line is not a JSON object),
+// `issuer_fault` (this program failed) or `self_check_failed` (the payload it
+// built failed its own 5.2/5.3 check, section 6.3). None of the three is a
+// refusal, and a conforming issuer gives none of them for a JSON exchange.
 import { createHash } from 'node:crypto';
 
 // ---------- helpers ----------
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 // own-property read that never walks the prototype chain and never throws
 const get = (o, k) => (isObj(o) && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined);
+const own = (o, k) => isObj(o) && Object.prototype.hasOwnProperty.call(o, k);
 const wf = (s) => s.isWellFormed();
-// "had": a non-empty string of well-formed Unicode (section 6.1).
-const had = (v) => typeof v === 'string' && v.length > 0 && wf(v);
-// an optional member that is absent and one that is null are the same (section 6.1)
-const opt = (o, k) => { const v = get(o, k); return v === null ? undefined : v; };
+// "present" (section 4.6): a non-empty string of well-formed Unicode.
+const present = (v) => typeof v === 'string' && v.length > 0 && wf(v);
+// an optional statement member is not given when missing or null (section 6.1)
+const NOT_GIVEN = Symbol('not given');
+const given = (o, k) => { const v = get(o, k); return v === undefined || v === null ? NOT_GIVEN : v; };
 
 // Value domain of section 4.6. Outermost object/array is level 1; max 8.
 function inDomain(v, level = 1) {
@@ -45,7 +51,8 @@ function jcs(v) {
 }
 const digest = (v) => 'sha256:' + createHash('sha256').update(Buffer.from(jcs(v), 'utf8')).digest('hex');
 
-const RE_CAIP2 = /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$/;
+// network identifier (section 4.6): CAIP-2 shape, namespace 3..32
+const RE_NETWORK = /^[-a-z0-9]{3,32}:[-_a-zA-Z0-9]{1,32}$/;
 const RE_ADDR = /^0x[0-9a-f]{40}$/;
 const RE_TX = /^0x[0-9a-f]{64}$/;
 const RE_RID = /^[A-Za-z0-9_-]{22,64}$/;
@@ -54,6 +61,10 @@ const RE_BTYPE = /^[a-z][a-z0-9+.-]{0,63}:[\x21-\x7e]{1,191}$/;
 const RE_BVALUE = /^[\x21-\x7e]{1,1024}$/;
 const OUTCOMES = ['delivered', 'partial', 'failed'];
 const STATUSES = ['settled', 'capturePending', 'reversed', 'refunded'];
+const MAX_SAFE = 2 ** 53 - 1;
+const ADVERTISED = 'action-receipt:advertised-info';
+const REVERSAL = 'action-receipt:reversal-transaction';
+const RESERVED = 'action-receipt:';
 
 // ASCII A-Z -> a-z, the rule a verifier applies in section 5.8. Nothing else.
 const evmLower = (s) => s.replace(/[A-Z]/g, (c) => c.toLowerCase());
@@ -64,7 +75,6 @@ function issue(ex) {
   const pr = get(ex, 'paymentRequired');
   const pp = get(ex, 'paymentPayload');
   const sr = get(ex, 'settlementResponse');
-  const sref = get(ex, 'settlementReference');
   const st = get(ex, 'statement');
 
   // 1
@@ -72,47 +82,50 @@ function issue(ex) {
 
   // 2
   const srTx = get(sr, 'transaction');
-  const hasTx = had(srTx);
-  const hasRef = had(sref);
-  if (!hasTx && !hasRef) return refuse('no_settlement_identifier');
+  const sref = get(ex, 'settlementReference');
+  let transaction = present(srTx) ? srTx : '';
+  const settlementRef = present(sref) ? sref : '';
+  if (transaction === '' && settlementRef === '') return refuse('no_settlement_identifier');
 
   // 3
   const accepted = get(pp, 'accepted');
   if (!isObj(accepted) || !inDomain(accepted)) return refuse('requirements_not_hashable');
 
-  // 4
-  const network = get(accepted, 'network');
-  if (typeof network !== 'string' || !RE_CAIP2.test(network)) return refuse('network_unusable');
-  const srNet = get(sr, 'network');
-  if (typeof srNet === 'string' && RE_CAIP2.test(srNet) && srNet !== network) return refuse('network_unusable');
+  // 4: accepted equals an offered entry by JCS bytes
+  const accepts = get(pr, 'accepts');
+  if (!Array.isArray(accepts)) return refuse('requirements_not_offered');
+  const acceptedJcs = jcs(accepted);
+  if (!accepts.some((e) => inDomain(e) && jcs(e) === acceptedJcs)) return refuse('requirements_not_offered');
 
   // 5
-  const url = get(get(pr, 'resource'), 'url');
-  if (!had(url) || !wf(url)) return refuse('resource_unavailable');
+  const network = get(accepted, 'network');
+  if (typeof network !== 'string' || !RE_NETWORK.test(network)) return refuse('network_unusable');
+  const srNet = get(sr, 'network');
+  if (typeof srNet === 'string' && RE_NETWORK.test(srNet) && srNet !== network) return refuse('network_unusable');
 
   // 6
-  let payer = get(sr, 'payer');
-  if (!had(payer)) payer = get(get(get(pp, 'payload'), 'authorization'), 'from');
-  if (!had(payer)) return refuse('payer_unavailable');
+  const url = get(get(pr, 'resource'), 'url');
+  if (!present(url)) return refuse('resource_unavailable');
 
   // 7
+  let payer = get(sr, 'payer');
+  if (!present(payer)) {
+    payer = get(get(get(pp, 'payload'), 'authorization'), 'from');
+    if (!present(payer)) payer = '';
+  }
   let payTo = get(accepted, 'payTo');
-  if (!had(payTo)) return refuse('identifier_out_of_grammar');
-  let transaction = hasTx ? srTx : '';
-  const settlementRef = hasRef ? sref : '';
+  if (!present(payTo)) return refuse('identifier_out_of_grammar');
   const evm = network.startsWith('eip155:');
   if (evm) {
     payer = evmLower(payer);
     payTo = evmLower(payTo);
     transaction = evmLower(transaction);
-  }
-  if (evm) {
-    if (!RE_ADDR.test(payer) || !RE_ADDR.test(payTo)) return refuse('identifier_out_of_grammar');
+    if (!RE_ADDR.test(payTo)) return refuse('identifier_out_of_grammar');
+    if (payer !== '' && !RE_ADDR.test(payer)) return refuse('identifier_out_of_grammar');
     if (transaction !== '' && !RE_TX.test(transaction)) return refuse('identifier_out_of_grammar');
   }
 
   // 8
-  if (!isObj(st)) return refuse('invalid_statement');
   const action = get(st, 'action');
   const agent = get(action, 'agent');
   const actionType = get(action, 'actionType');
@@ -121,57 +134,62 @@ function issue(ex) {
   const settlementStatus = get(st, 'settlementStatus');
   const receiptId = get(st, 'receiptId');
   const issuedAt = get(st, 'issuedAt');
-  const supersedesIn = opt(st, 'supersedes');
-  if (!had(agent) || !wf(agent)) return refuse('invalid_statement');
-  if (!had(actionType) || !wf(actionType)) return refuse('invalid_statement');
+  const supersedesIn = given(st, 'supersedes');
+  const reversal = given(st, 'reversalTransaction');
+  const further = given(st, 'bindings');
+  if (!present(agent)) return refuse('invalid_statement');
+  if (!present(actionType)) return refuse('invalid_statement');
   if (typeof scope !== 'string' || !wf(scope)) return refuse('invalid_statement');
   if (typeof outcome !== 'string' || !OUTCOMES.includes(outcome)) return refuse('invalid_statement');
   if (typeof settlementStatus !== 'string' || !STATUSES.includes(settlementStatus)) return refuse('invalid_statement');
   if (typeof receiptId !== 'string' || !RE_RID.test(receiptId)) return refuse('invalid_statement');
-  if (typeof issuedAt !== 'number' || !Number.isSafeInteger(issuedAt) || issuedAt < 0) return refuse('invalid_statement');
-  if (!(supersedesIn === undefined || supersedesIn === '' || (typeof supersedesIn === 'string' && RE_REF.test(supersedesIn)))) {
-    return refuse('invalid_statement');
-  }
+  if (typeof issuedAt !== 'number' || !Number.isSafeInteger(issuedAt)) return refuse('invalid_statement');
+  if (issuedAt < 0) return refuse('invalid_statement');
+  const supersedes = supersedesIn === NOT_GIVEN ? '' : supersedesIn;
+  if (typeof supersedes !== 'string' || !(supersedes === '' || RE_REF.test(supersedes))) return refuse('invalid_statement');
+  if (reversal !== NOT_GIVEN && typeof reversal !== 'string') return refuse('invalid_statement');
+  if (further !== NOT_GIVEN && !Array.isArray(further)) return refuse('invalid_statement');
 
-  // 9
+  // 9: the advertised info is read strictly; a member whose value is null is a member
   const ext = get(get(pr, 'extensions'), 'action-receipt');
   const info = get(ext, 'info');
-  // advertised iff the extension entry is an object whose info is a JSON object
   const advertised = isObj(ext) && isObj(info);
   if (advertised) {
-    // each of actionType and scope PRESENT in info must be a string equal to the statement's
-    const own = (k) => Object.prototype.hasOwnProperty.call(info, k);
-    if (own('actionType') && info.actionType !== actionType) return refuse('advertisement_conflict');
-    if (own('scope') && info.scope !== scope) return refuse('advertisement_conflict');
+    if (own(info, 'actionType') && !(typeof info.actionType === 'string' && info.actionType === actionType)) {
+      return refuse('advertisement_conflict');
+    }
+    if (own(info, 'scope') && !(typeof info.scope === 'string' && info.scope === scope)) {
+      return refuse('advertisement_conflict');
+    }
   }
 
   // 10
-  const further = opt(st, 'bindings');
-  let entries = [];
-  if (further !== undefined) {
-    if (!Array.isArray(further)) return refuse('invalid_bindings');
-    entries = further.slice();
-    // types this specification defines are added below, never supplied
-    for (const e of entries) {
-      if (isObj(e) && typeof get(e, 'type') === 'string' && e.type.startsWith('action-receipt:')) {
-        return refuse('invalid_bindings');
-      }
-    }
+  const entries = further === NOT_GIVEN ? [] : further.slice();
+  for (const e of entries) {
+    if (isObj(e) && typeof get(e, 'type') === 'string' && e.type.startsWith(RESERVED)) return refuse('invalid_bindings');
   }
   if (advertised) {
     if (!inDomain(info)) return refuse('invalid_bindings');
-    entries.push({ type: 'action-receipt:advertised-info', value: digest(info) });
+    entries.push({ type: ADVERTISED, value: digest(info) });
   }
-  const reversal = get(st, 'reversalTransaction');
-  if (had(reversal)) entries.push({ type: 'action-receipt:reversal-transaction', value: reversal });
+  if (reversal !== NOT_GIVEN) entries.push({ type: REVERSAL, value: evm ? evmLower(reversal) : reversal });
   if (entries.length > 16) return refuse('invalid_bindings');
   const bindings = [];
   for (const e of entries) {
     if (!isObj(e)) return refuse('invalid_bindings');
     const keys = Object.keys(e);
-    if (keys.length !== 2 || !keys.includes('type') || !keys.includes('value')) return refuse('invalid_bindings');
+    if (keys.length !== 2 || !own(e, 'type') || !own(e, 'value')) return refuse('invalid_bindings');
     if (typeof e.type !== 'string' || !RE_BTYPE.test(e.type)) return refuse('invalid_bindings');
     if (typeof e.value !== 'string' || !RE_BVALUE.test(e.value)) return refuse('invalid_bindings');
+    if (e.type.startsWith(RESERVED)) {
+      if (e.type === ADVERTISED) {
+        if (!RE_REF.test(e.value)) return refuse('invalid_bindings');
+      } else if (e.type === REVERSAL) {
+        if (evm && !RE_TX.test(e.value)) return refuse('invalid_bindings');
+      } else {
+        return refuse('invalid_bindings');
+      }
+    }
     bindings.push({ type: e.type, value: e.value });
   }
   bindings.sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
@@ -192,30 +210,88 @@ function issue(ex) {
     settlementRef,
     settlementStatus,
     requirementsDigest: digest(accepted),
-    supersedes: typeof supersedesIn === 'string' ? supersedesIn : '',
+    supersedes,
     action: { agent, actionType, scope, outcome },
     bindings,
   };
+  if (!selfCheck(payload)) return refuse('self_check_failed');
   return { issued: true, payload };
 }
 
-function handle(line) {
-  let id = null;
+// ---------- section 6.3 self-check: sections 5.2 and 5.3 on the built payload ----------
+const TOP = ['version', 'receiptId', 'issuedAt', 'network', 'resourceUrl', 'payer', 'payTo', 'transaction',
+  'settlementRef', 'settlementStatus', 'requirementsDigest', 'supersedes', 'action', 'bindings'];
+const ACTION = ['agent', 'actionType', 'scope', 'outcome'];
+const STRINGS = ['receiptId', 'network', 'resourceUrl', 'payer', 'payTo', 'transaction', 'settlementRef',
+  'settlementStatus', 'requirementsDigest', 'supersedes'];
+const sameSet = (keys, want) => keys.length === want.length && want.every((k) => keys.includes(k));
+
+function selfCheck(p) {
+  // 5.2: in the value domain, and the JCS bytes parse back to the same bytes
+  if (!inDomain(p)) return false;
+  const text = jcs(p);
+  let back;
+  try { back = JSON.parse(text); } catch { return false; }
+  if (!inDomain(back) || jcs(back) !== text) return false;
+  // 5.3
+  if (!isObj(p) || !Number.isSafeInteger(p.version) || p.version !== 1) return false;
+  if (!sameSet(Object.keys(p), TOP)) return false;
+  if (!isObj(p.action) || !sameSet(Object.keys(p.action), ACTION)) return false;
+  if (!STRINGS.every((k) => typeof p[k] === 'string')) return false;
+  if (!ACTION.every((k) => typeof p.action[k] === 'string')) return false;
+  if (!Number.isSafeInteger(p.issuedAt) || p.issuedAt < 0 || p.issuedAt > MAX_SAFE) return false;
+  if (!RE_RID.test(p.receiptId) || !RE_NETWORK.test(p.network)) return false;
+  if (!p.resourceUrl || !p.payTo || !p.action.agent || !p.action.actionType) return false;
+  if (!p.transaction && !p.settlementRef) return false;
+  const evm = p.network.startsWith('eip155:');
+  if (evm) {
+    if (!RE_ADDR.test(p.payTo)) return false;
+    if (p.payer && !RE_ADDR.test(p.payer)) return false;
+    if (p.transaction && !RE_TX.test(p.transaction)) return false;
+  }
+  if (!RE_REF.test(p.requirementsDigest)) return false;
+  if (p.supersedes && !RE_REF.test(p.supersedes)) return false;
+  if (!OUTCOMES.includes(p.action.outcome) || !STATUSES.includes(p.settlementStatus)) return false;
+  if (!Array.isArray(p.bindings) || p.bindings.length > 16) return false;
+  let prev = null;
+  for (const b of p.bindings) {
+    if (!isObj(b) || !sameSet(Object.keys(b), ['type', 'value'])) return false;
+    if (typeof b.type !== 'string' || typeof b.value !== 'string') return false;
+    if (!RE_BTYPE.test(b.type) || !RE_BVALUE.test(b.value)) return false;
+    if (b.type.startsWith(RESERVED)) {
+      if (b.type === ADVERTISED) { if (!RE_REF.test(b.value)) return false; }
+      else if (b.type === REVERSAL) { if (evm && !RE_TX.test(b.value)) return false; }
+      else return false;
+    }
+    if (prev !== null && !(prev < b.type)) return false;
+    prev = b.type;
+  }
+  return true;
+}
+
+// ---------- adapter ----------
+const fatalUtf8 = new TextDecoder('utf-8', { fatal: true });
+
+function handle(bytes) {
+  let line;
+  try { line = fatalUtf8.decode(bytes); } catch { return { id: null, ...refuse('invalid_input') }; }
   let msg;
   try {
     msg = JSON.parse(line);
   } catch {
+    let id = null;
     const m = /"id"\s*:\s*("(?:[^"\\]|\\.)*")/.exec(line);
     if (m) { try { id = JSON.parse(m[1]); } catch { /* keep null */ } }
-    return { id, ...refuse('settlement_not_successful') };
+    return { id, ...refuse('invalid_input') };
   }
+  if (!isObj(msg)) return { id: null, ...refuse('invalid_input') };
   const rawId = get(msg, 'id');
-  if (rawId !== undefined) id = rawId;
+  const id = rawId === undefined ? null : rawId;
   let res;
   try {
     res = issue(get(msg, 'exchange'));
   } catch {
-    res = refuse('settlement_not_successful'); // defensive; not expected to be reachable
+    res = refuse('issuer_fault');
   }
   return { id, ...res };
 }
@@ -223,12 +299,17 @@ function handle(line) {
 const chunks = [];
 process.stdin.on('data', (c) => chunks.push(c));
 process.stdin.on('end', () => {
-  const text = Buffer.concat(chunks).toString('utf8');
+  const all = Buffer.concat(chunks);
   const out = [];
-  for (const line of text.split('\n')) {
-    if (line.trim() === '') continue;
+  let start = 0;
+  while (start <= all.length) {
+    let end = all.indexOf(0x0a, start);
+    if (end === -1) end = all.length;
+    const bytes = all.subarray(start, end);
+    start = end + 1;
+    if (/^[ \t\r]*$/.test(bytes.toString('latin1'))) continue;
     let s;
-    try { s = JSON.stringify(handle(line)); } catch { s = JSON.stringify({ id: null, issued: false, reason: 'settlement_not_successful' }); }
+    try { s = JSON.stringify(handle(bytes)); } catch { s = JSON.stringify({ id: null, issued: false, reason: 'issuer_fault' }); }
     out.push(s);
   }
   process.stdout.write(out.length ? out.join('\n') + '\n' : '');

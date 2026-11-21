@@ -1,0 +1,62 @@
+{
+  "paymentRequired": {
+    "x402Version": 2,
+    "error": "Payment required",
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
+    "accepts": [
+      {
+        "scheme": "batch-settlement",
+        "network": "cloudflare:402",
+        "amount": "10000",
+        "asset": "USD",
+        "payTo": "merchant",
+        "maxTimeoutSeconds": 60,
+        "extra": {}
+      }
+    ],
+    "extensions": {}
+  },
+  "paymentPayload": {
+    "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
+    "accepted": {
+      "scheme": "batch-settlement",
+      "network": "cloudflare:402",
+      "amount": "10000",
+      "asset": "USD",
+      "payTo": "merchant",
+      "maxTimeoutSeconds": 60,
+      "extra": {}
+    },
+    "payload": {
+      "amount": "10000",
+      "asset": "USD"
+    },
+    "extensions": {}
+  },
+  "settlementResponse": {
+    "success": true,
+    "transaction": "cf-settlement-000000000001",
+    "network": "cloudflare:402"
+  },
+  "settlementReference": null,
+  "statement": {
+    "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+    "issuedAt": 1703123456,
+    "action": {
+      "agent": "did:web:agent.example",
+      "actionType": "inference.completion",
+      "scope": "read:model-x",
+      "outcome": "delivered"
+    },
+    "settlementStatus": "settled"
+  }
+}

@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -19,24 +21,15 @@
         }
       }
     ],
-    "extensions": {
-      "action-receipt": {
-        "info": {
-          "willIssueReceipt": true,
-          "actionType": "inference.completion",
-          "scope": "read:model-x"
-        },
-        "schema": {
-          "type": "object",
-          "required": [
-            "willIssueReceipt"
-          ]
-        }
-      }
-    }
+    "extensions": {}
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -75,9 +68,9 @@
     "action": {
       "agent": "did:web:agent.example",
       "actionType": "inference.completion",
-      "scope": "write:model-x",
-      "outcome": "shipped"
+      "scope": "read:model-x",
+      "outcome": "delivered"
     },
-    "settlementStatus": "settled"
+    "settlementStatus": "captured"
   }
 }

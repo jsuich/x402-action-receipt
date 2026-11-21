@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -24,12 +26,35 @@
         "info": {
           "willIssueReceipt": true,
           "weight": 1.5
+        },
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "willIssueReceipt": {
+              "type": "boolean"
+            },
+            "actionType": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "willIssueReceipt"
+          ]
         }
       }
     }
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -53,7 +78,14 @@
         "nonce": "0xf3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3"
       }
     },
-    "extensions": {}
+    "extensions": {
+      "action-receipt": {
+        "info": {
+          "willIssueReceipt": true,
+          "weight": 1.5
+        }
+      }
+    }
   },
   "settlementResponse": {
     "success": true,

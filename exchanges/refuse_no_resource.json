@@ -1,8 +1,9 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
-      "description": "x"
+      "description": "Text completion"
     },
     "accepts": [
       {
@@ -22,6 +23,11 @@
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",

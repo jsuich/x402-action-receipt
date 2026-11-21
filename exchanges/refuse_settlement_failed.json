@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -23,6 +25,11 @@
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -50,7 +57,8 @@
   },
   "settlementResponse": {
     "success": false,
-    "transaction": "0xabababababababababababababababababababababababababababababababab",
+    "errorReason": "insufficient_funds",
+    "transaction": "",
     "network": "eip155:8453",
     "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66"
   },

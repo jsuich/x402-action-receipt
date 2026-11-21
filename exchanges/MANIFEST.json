@@ -1,14 +1,14 @@
 {
   "profile": "action-receipt",
-  "specDraft": "0.3",
+  "specDraft": "0.4",
   "note": "Issuer conformance. For each exchange a conformant issuer either produces exactly `payload` (compare the RFC 8785 serializations) or refuses with `reason`. Expected payloads were declared by hand as differences from the payload printed in spec section 4.7; none was produced by running an issuer.",
   "refusalReasons": [
     "settlement_not_successful",
     "no_settlement_identifier",
     "requirements_not_hashable",
+    "requirements_not_offered",
     "network_unusable",
     "resource_unavailable",
-    "payer_unavailable",
     "identifier_out_of_grammar",
     "invalid_statement",
     "advertisement_conflict",
@@ -66,6 +66,156 @@
       }
     },
     {
+      "file": "issue_payer_response_wins_over_authorization.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_payer_from_authorization_lowercased.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0xabcdef0123456789abcdef0123456789abcdef01",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_payer_none.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_payer_permit2_from_response.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_payer_permit2_no_response_payer.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_payer_response_not_string.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
       "file": "issue_response_uppercase_hex.json",
       "issued": true,
       "payload": {
@@ -91,7 +241,32 @@
       }
     },
     {
-      "file": "issue_response_network_not_caip2.json",
+      "file": "issue_response_network_not_identifier.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_response_network_absent.json",
       "issued": true,
       "payload": {
         "action": {
@@ -132,6 +307,131 @@
         "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
         "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_offer_float_spelling.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_offer_member_order_differs.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_offer_among_several.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_offer_entry_out_of_domain_skipped.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_requirements_depth_8.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:27905833e432a5548f511e46c000f19898a319c1d3d8b7396be49fd3fe886bbf",
         "resourceUrl": "https://api.example.com/v1/complete",
         "settlementRef": "",
         "settlementStatus": "settled",
@@ -191,6 +491,156 @@
       }
     },
     {
+      "file": "issue_settlement_ref_upper_case_evm.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "Batch:Voucher:9F3C1D0A-0000-4A11-B2CC-Settlement-Root-01",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_solana_batch_settlement.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "settlementStatus": "capturePending",
+        "supersedes": "",
+        "transaction": "",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_svm_exact.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "payer": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:60ea5a3bab3ffeaaf42fcae332e100fdd58e49ac82139e74277763c9fff2154b",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_svm_exact_no_response_payer.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:60ea5a3bab3ffeaaf42fcae332e100fdd58e49ac82139e74277763c9fff2154b",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_network_cloudflare.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "cloudflare:402",
+        "payTo": "merchant",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:344600e74e80d8402de2f2aefd0c2f8c0f2c2dd3a1bf1a242ca3cd87144818e6",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "cf-settlement-000000000001",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_network_namespace_32.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:5a8bc57d62652789ccdff8517e1c2a27b478bf989bb5073a4c4ffaec00ac1859",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
       "file": "issue_advertised.json",
       "issued": true,
       "payload": {
@@ -206,6 +656,146 @@
             "value": "sha256:33df93fe0564655d6fa711a9b0b6a390396132ca577f0b7cfac2f6cd3dbffd76"
           }
         ],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_advertised_echo_ignored.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "value": "sha256:33df93fe0564655d6fa711a9b0b6a390396132ca577f0b7cfac2f6cd3dbffd76"
+          }
+        ],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_advertised_info_empty.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "value": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          }
+        ],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_advertised_will_issue_false.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "value": "sha256:1819870fb6c521d4f365597f37dc7372aeaae63b6d722416d09f93450ed175f0"
+          }
+        ],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_advertisement_info_not_object.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_advertisement_entry_not_object.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -247,6 +837,66 @@
         "settlementStatus": "refunded",
         "supersedes": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
         "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_reversal_lowercased_evm.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [
+          {
+            "type": "action-receipt:reversal-transaction",
+            "value": "0xefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+          }
+        ],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "reversed",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_reversal_non_evm_verbatim.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [
+          {
+            "type": "action-receipt:reversal-transaction",
+            "value": "4aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789aBcDeFgHiJkLmNoPqRsTuVwXyZ1"
+          }
+        ],
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "payer": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:60ea5a3bab3ffeaaf42fcae332e100fdd58e49ac82139e74277763c9fff2154b",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "refunded",
+        "supersedes": "",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
         "version": 1
       }
     },
@@ -314,7 +964,32 @@
       }
     },
     {
-      "file": "issue_non_evm.json",
+      "file": "issue_outcome_partial.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "agent": "did:web:agent.example",
+          "actionType": "inference.completion",
+          "scope": "read:model-x",
+          "outcome": "partial"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_status_capture_pending.json",
       "issued": true,
       "payload": {
         "action": {
@@ -325,16 +1000,166 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-        "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
-        "payer": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:c856cd72658dabeab6166432b4122d3b88f6e03aad332ad105575822d21eae96",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "capturePending",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_status_reversed.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "reversed",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_scope_empty.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "agent": "did:web:agent.example",
+          "actionType": "inference.completion",
+          "scope": "",
+          "outcome": "delivered"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
         "resourceUrl": "https://api.example.com/v1/complete",
         "settlementRef": "",
         "settlementStatus": "settled",
         "supersedes": "",
-        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_receiptid_22.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "AAAAAAAAAAAAAAAAAAAAAA",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_receiptid_64.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "a-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Za-_Z",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_issuedat_zero.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 0,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_issuedat_max.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 9007199254740991,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
         "version": 1
       }
     },
@@ -429,6 +1254,96 @@
       }
     },
     {
+      "file": "issue_sixteen_with_issuer_added.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "value": "sha256:33df93fe0564655d6fa711a9b0b6a390396132ca577f0b7cfac2f6cd3dbffd76"
+          },
+          {
+            "type": "action-receipt:reversal-transaction",
+            "value": "0xefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+          },
+          {
+            "type": "n:00",
+            "value": "1"
+          },
+          {
+            "type": "n:01",
+            "value": "1"
+          },
+          {
+            "type": "n:02",
+            "value": "1"
+          },
+          {
+            "type": "n:03",
+            "value": "1"
+          },
+          {
+            "type": "n:04",
+            "value": "1"
+          },
+          {
+            "type": "n:05",
+            "value": "1"
+          },
+          {
+            "type": "n:06",
+            "value": "1"
+          },
+          {
+            "type": "n:07",
+            "value": "1"
+          },
+          {
+            "type": "n:08",
+            "value": "1"
+          },
+          {
+            "type": "n:09",
+            "value": "1"
+          },
+          {
+            "type": "n:10",
+            "value": "1"
+          },
+          {
+            "type": "n:11",
+            "value": "1"
+          },
+          {
+            "type": "n:12",
+            "value": "1"
+          },
+          {
+            "type": "n:13",
+            "value": "1"
+          }
+        ],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
       "file": "issue_issuedat_float_spelling.json",
       "issued": true,
       "payload": {
@@ -479,7 +1394,7 @@
       }
     },
     {
-      "file": "issue_advertisement_info_not_object.json",
+      "file": "issue_supersedes_empty_string.json",
       "issued": true,
       "payload": {
         "action": {
@@ -529,6 +1444,31 @@
       }
     },
     {
+      "file": "issue_statement_extra_member_ignored.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
       "file": "issue_transaction_wrong_type_with_reference.json",
       "issued": true,
       "payload": {
@@ -554,7 +1494,137 @@
       }
     },
     {
+      "file": "issue_resource_url_whitespace_verbatim.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "  https://api.example.com/v1/complete \t",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_surrogate_response_transaction.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_surrogate_response_payer.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_surrogate_settlement_reference.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_surrogate_authorization_from.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
       "file": "refuse_settlement_failed.json",
+      "issued": false,
+      "reason": "settlement_not_successful"
+    },
+    {
+      "file": "refuse_settlement_pending.json",
       "issued": false,
       "reason": "settlement_not_successful"
     },
@@ -564,7 +1634,27 @@
       "reason": "settlement_not_successful"
     },
     {
+      "file": "refuse_settlement_success_one.json",
+      "issued": false,
+      "reason": "settlement_not_successful"
+    },
+    {
       "file": "refuse_no_identifier.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_no_identifier_wrong_type.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_no_identifier_surrogate.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_cloudflare_no_identifier.json",
       "issued": false,
       "reason": "no_settlement_identifier"
     },
@@ -579,12 +1669,82 @@
       "reason": "requirements_not_hashable"
     },
     {
-      "file": "refuse_network_not_caip2.json",
+      "file": "refuse_requirements_array.json",
+      "issued": false,
+      "reason": "requirements_not_hashable"
+    },
+    {
+      "file": "refuse_requirements_unsafe_integer.json",
+      "issued": false,
+      "reason": "requirements_not_hashable"
+    },
+    {
+      "file": "refuse_requirements_depth_9.json",
+      "issued": false,
+      "reason": "requirements_not_hashable"
+    },
+    {
+      "file": "refuse_offered_amount_changed.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_payto_changed.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_extra_changed.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_member_added.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_payto_case_differs.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_accepts_missing.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_accepts_not_array.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_accepts_empty.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_only_out_of_domain.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_network_not_identifier.json",
       "issued": false,
       "reason": "network_unusable"
     },
     {
-      "file": "refuse_network_not_caip2_either_side.json",
+      "file": "refuse_network_namespace_33.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
+      "file": "refuse_network_namespace_2.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
+      "file": "refuse_network_not_identifier_either_side.json",
       "issued": false,
       "reason": "network_unusable"
     },
@@ -599,12 +1759,32 @@
       "reason": "resource_unavailable"
     },
     {
-      "file": "refuse_no_payer.json",
+      "file": "refuse_resource_url_empty.json",
       "issued": false,
-      "reason": "payer_unavailable"
+      "reason": "resource_unavailable"
+    },
+    {
+      "file": "refuse_resource_url_not_string.json",
+      "issued": false,
+      "reason": "resource_unavailable"
+    },
+    {
+      "file": "refuse_resource_url_surrogate.json",
+      "issued": false,
+      "reason": "resource_unavailable"
     },
     {
       "file": "refuse_payto_role_constant.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_payto_missing.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_payto_empty_non_evm.json",
       "issued": false,
       "reason": "identifier_out_of_grammar"
     },
@@ -614,9 +1794,49 @@
       "reason": "identifier_out_of_grammar"
     },
     {
-      "file": "refuse_payto_missing.json",
+      "file": "refuse_payer_out_of_grammar_evm.json",
       "issued": false,
       "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_payer_from_authorization_out_of_grammar.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_agent_empty.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_agent_surrogate.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_actiontype_empty.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_actiontype_missing.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_scope_not_string.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_scope_missing.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_scope_unpaired_surrogate.json",
+      "issued": false,
+      "reason": "invalid_statement"
     },
     {
       "file": "refuse_outcome_unknown.json",
@@ -629,7 +1849,37 @@
       "reason": "invalid_statement"
     },
     {
-      "file": "refuse_receiptid_short.json",
+      "file": "refuse_status_unknown.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_status_case.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_receiptid_21.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_receiptid_65.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_receiptid_alphabet.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_issuedat_negative.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_issuedat_2_53.json",
       "issued": false,
       "reason": "invalid_statement"
     },
@@ -639,14 +1889,79 @@
       "reason": "invalid_statement"
     },
     {
-      "file": "refuse_advertised_scope_not_string.json",
+      "file": "refuse_issuedat_boolean.json",
       "issued": false,
-      "reason": "advertisement_conflict"
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_issuedat_string.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_supersedes_grammar.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_supersedes_not_string.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_reversal_not_string.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_further_bindings_not_array.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_statement_not_object.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_action_not_object.json",
+      "issued": false,
+      "reason": "invalid_statement"
     },
     {
       "file": "refuse_advertised_scope_conflict.json",
       "issued": false,
       "reason": "advertisement_conflict"
+    },
+    {
+      "file": "refuse_advertised_actiontype_conflict.json",
+      "issued": false,
+      "reason": "advertisement_conflict"
+    },
+    {
+      "file": "refuse_advertised_scope_not_string.json",
+      "issued": false,
+      "reason": "advertisement_conflict"
+    },
+    {
+      "file": "refuse_advertised_scope_null.json",
+      "issued": false,
+      "reason": "advertisement_conflict"
+    },
+    {
+      "file": "refuse_advertised_actiontype_null.json",
+      "issued": false,
+      "reason": "advertisement_conflict"
+    },
+    {
+      "file": "refuse_binding_reserved_type.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_binding_reserved_unknown_type.json",
+      "issued": false,
+      "reason": "invalid_bindings"
     },
     {
       "file": "refuse_binding_duplicates_advertisement.json",
@@ -659,14 +1974,9 @@
       "reason": "invalid_bindings"
     },
     {
-      "file": "refuse_binding_reserved_type.json",
+      "file": "refuse_advertised_info_depth_9.json",
       "issued": false,
       "reason": "invalid_bindings"
-    },
-    {
-      "file": "refuse_scope_unpaired_surrogate.json",
-      "issued": false,
-      "reason": "invalid_statement"
     },
     {
       "file": "refuse_binding_duplicate_type.json",
@@ -679,24 +1989,99 @@
       "reason": "invalid_bindings"
     },
     {
+      "file": "refuse_binding_value_grammar.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_binding_value_empty.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_binding_extra_member.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_binding_not_object.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
       "file": "refuse_seventeen_bindings.json",
       "issued": false,
       "reason": "invalid_bindings"
     },
     {
-      "file": "refuse_bindings_not_array.json",
+      "file": "refuse_seventeen_with_issuer_added.json",
       "issued": false,
       "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_reversal_malformed_evm.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_reversal_empty_string.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_reversal_surrogate.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_order_1_before_2.json",
+      "issued": false,
+      "reason": "settlement_not_successful"
+    },
+    {
+      "file": "refuse_order_2_before_3.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_order_3_before_4.json",
+      "issued": false,
+      "reason": "requirements_not_hashable"
+    },
+    {
+      "file": "refuse_order_4_before_5.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_order_5_before_6.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
+      "file": "refuse_order_6_before_7.json",
+      "issued": false,
+      "reason": "resource_unavailable"
+    },
+    {
+      "file": "refuse_order_7_before_8.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_order_8_before_9.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
+      "file": "refuse_order_9_before_10.json",
+      "issued": false,
+      "reason": "advertisement_conflict"
     },
     {
       "file": "refuse_order_settlement_before_statement.json",
       "issued": false,
       "reason": "settlement_not_successful"
-    },
-    {
-      "file": "refuse_order_statement_before_advertisement.json",
-      "issued": false,
-      "reason": "invalid_statement"
     }
   ]
 }

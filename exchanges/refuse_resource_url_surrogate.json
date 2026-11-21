@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
-      "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "url": "https://api.example.com/v1/complete\ud800",
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -23,6 +25,11 @@
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -64,10 +71,6 @@
       "scope": "read:model-x",
       "outcome": "delivered"
     },
-    "settlementStatus": "settled",
-    "bindings": {
-      "type": "a:b",
-      "value": "1"
-    }
+    "settlementStatus": "settled"
   }
 }

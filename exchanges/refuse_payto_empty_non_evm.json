@@ -1,0 +1,66 @@
+{
+  "paymentRequired": {
+    "x402Version": 2,
+    "error": "Payment required",
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
+    "accepts": [
+      {
+        "scheme": "exact",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "amount": "10000",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "feePayer": "EwWqGE4ZFKLofuestmU4LDdK7XM1N4ALgdZccwYugwGd"
+        }
+      }
+    ],
+    "extensions": {}
+  },
+  "paymentPayload": {
+    "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
+    "accepted": {
+      "scheme": "exact",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "amount": "10000",
+      "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "payTo": "",
+      "maxTimeoutSeconds": 60,
+      "extra": {
+        "feePayer": "EwWqGE4ZFKLofuestmU4LDdK7XM1N4ALgdZccwYugwGd"
+      }
+    },
+    "payload": {
+      "transaction": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDAw=="
+    },
+    "extensions": {}
+  },
+  "settlementResponse": {
+    "success": true,
+    "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+    "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    "payer": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+  },
+  "settlementReference": null,
+  "statement": {
+    "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+    "issuedAt": 1703123456,
+    "action": {
+      "agent": "did:web:agent.example",
+      "actionType": "inference.completion",
+      "scope": "read:model-x",
+      "outcome": "delivered"
+    },
+    "settlementStatus": "settled"
+  }
+}

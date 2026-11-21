@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -19,10 +21,41 @@
         }
       }
     ],
-    "extensions": {}
+    "extensions": {
+      "action-receipt": {
+        "info": {
+          "willIssueReceipt": true,
+          "actionType": "inference.completion",
+          "scope": "read:model-x"
+        },
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "willIssueReceipt": {
+              "type": "boolean"
+            },
+            "actionType": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "willIssueReceipt"
+          ]
+        }
+      }
+    }
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -46,7 +79,15 @@
         "nonce": "0xf3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3"
       }
     },
-    "extensions": {}
+    "extensions": {
+      "action-receipt": {
+        "info": {
+          "willIssueReceipt": true,
+          "actionType": "inference.completion",
+          "scope": "read:model-x"
+        }
+      }
+    }
   },
   "settlementResponse": {
     "success": true,
@@ -56,14 +97,20 @@
   },
   "settlementReference": null,
   "statement": {
-    "receiptId": "tooshort",
+    "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,
     "action": {
       "agent": "did:web:agent.example",
       "actionType": "inference.completion",
-      "scope": "read:model-x",
+      "scope": "write:model-x",
       "outcome": "delivered"
     },
-    "settlementStatus": "settled"
+    "settlementStatus": "settled",
+    "bindings": [
+      {
+        "type": "no-colon",
+        "value": "1"
+      }
+    ]
   }
 }
