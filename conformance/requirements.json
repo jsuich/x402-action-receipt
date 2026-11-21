@@ -1800,6 +1800,7 @@
       "anchor": "**Well-formed statement (step 8).**",
       "tested_by": "exchange",
       "exchanges": [
+        "refuse_receiptid_short.json",
         "refuse_agent_empty.json",
         "refuse_agent_surrogate.json",
         "refuse_actiontype_empty.json",

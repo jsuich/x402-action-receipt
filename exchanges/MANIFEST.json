@@ -1949,6 +1949,11 @@
       "reason": "invalid_statement"
     },
     {
+      "file": "refuse_receiptid_short.json",
+      "issued": false,
+      "reason": "invalid_statement"
+    },
+    {
       "file": "refuse_receiptid_21.json",
       "issued": false,
       "reason": "invalid_statement"

@@ -676,6 +676,7 @@ SUITE = [
     E("refuse_outcome_retired_value", X_STATEMENT, statement__action__outcome="refused"),
     E("refuse_status_unknown", X_STATEMENT, statement__settlementStatus="captured"),
     E("refuse_status_case", X_STATEMENT, statement__settlementStatus="Settled"),
+    E("refuse_receiptid_short", X_STATEMENT, statement__receiptId="tooshort"),
     E("refuse_receiptid_21", X_STATEMENT, statement__receiptId="A" * 21),
     E("refuse_receiptid_65", X_STATEMENT, statement__receiptId="A" * 65),
     E("refuse_receiptid_alphabet", X_STATEMENT, statement__receiptId="A" * 21 + "+"),
