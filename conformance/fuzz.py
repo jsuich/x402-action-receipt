@@ -19,6 +19,10 @@ PROTOCOL in CONFORMANCE.md), and reports:
         P7  configuration outside the contract  =>  ERROR invalid_configuration,
             whatever the receipt (the contract is re-stated here, independently
             of both verifiers, in `config_valid`)
+      and one oracle, restated from the spec in `expected_charged_amount`:
+        P8  PASS  =>  checks.chargedAmount is `compared` exactly when the context
+            holds an in-domain `accepted` object with a string `scheme`, and then
+            the receipt's chargedAmount is the value the §4.3 table names, or ""
     Every property is evaluated on EVERY implementation's results, not only
     the first adapter's.
 
@@ -160,10 +164,14 @@ class Case:
             "transaction": "" if batch else A.SETTLEMENT_TX,
             "settlementRef": (A.COMMITMENT_ID if sol else A.BATCH_REF) if batch else "",
             "network": A.SOL_NET if sol else A.NETWORK, "payer": None if sol else A.PAYER,
-            "amount": A.CHARGED,
             "accepted": copy.deepcopy(A.ACCEPTED_SOL if sol else A.ACCEPTED), "advertisedInfo": None,
             "now": A.VERIFIER_NOW, "maxAgeSeconds": 3600, "mode": "session",
         }
+        # where the response reports the charge depends on the scheme (spec §4.3)
+        if sol:
+            self.context["extra"] = {"chargedAmount": A.CHARGED}
+        else:
+            self.context["amount"] = A.CHARGED
         if rng.random() < 0.2:
             del self.context["maxAgeSeconds"]      # the default applies
         self.ops = []
@@ -299,16 +307,16 @@ def op_charged_amount(c):
 
 
 def op_ctx_charged(c):
-    """The response's `amount` and `extra.chargedAmount` (spec §4.3, §5.8): the
-    precedence, the present/absent reading and no normalization decide."""
+    """The response's `amount` and `extra.chargedAmount` (spec §4.3, §5.8): which
+    one the scheme names, the present/absent reading and no normalization decide."""
     x = c.context
-    r = c.rng.randrange(6)
+    r = c.rng.randrange(7)
     if r == 0:
-        x["amount"] = c.rng.choice(AMOUNTS + [None, 10000, "\ud800"])
+        x["amount"] = c.rng.choice(AMOUNTS + [None, 10000, "\ud800", "25\udc00"])
     elif r == 1:
         x.pop("amount", None)
     elif r == 2:
-        x["extra"] = {"chargedAmount": c.rng.choice(AMOUNTS + [None, 2500, "\ud800"])}
+        x["extra"] = {"chargedAmount": c.rng.choice(AMOUNTS + [None, 2500, "\ud800", "25\udc00"])}
     elif r == 3:
         x["extra"] = c.rng.choice([None, [], "2500", 1, {}, {"chargedamount": "2500"}, [{"chargedAmount": "2500"}]])
     elif r == 4:
@@ -316,12 +324,51 @@ def op_ctx_charged(c):
         v = c.rng.choice(AMOUNTS)
         x["extra"] = {"chargedAmount": v, "commitmentId": A.COMMITMENT_ID}
         c.payload["chargedAmount"] = v if c.rng.random() < 0.8 else x.get("amount", "")
-    else:
+    elif r == 5:
         # the receipt and the response agree on a value, which may be out of grammar
         v = c.rng.choice(AMOUNTS)
         x["amount"] = v
         x.pop("extra", None)
         c.payload["chargedAmount"] = v
+    else:
+        # both locations carry a value; the receipt takes one of them, or neither
+        a, e = c.rng.choice(AMOUNTS), c.rng.choice(AMOUNTS)
+        x["amount"], x["extra"] = a, {"chargedAmount": e}
+        c.payload["chargedAmount"] = c.rng.choice([a, e, ""])
+
+
+# accepted.scheme values on both sides of the table of spec §4.3 (exact match only)
+SCHEMES = ["exact", "upto", "batch-settlement", "auth-capture", "streaming", "Exact", "UPTO",
+           "batch-Settlement", "batch_settlement", "exact ", "", 5, None, ["exact"], {"s": "exact"}]
+
+
+def op_ctx_scheme(c):
+    """The accepted scheme decides where the charged amount is (spec §4.3, §5.8),
+    and whether it is compared at all. The receipt commits to the requirements
+    held, so §5.9 does not decide; the receipt's value sits at one location."""
+    acc = c.context.get("accepted")
+    if not isinstance(acc, dict):
+        acc = copy.deepcopy(A.ACCEPTED)
+        c.context["accepted"] = acc
+    s = c.rng.choice(SCHEMES + ["<absent>"])
+    if s == "<absent>":
+        acc.pop("scheme", None)
+    else:
+        acc["scheme"] = s
+    c.payload["requirementsDigest"] = A.sha256_tag(to_bytes(loose(acc)))
+    x, r = c.context, c.rng.random()
+    v = c.rng.choice(AMOUNTS[:8])
+    if r < 0.35:
+        x["amount"] = v
+        c.payload["chargedAmount"] = v
+    elif r < 0.7:
+        x["extra"] = {"chargedAmount": v}
+        c.payload["chargedAmount"] = v
+    elif r < 0.85:
+        x["amount"], x["extra"] = v, {"chargedAmount": c.rng.choice(AMOUNTS[:8])}
+        c.payload["chargedAmount"] = c.rng.choice([v, x["extra"]["chargedAmount"], ""])
+    else:
+        c.payload["chargedAmount"] = ""
 
 
 def op_digest(c):
@@ -809,7 +856,7 @@ OPERATORS = [
     (op_bindings_wellformed, 3), (op_ctx_number_spelling, 2),
     (op_ctx_requirements_network, 2), (op_ctx_paid_resource, 3),
     (op_header_value, 4), (op_header_text, 5), (op_ctx_config, 5), (op_payer_free, 2),
-    (op_network_non_evm, 4), (op_charged_amount, 3), (op_ctx_charged, 4),
+    (op_network_non_evm, 4), (op_charged_amount, 3), (op_ctx_charged, 4), (op_ctx_scheme, 4),
 ]
 RAW_OPS = {op_raw_whitespace, op_raw_number, op_raw_escape, op_raw_structure, op_raw_bytes,
            op_payload_scalar}
@@ -885,11 +932,72 @@ def derived_cases(case):
     return out
 
 
+# --- an independent oracle for the charged amount (spec §4.3 table, §5.8) ----
+# Restated here from the spec text, not imported from either verifier.
+
+def _well_formed(s: str) -> bool:
+    try:
+        s.encode("utf-8")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _in_value_domain(v, level: int = 0) -> bool:
+    """Spec §4.6 over a parsed JSON value: safe integers by value, well-formed
+    strings and member names, containers at most 8 levels deep."""
+    if v is None or isinstance(v, bool):
+        return True
+    if isinstance(v, int):
+        return abs(v) <= 2**53 - 1
+    if isinstance(v, float):
+        return v == v and abs(v) <= 2**53 - 1 and v.is_integer()
+    if isinstance(v, str):
+        return _well_formed(v)
+    if isinstance(v, list):
+        return level < 8 and all(_in_value_domain(x, level + 1) for x in v)
+    if isinstance(v, dict):
+        return level < 8 and all(_well_formed(k) and _in_value_domain(x, level + 1) for k, x in v.items())
+    return False
+
+
+def expected_charged_amount(ctx):
+    """None when the verifier must not compare (no in-domain `accepted` object
+    with a string `scheme`); else the charged amount the table names, or ""."""
+    acc = ctx.get("accepted") if isinstance(ctx, dict) else None
+    if not (isinstance(acc, dict) and _in_value_domain(acc) and isinstance(acc.get("scheme"), str)):
+        return None
+    scheme = acc["scheme"]
+    if scheme in ("exact", "upto"):
+        v = ctx.get("amount")
+    elif scheme == "batch-settlement":
+        extra = ctx.get("extra")
+        v = extra.get("chargedAmount") if isinstance(extra, dict) else None
+    else:
+        v = None
+    return v if isinstance(v, str) and v != "" and _well_formed(v) else ""
+
+
 def properties(name: str, res: dict, by_id: dict, origin: dict) -> list:
-    """Oracle-free properties P1..P7 on ONE implementation's results."""
+    """Oracle-free properties P1..P7, and the charged-amount oracle P8, on ONE
+    implementation's results."""
     violations = []
     for cid, (verdict, reason, report) in res.items():
         valid = config_valid(by_id[cid]["context"])
+        if verdict == A.PASS and isinstance(report, dict):
+            want = expected_charged_amount(by_id[cid]["context"])
+            got = (report.get("checks") or {}).get("chargedAmount")
+            if got != ("not_compared" if want is None else "compared"):
+                violations.append(("P8", name, cid, f"checks.chargedAmount {got}, the table says "
+                                                    f"{'not_compared' if want is None else 'compared'}"))
+            elif want is not None:
+                try:
+                    signed = json.loads(payload_bytes_of(by_id[cid]["receipt"]) or b"{}").get("chargedAmount")
+                except (ValueError, AttributeError):
+                    signed = None
+                if signed != want:
+                    violations.append(("P8", name, cid, f"PASS with chargedAmount {signed!r}; the response's "
+                                                        f"charged amount is {want!r}"))
         if not valid and (verdict, reason) != (A.ERROR, CONFIG_ERROR):
             violations.append(("P7", name, cid, f"configuration outside the contract gave {verdict}/{reason}"))
         if valid and verdict == A.ERROR:

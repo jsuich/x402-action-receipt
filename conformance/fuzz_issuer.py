@@ -22,9 +22,10 @@ issuer adapter (ISSUER ADAPTER PROTOCOL in CONFORMANCE.md), and reports:
             is true; accepted is byte-equal to an entry of accepts; network,
             resourceUrl, the action and the status are copied; settlementRef
             is the reference §4.3's table names for accepted.scheme and
-            accepted.network, or ""; chargedAmount is extra.chargedAmount, else
-            amount, each when present, or ""; requirementsDigest is the digest
-            of accepted
+            accepted.network, or ""; chargedAmount is the value at the location
+            §4.3's table names for accepted.scheme (amount under exact and upto,
+            extra.chargedAmount only under batch-settlement, nothing otherwise)
+            when present, or ""; requirementsDigest is the digest of accepted
 
     python3 conformance/fuzz_issuer.py --seed 1 --n 2000
     python3 conformance/fuzz_issuer.py --issuer mine="java -jar my-issuer.jar"
@@ -157,6 +158,39 @@ def x_charged_amount(r, x):
         # the batch shape: both, differing
         resp["amount"] = r.choice(["50000", "", "010", "10000"])
         _extra(x)["chargedAmount"] = r.choice(["2500", "0", "", "007", 2500])
+
+
+# accepted.scheme on both sides of the charged-amount table of §4.3 (exact match)
+CHARGED_SCHEMES = ["exact", "upto", "batch-settlement", "auth-capture", "streaming", "Exact", "UPTO",
+                   "batch-Settlement", "batch_settlement", "upto ", "", 7, None]
+
+
+def x_charged_scheme(r, x):
+    """accepted.scheme decides which location holds the charged amount (§4.3):
+    the scheme is changed (and offered), and the response carries a value at
+    one location, the other, both, or neither."""
+    acc = x["paymentPayload"]["accepted"]
+    s = r.choice(CHARGED_SCHEMES + ["<absent>"])
+    if s == "<absent>":
+        acc.pop("scheme", None)
+    else:
+        acc["scheme"] = s
+    resp = x["settlementResponse"]
+    c = r.randrange(4)
+    if c == 0:
+        resp["amount"] = r.choice(CHARGED_VALUES[:9])
+        resp.pop("extra", None)
+    elif c == 1:
+        resp.pop("amount", None)
+        _extra(x)["chargedAmount"] = r.choice(CHARGED_VALUES[:9])
+    elif c == 2:
+        resp["amount"] = r.choice(["1500", "100000", "010", ""])
+        _extra(x)["chargedAmount"] = r.choice(["700", "0", "007", "", 700])
+    else:
+        resp["amount"] = r.choice(["1500", "95000", "2000"])
+        _extra(x).pop("chargedAmount", None)
+    if r.random() < 0.9:
+        x["paymentRequired"]["accepts"] = [copy.deepcopy(acc)]
 
 
 def x_no_tx_with_ref(r, x):
@@ -449,7 +483,7 @@ OPERATORS = [
     (x_auth_from, 3), (x_accepted_shape, 1), (x_accepted_network, 3), (x_accepted_payto, 3),
     (x_accepted_member, 4), (x_accepts, 5), (x_non_evm, 2), (x_resource, 3), (x_statement_ids, 6),
     (x_statement_types, 4), (x_statement_action, 6), (x_statement_shape, 2), (x_bindings, 6),
-    (x_advertise, 6), (x_top, 1), (x_statement_unicode, 3), (x_charged_amount, 5),
+    (x_advertise, 6), (x_top, 1), (x_statement_unicode, 3), (x_charged_amount, 5), (x_charged_scheme, 5),
 ]
 
 
@@ -546,16 +580,23 @@ def table_reference(accepted, resp) -> str:
     return v if isinstance(v, str) and v and A.in_domain(v) else ""
 
 
-def found_charged_amount(resp) -> str:
-    """§4.3, written here a third time: extra.chargedAmount when present (§4.6),
-    else amount when present, else ""; whatever the scheme."""
-    if not isinstance(resp, dict):
+def found_charged_amount(accepted, resp) -> str:
+    """§4.3's charged-amount table, written here a third time (independently of
+    issuer.py, issuer.mjs and both verifiers): by accepted.scheme compared
+    exactly, `exact` and `upto` name SettlementResponse.amount,
+    `batch-settlement` names SettlementResponse.extra.chargedAmount and never
+    amount, and every other scheme names nothing. The value there when present
+    (§4.6), else ""."""
+    scheme = accepted.get("scheme") if isinstance(accepted, dict) else None
+    resp = resp if isinstance(resp, dict) else {}
+    if scheme == "exact" or scheme == "upto":
+        v = resp.get("amount")
+    elif scheme == "batch-settlement":
+        extra = resp.get("extra")
+        v = extra.get("chargedAmount") if isinstance(extra, dict) else None
+    else:
         return ""
-    extra = resp.get("extra")
-    for v in ((extra.get("chargedAmount") if isinstance(extra, dict) else None), resp.get("amount")):
-        if isinstance(v, str) and v and A.in_domain(v):
-            return v
-    return ""
+    return v if isinstance(v, str) and v != "" and V._well_formed(v) else ""
 
 
 def copies_sources(exchange, payload) -> list[str]:
@@ -582,7 +623,7 @@ def copies_sources(exchange, payload) -> list[str]:
         out.append("resourceUrl not copied verbatim")
     if payload.get("settlementRef") != table_reference(acc, resp):
         out.append("settlementRef is not the reference §4.3's table names, copied verbatim")
-    if payload.get("chargedAmount") != found_charged_amount(resp):
+    if payload.get("chargedAmount") != found_charged_amount(acc, resp):
         out.append("chargedAmount is not the value §4.3 finds in the response, copied verbatim")
     if payload.get("settlementStatus") != st.get("settlementStatus") or payload.get("receiptId") != st.get("receiptId"):
         out.append("status or receiptId not copied")

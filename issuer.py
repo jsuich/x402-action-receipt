@@ -762,6 +762,8 @@ SUITE = [
     E("issue_charged_amount_batch_extra_zero", {"chargedAmount": "0", **_EVM_BATCH_EXPECT},
       **evm_batch(amount="4200", extra={"chargedAmount": "0"})),
     E("issue_charged_amount_amount_surrogate", {"chargedAmount": ""}, settlementResponse__amount="1\ud800"),
+    E("issue_charged_amount_batch_extra_surrogate", {"chargedAmount": "", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount=DELETE, extra={"chargedAmount": "2500\ud800"})),
     # under batch-settlement the top-level amount is never read, so its grammar is not judged
     E("issue_charged_amount_batch_amount_out_of_grammar_ignored", {"chargedAmount": "2500", **_EVM_BATCH_EXPECT},
       **evm_batch(amount="010", extra={"chargedAmount": "2500"})),
