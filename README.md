@@ -77,11 +77,11 @@ the cycle; it is never counted as a pass.
 | python | the reference verifier reproduces the manifest, cross-checked against an independent RFC 8785 library |
 | python-a, node | each verifier, driven through the adapter protocol by `run_vectors.py`, reproduces the manifest, including follow-up cases it cannot look up by name |
 | example | the second verifier reproduces the spec's worked example from the spec text |
-| flips | each of 138 checks across both verifiers, disabled, is caught by a named vector |
+| flips | each of 153 checks across both verifiers, disabled, is caught by a named vector |
 | fuzz | the two verifiers agree on generated receipts, headers and configurations, and the oracle-free properties hold on both |
 | issuer | the reference issuer reproduces the exchange manifest; every receipt it issues, signed, verifies through both verifiers with the report §6.3 promises |
 | issuer-n | the second issuer reproduces the manifest under opaque ids, plus follow-ups and protocol cases |
-| issuer-fl | each of 119 issuer checks across both issuers, disabled, is caught by a named case |
+| issuer-fl | each of 133 issuer checks across both issuers, disabled, is caught by a named case |
 | issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |
 
 Each instrument has a control: the flip probes end with an unpatched run that

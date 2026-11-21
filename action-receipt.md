@@ -302,11 +302,15 @@ did not carry, and MUST NOT compute one. A scheme whose result has an empty
 `transaction` and no row here is not covered (§1.3).
 
 **The settlement reference of an exchange** is found by this table and nothing
-else: take `accepted.scheme` and `accepted.network`; if a row matches (the
-`*` matches any reference after the namespace), the reference is the value at
+else: take `accepted.scheme` and `accepted.network`; if a row matches, the
+reference is the value at
 that row's location in the `SettlementResponse` when present (§4.6); otherwise
 the exchange has no settlement reference. A value at that location under a
-scheme or network with no row is not a settlement reference. The issuer and a
+scheme or network with no row is not a settlement reference. A row matches when
+`accepted.scheme` equals the row's scheme exactly and `accepted.network` begins
+with the row's namespace followed by `:` (`solana:*` matches `solana:` followed
+by anything, whether or not it is a valid network identifier: step 5 of §6.2
+judges that, not this lookup). No case folding is applied. The issuer and a
 verifier that holds `accepted` find the same one.
 
 **`payer`.** The payer is `SettlementResponse.payer`. When the response has
@@ -1214,8 +1218,10 @@ What conformance does and does not show:
   implementation with the repository's own. A third-party implementation is
   tested against the fixed manifests, and should also be run through the fuzzers
   as an extra adapter.
-- The exchanges and vectors are `exact`-shaped messages. Networks other than
-  `eip155` appear, but no vector was produced by another scheme's SDK.
+- The exchanges and vectors are mostly `exact`-shaped messages, with Solana and
+  Cloudflare `batch-settlement`, SVM `exact` and Permit2 shapes alongside. They
+  were written by hand from the upstream specifications; none was produced by a
+  scheme's SDK.
 
 All settlement identifiers in the vectors are synthetic.
 

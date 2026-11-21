@@ -174,15 +174,16 @@ neither implementer had used:
 
 | Check | Result |
 |---|---|
-| `cycle.py --seeds 121,122,123 --n 3000` | 12 of 12 stages pass, 0 void |
-| Verifier vectors | 229 (60 positive, 152 negative, 17 configuration), every report declared by hand; both verifiers agree on all of them through the adapter runner |
-| Issuer exchanges | 158 (60 issued, 98 refused); every issued payload, signed, passes both verifiers with the §6.3 report |
-| Verifier flips | 138 of 138 caught by a named vector (93 Python, 45 JavaScript) |
-| Issuer flips | 119 of 119 caught by a named case (73 Python, 46 JavaScript) |
+| `cycle.py --seeds 181,182,183 --n 3000` (final tree) | 12 of 12 stages pass, 0 void |
+| Verifier vectors | 256 (71 positive, 166 negative, 19 configuration), every report declared by hand; both verifiers agree on all of them through the adapter runner |
+| Issuer exchanges | 178 (63 issued, 115 refused); every issued payload, signed, passes both verifiers with the §6.3 report |
+| Verifier flips | 153 of 153 caught by a named vector (102 Python, 51 JavaScript) |
+| Issuer flips | 133 of 133 caught by a named case (79 Python, 54 JavaScript) |
 | Fuzzing | 9000 verifier cases and 9000 exchanges, 0 disagreements, 0 property violations |
 | Reviewer E's 14 surviving mutants | all killed by fixed cases |
 | New mutants by the implementers | verifier 19 of 20 killed by fixed vectors (survivor argued equivalent); issuer 18 of 18 after six witnesses were added (12 of 18 before) |
-| Mutants by the author | three (freshness skew `<=`, binding count 17, offered requirements compared by amount only): all killed by fixed cases |
+| Mutants by the author | four (freshness skew `<=`, binding count 17, offered requirements compared by amount only, settlement-reference namespace matched without its `:`): all killed by fixed cases |
+| Pre-publication reviewer's 21 mutants on rules new in 0.4 | 4 survived the cycle before the fixes below; after them all 21 are killed by fixed cases, none by fuzzing alone |
 | Signing | 1200 signatures (400 per algorithm, 800 of them ECDSA with a stock randomized signer, low-`s` normalized), all pass both verifiers; without normalization 45 to 58 of 100 ECDSA signatures are rejected |
 | 0.3 implementations against the 0.4 suite | every B and D defect shows as a red vector |
 
@@ -190,6 +191,29 @@ One defect introduced during the fix: commit `d920250` added a paragraph to
 §5.13 that the verifier suite's reason-code drift check read as a new reason
 code, and the author ran only the trace after that edit, not the cycle. The
 issuer implementer found it, and `af226c9` makes the check read only the table.
+
+### Pre-publication review
+
+A seventh reviewer, new to the work, read the finished revision before
+publication and judged it not fit as it stood:
+
+- **The issuer exchanges contradicted §4.3.** The issuer protocol handed the
+  settlement reference in from outside, so no issuer applied the §4.3 table, and
+  five EVM `exact` exchanges expected a reference the spec forbids. An issuer
+  written to the letter of §4.3 failed them. This is the class C-F1 was about,
+  in a new place: the implementation and the test agreed with each other and not
+  with the text. Fixed: §4.3 states the lookup exactly, both issuers apply it,
+  the out-of-band input is gone, and the exchanges were rewritten in shapes §4.3
+  allows.
+- **Four mutants on rules new in 0.4 survived the full cycle** (a `.` admitted in
+  the network reference by an issuer and by a verifier; `checks.advertisement`
+  wrong when other bindings are present; a negative clock refused). Each now
+  fails a fixed case, and every configuration and value-domain bound has a case
+  on both sides.
+- **Published claims were false**: that the JavaScript implementations are
+  independent (true only through 0.3), that every bound had both sides, and
+  that the vectors are all `exact`-shaped. Corrected in §7, the README and this
+  file.
 
 Remaining limits, as stated in §7: every implementation came from one working
 session; `did:web` and authorization "as of `issuedAt`" are implemented nowhere;
