@@ -1,12 +1,15 @@
 # Test cycles
 
-A record of each test cycle run against draft 0.3: what ran, what it found, and
-what changed as a result. Add an entry whenever a cycle finds something or the
-harness changes. A cycle that finds nothing is recorded in one line.
+A record of each test cycle run against drafts 0.3 and 0.4: what ran, what it
+found, and what changed as a result. Add an entry whenever a cycle finds
+something or the harness changes. A cycle that finds nothing is recorded in one
+line.
 
 How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --save <dir>`.
 Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
-31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73.
+31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73, 81 to 83, 91 and 92, 101 to
+103 (the CI workflow's fixed seeds, run on every push), 111 to 113, 121 to 123,
+131 and 132, 141, 151 to 153, 161 and 162, 171 and 172.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
@@ -161,17 +164,56 @@ Seeds 61 to 64 ran on an export of the committed tree before this change; seeds
 71 to 73 after it: 15,000 cases and 15,000 exchanges, 0 disagreements, all eleven
 stages passed. 95 vectors, 47 exchanges.
 
+## Cycle 10 — 2026-11-20 (draft 0.4: review, pre-publication review)
+
+**Six-reviewer review of 0.3.** Its findings, dispositions and how each code
+disposition was verified are in `conformance/REVIEW-0.4.md`; draft 0.4 is the
+result. The 0.4 work ran seeds 81 to 83, 91 and 92, 111 to 113, 121 to 123,
+131 and 132, and 141.
+
+**Pre-publication review of 0.4.** A further reviewer read the 0.4 text and
+code, ran 21 hand-written mutants of the four implementations through the full
+cycle (seeds 131 and 132, 2,000 each) and cross-checked both verifiers on
+generated receipts. It found:
+
+| # | Finding | Class | Resolution |
+|---|---|---|---|
+| 21 | The issuer exchanges handed the settlement reference in as a top-level `settlementReference`, outside the x402 objects. Five EVM `exact` exchanges (`issue_batch`, `issue_settlement_ref_upper_case_evm`, `issue_transaction_wrong_type_with_reference`, `issue_surrogate_response_transaction`, `issue_both_identifiers`) expected a `settlementRef` that the settlement result never carried, which §4.3 forbids; an issuer that found the reference by the table was red on all five | B + C | §4.3 now says the reference of an exchange is found by the table from `accepted.scheme` and `accepted.network` and nothing else. Both issuers do that; the input is gone from the exchanges and the adapter protocol. The five, and `issue_surrogate_settlement_reference`, are Solana `batch-settlement` exchanges testing the same rules (`issue_settlement_ref_upper_case_evm` is now `issue_settlement_ref_upper_case_verbatim`). New exchanges: `commitmentId` under `exact` or off `solana` is no reference; empty, non-string or missing `commitmentId` gives none; scheme and namespace match exactly; a top-level `settlementReference` is ignored. Requirements I-SET-1, I-SET-2 now cite them; I-SET-3 added |
+| 22 | Four mutants survived the whole cycle: the second issuer's network regex admitting `.` (M16), the reference verifier admitting `.` in the network reference (M10b), `checks.advertisement` reported `not_evaluated` instead of `absent` beside other bindings (M05b), a negative clock treated as a configuration error (M12b) | suite gap | Fixed cases for each: `refuse_network_reference_dot`, `neg_schema_network_reference_dot`, `pos_advertisement_absent_other_bindings`, `pos_clock_negative_archival`; and both sides of every configuration bound (clock ±(2^53 - 1) valid, ±2^53 `ERROR`; `maxAgeSeconds` 0 and 2^53 - 1 valid, 2^53 `ERROR`, a receipt one second old stale under 0). Sweeping the other bounds of §3, §4.5, §4.6 and §5 added: `issuedAt` at -(2^53 - 1) and -(2^53), payload nesting 8, held requirements and advertised `info` at 2^53 - 1 / 2^53 and 8 / 9 levels, binding prefix, name and value of length 0, characters 0x20 and 0x7F. Each new rule has a flip |
+| 23 | Rules caught only by a fuzzer, never by a named case: step 4 comparing `asset` and `maxTimeoutSeconds`, a supplied `action-receipt:reversal-transaction` binding, `authorization.from` off `eip155` (M06, M17, M07, M14 were killed by the fuzzers and by flip-probe setup errors, not by an exchange) | suite gap | Exchanges `refuse_offered_asset_changed`, `refuse_offered_max_timeout_changed`, `refuse_offered_scheme_changed`, `refuse_offered_network_changed`, `refuse_binding_reserved_reversal_type`, `issue_payer_from_authorization_non_evm`; issuer flips for each |
+| 24 | The text claimed the JavaScript implementations were independent of the Python ones; for 0.4 each side was revised by one implementer, and both verifiers use OpenSSL | B (text wrong) | §7 and the README now say so, and say some defects are caught only by the fuzzers |
+| 25 | §5.8's new consumer sentence had no requirement | suite gap | C-13 (consumer, untested) |
+| 26 | A line beginning with a UTF-8 byte-order mark: the Node issuer stripped it and issued, the Python issuer answered `invalid_input` | A (Node) | Both answer `invalid_input`; protocol case `not_json_leading_bom`; flip |
+| 27 | `cycle.py` ignored the fuzzers' exit codes and `fuzz_issuer.py`'s `status`, `problems` and `operators_never_applied`; `--seeds 7,7` ran a seed twice; `flip_issuer.py` and `flip_probe.py` passed with an empty flip list; `run_exchanges.py --help` raised a traceback; the CI comment named a local cycle's seeds and said CI explores | C | Each fixed; a fuzzer that reports a problem fails its stage |
+
+**This cycle.** Seeds 151 to 153, 3,000 each: 9,000 cases and 3,328 follow-ups
+through both verifiers, 9,000 exchanges and 5,462 round trips through both
+issuers and both verifiers; 0 disagreements, 0 property violations, all twelve
+stages passed. 256 vectors, 178 exchanges, 153 verifier flips, 133 issuer
+flips, 156 requirements (124 tested). Seeds 161 and 162 ran one fuzzer each
+while the fixes were made.
+
+The reviewer's 21 mutants were re-run against the result: with the fixed-case
+stages alone (`cycle.py --quick`) all 21 are killed, each by a named vector or
+exchange. Through the full cycle (seeds 171 and 172, 3,000 each) all 21 are
+killed as well; none survives. A flip-probe stage that fails only with "broken"
+or "setup errors" is an artifact of the mutant editing the line a flip patches,
+not a detection, so it is not counted as a kill above. The mutant labelled M15
+by the reviewer (find the reference by the table) is now the correct
+behaviour; it was re-run reversed (the old out-of-band read) and is killed by
+eight exchanges.
+
 ## Known limits of this process
 
 - Both verifiers were written in one working session, one of them from the spec
-  text alone. Agreement between them is weaker evidence than agreement with an
-  implementation by someone else.
+  text alone; for draft 0.4 one implementer revised both. Agreement between them
+  is weaker evidence than agreement with an implementation by someone else.
 - The fuzzer compares the two implementations with each other. A reading that
   both share and that is wrong is invisible to it; only the properties (P1 to P6)
   and the hand-declared vector expectations stand against that.
 - The properties are few and all concern a passing receipt.
-- 24 of 101 requirements are not tested, 9 of them verifier requirements. They
-  are listed with reasons in `CONFORMANCE.md`.
+- 32 of 156 requirements are not tested, 8 of them verifier requirements (draft
+  0.4, cycle 10). They are listed with reasons in `CONFORMANCE.md`.
 - Issuer conformance covers the payload an issuer builds and its refusals. It
   does not cover signing, the randomness of `receiptId`, or key retention.
 - The scheme-payload payer is defined for one field,
