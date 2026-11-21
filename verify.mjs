@@ -1,11 +1,13 @@
-// Clean-room verifier for the x402 `action-receipt` extension, draft 0.3.
-// Written from action-receipt.md alone. Node built-ins only.
+// Second verifier for the x402 `action-receipt` extension, draft 0.4.
+// Written from action-receipt.md. Node built-ins only.
 //
 //   node verify.mjs            run every vector in vectors/MANIFEST.json
 //   node verify.mjs --example  check the worked example of spec section 4.7
 //
+// Exit 0 only if something was checked and all of it held: an empty manifest,
+// or a run that checked nothing, exits non-zero.
 import { createHash, createPublicKey, verify as cryptoVerify } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -16,6 +18,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 const isObj = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string';
+const own = (o, n) => (isObj(o) && Object.hasOwn(o, n) ? o[n] : undefined);
 const sha256hex = (buf) => createHash('sha256').update(buf).digest('hex');
 
 function hasExactly(o, names) {
@@ -25,7 +28,7 @@ function hasExactly(o, names) {
   return true;
 }
 
-// ASCII-only lowercasing (spec 5.8: "lowercases"); avoids Unicode case mapping.
+// ASCII-only lowercasing (spec 5.8: "ASCII A-Z to a-z"); no Unicode case mapping.
 const asciiLower = (s) => s.replace(/[A-Z]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 32));
 
 // Strict unpadded base64url (spec 3, 5.1 step 1). Returns Buffer or null.
@@ -49,6 +52,8 @@ function utf8Strict(buf) {
 // ------------------------------------------------- value domain (spec 4.6)
 
 const MAX_DEPTH = 8;
+const MAX_COMPACT = 65536;     // spec 3, 5.1
+const DEFAULT_MAX_AGE = 3600;  // spec 5, 5.10
 
 // A scalar has depth 0; a container is one level deeper than its deepest child.
 function inDomain(v, level = 0) {
@@ -70,6 +75,9 @@ function inDomain(v, level = 0) {
   }
   return false;
 }
+
+// "Present" (spec 4.6): a non-empty string of well-formed Unicode. Anything else is absent.
+const present = (v) => isStr(v) && v !== '' && v.isWellFormed();
 
 // ---------------------------------- RFC 8785 over the domain of spec 4.6
 
@@ -110,11 +118,28 @@ function jcsText(v) {
 
 export const jcs = (v) => Buffer.from(jcsText(v), 'utf8');
 
+// The test of spec 5.2, used for the payload and (5.1 step 1) for the header:
+// valid UTF-8, parses as JSON, in the value domain, and JCS(parsed) == bytes.
+// Returns { ok: true, value } or { ok: false }.
+function parseCanonical(buf) {
+  const t = utf8Strict(buf);
+  if (t === null) return { ok: false };
+  let v;
+  try {
+    v = JSON.parse(t);
+  } catch {
+    return { ok: false };
+  }
+  if (!inDomain(v)) return { ok: false };
+  if (!jcs(v).equals(buf)) return { ok: false };
+  return { ok: true, value: v };
+}
+
 // ------------------------------------------------------ grammar (spec 4.6)
 
 const RE = {
   receiptId: /^[A-Za-z0-9_-]{22,64}$/,
-  caip2: /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$/,
+  network: /^[-a-z0-9]{3,32}:[-_a-zA-Z0-9]{1,32}$/,   // a "network identifier"
   evmAddr: /^0x[0-9a-f]{40}$/,
   evmTx: /^0x[0-9a-f]{64}$/,
   digest: /^sha256:[0-9a-f]{64}$/,
@@ -132,6 +157,8 @@ const OUTCOMES = ['delivered', 'partial', 'failed'];
 const STATUSES = ['settled', 'capturePending', 'reversed', 'refunded'];
 const ALGS = ['ES256', 'ES256K', 'EdDSA'];
 const TYP = 'x402-action-receipt+jws';
+const BT_ADVERTISED = 'action-receipt:advertised-info';
+const BT_REVERSAL = 'action-receipt:reversal-transaction';
 
 // Curve orders, for the low-s rule (spec 3, 5.6).
 const ORDER = {
@@ -142,24 +169,91 @@ const CURVE = { ES256: 'prime256v1', ES256K: 'secp256k1' };
 
 // --------------------------------------------- fixture resolver (spec 7)
 
+const PEM_RE = /^-----BEGIN PUBLIC KEY-----\n((?:[A-Za-z0-9+/=]+\n)+)-----END PUBLIC KEY-----\n?$/;
+
+// A key this verifier can use at all (spec 5.5): the kinds of the three
+// algorithms of spec 3. Whether the kind matches `alg` is spec 5.6.
+function usableKind(key) {
+  if (key.asymmetricKeyType === 'ed25519') return true;
+  return key.asymmetricKeyType === 'ec'
+    && Object.values(CURVE).includes(key.asymmetricKeyDetails?.namedCurve);
+}
+
+// Spec 5 inputs, 5.5, 7: only a SubjectPublicKeyInfo public key is usable. One
+// PEM block armoured PUBLIC KEY, nothing around it, canonical base64 and
+// canonical DER (it re-exports to the same bytes), of a usable kind. A private
+// key or a certificate is not one (createPublicKey would derive or extract one).
+export function parsePublicKey(pem) {
+  if (!isStr(pem)) return null;
+  const m = PEM_RE.exec(pem);
+  if (!m) return null;
+  const body = m[1].replace(/\n/g, '');
+  const der = Buffer.from(body, 'base64');
+  if (der.toString('base64') !== body) return null;
+  let key;
+  try {
+    key = createPublicKey({ key: der, format: 'der', type: 'spki' });
+  } catch {
+    return null;
+  }
+  if (!usableKind(key)) return null;
+  let again;
+  try {
+    again = key.export({ type: 'spki', format: 'der' });
+  } catch {
+    return null;
+  }
+  return again.equals(der) ? key : null;
+}
+
+// Returns null when `keys` is not a fixture at all (a configuration error).
 export function fixtureResolver(keys) {
-  const list = (name) => (Object.hasOwn(keys, name) && Array.isArray(keys[name]) ? keys[name] : []);
+  if (!isObj(keys)) return null;
+  // A value that is not an array of strings authorizes nothing (spec 7).
+  const list = (name) => {
+    const v = own(keys, name);
+    return Array.isArray(v) && v.every(isStr) ? v : [];
+  };
   return {
-    // spec 5.4 (a) and (b)
-    isAuthorized(kid, resourceUrl, payTo) {
-      return list(`__service__:${resourceUrl}`).includes(kid)
-        || list(`__payTo__:${payTo}|${resourceUrl}`).includes(kid);
+    // spec 5.4: 'authorized' | 'not_authorized' | 'no_answer'
+    authorize(kid, resourceUrl, payTo) {
+      if (own(keys, `__unavailable__:${resourceUrl}`) === true) return 'no_answer';
+      if (list(`__service__:${resourceUrl}`).includes(kid)) return 'authorized';
+      if (list(`__payTo__:${payTo}|${resourceUrl}`).includes(kid)) return 'authorized';
+      return 'not_authorized';
     },
     // spec 5.5: returns a KeyObject or null
     resolveKey(kid) {
-      if (!Object.hasOwn(keys, kid) || !isStr(keys[kid])) return null;
-      try {
-        return createPublicKey(keys[kid]);
-      } catch {
-        return null;
-      }
+      return parsePublicKey(own(keys, kid));
     },
   };
+}
+
+// ---------------------------------- verifier configuration (spec 5 inputs)
+
+// Returns { mode, now, maxAge, paid } or null when the configuration is outside
+// the contract. `paid` is null when the verifier did not make the payment.
+// A member that is absent (or `undefined`) is absent; `null` is absent only for
+// the paid resource URL, whose absence the contract names; a `null` maximum age
+// is a value the verifier cannot read, so it is outside the contract.
+export function configuration(ctx, resolver) {
+  if (!isObj(ctx)) return null;
+  if (resolver === null || typeof resolver !== 'object'
+      || typeof resolver.authorize !== 'function' || typeof resolver.resolveKey !== 'function') return null;
+  const mode = own(ctx, 'mode');
+  if (mode !== 'session' && mode !== 'archival') return null;
+  const now = own(ctx, 'now');
+  if (!Number.isSafeInteger(now)) return null;
+  let maxAge = DEFAULT_MAX_AGE;
+  const m = own(ctx, 'maxAgeSeconds');
+  if (m !== undefined) {
+    if (!Number.isSafeInteger(m) || m < 0) return null;
+    maxAge = m === 0 ? 0 : m;
+  }
+  let paid = own(ctx, 'paidResourceUrl');
+  if (paid === undefined || paid === null) paid = null;
+  else if (!isStr(paid)) return null;
+  return { mode, now: now === 0 ? 0 : now, maxAge, paid };
 }
 
 // ------------------------------------------------- verification (spec 5)
@@ -167,65 +261,58 @@ export function fixtureResolver(keys) {
 const reject = (reason) => ({ verdict: 'REJECT', reason });
 
 export function verify(receipt, ctx, resolver) {
+  let cfg;
   try {
-    return verifyInner(receipt, ctx, resolver);
+    cfg = configuration(ctx, resolver);
   } catch (e) {
-    return { verdict: 'ERROR', error: String(e && e.message ? e.message : e) };
+    return { verdict: 'ERROR', reason: 'verifier_fault', error: String(e && e.message ? e.message : e) };
+  }
+  if (cfg === null) {
+    return { verdict: 'ERROR', reason: 'invalid_configuration', error: 'configuration outside the contract of spec 5' };
+  }
+  try {
+    return verifyInner(receipt, ctx, cfg, resolver);
+  } catch (e) {
+    return { verdict: 'ERROR', reason: 'verifier_fault', error: String(e && e.message ? e.message : e) };
   }
 }
 
-function verifyInner(receipt, ctx, resolver) {
+function verifyInner(receipt, ctx, cfg, resolver) {
   // ---- 5.1 envelope and header
-  if (!isObj(receipt) || receipt.format !== 'jws' || !isStr(receipt.signature)) {
-    return reject('invalid_payload');
-  }
-  const segs = receipt.signature.split('.');
+  if (!isObj(receipt) || own(receipt, 'format') !== 'jws') return reject('invalid_payload');
+  const compact = own(receipt, 'signature');
+  if (!isStr(compact) || compact.length > MAX_COMPACT) return reject('invalid_payload');
+  const segs = compact.split('.');
   if (segs.length !== 3) return reject('invalid_payload');
   const dec = segs.map(b64urlDecode);
   if (dec.some((d) => d === null)) return reject('invalid_payload');
-  let header;
-  {
-    const t = utf8Strict(dec[0]);
-    if (t === null) return reject('invalid_payload');
-    try {
-      header = JSON.parse(t);
-    } catch {
-      return reject('invalid_payload');
-    }
-    if (!isObj(header)) return reject('invalid_payload');
-  }
-  const h = (n) => (Object.hasOwn(header, n) ? header[n] : undefined);
-  if (h('typ') !== TYP) return reject('invalid_actionreceipt_typ');
-  if (!ALGS.includes(h('alg'))) return reject('invalid_actionreceipt_alg');
+  // The header has one spelling: it passes the canonical-bytes test of 5.2.
+  const hp = parseCanonical(dec[0]);
+  if (!hp.ok || !isObj(hp.value)) return reject('invalid_payload');
+  const header = hp.value;
+  if (own(header, 'typ') !== TYP) return reject('invalid_actionreceipt_typ');
+  const alg = own(header, 'alg');
+  if (!isStr(alg) || !ALGS.includes(alg)) return reject('invalid_actionreceipt_alg');
   if (!hasExactly(header, ['alg', 'kid', 'typ']) || !isStr(header.kid)) {
     return reject('invalid_payload');
   }
-  const alg = header.alg;
   const kid = header.kid;
 
   // ---- 5.2 canonical bytes
   const B = dec[1];
-  let p;
-  {
-    const t = utf8Strict(B);
-    if (t === null) return reject('invalid_actionreceipt_canonicalization');
-    try {
-      p = JSON.parse(t);
-    } catch {
-      return reject('invalid_actionreceipt_canonicalization');
-    }
-    if (!inDomain(p)) return reject('invalid_actionreceipt_canonicalization');
-    if (!jcs(p).equals(B)) return reject('invalid_actionreceipt_canonicalization');
-  }
+  const pp = parseCanonical(B);
+  if (!pp.ok) return reject('invalid_actionreceipt_canonicalization');
+  const p = pp.value;
 
   // ---- 5.3 closed schema and field grammar
-  // 1
-  if (!isObj(p) || !hasExactly(p, PAYLOAD_MEMBERS) || !Number.isSafeInteger(p.version)) {
+  // 1: an object with an integer `version`
+  if (!isObj(p) || !Object.hasOwn(p, 'version') || !Number.isSafeInteger(p.version)) {
     return reject('invalid_payload');
   }
-  // 2
+  // 2: before the member set
   if (p.version !== 1) return reject('invalid_actionreceipt_version');
   // 3
+  if (!hasExactly(p, PAYLOAD_MEMBERS)) return reject('invalid_payload');
   {
     const a = p.action;
     if (!isObj(a) || !hasExactly(a, ACTION_MEMBERS)) return reject('invalid_payload');
@@ -237,9 +324,10 @@ function verifyInner(receipt, ctx, resolver) {
     const ok =
       Number.isSafeInteger(p.issuedAt) && p.issuedAt >= 0 &&
       RE.receiptId.test(p.receiptId) &&
-      RE.caip2.test(p.network) &&
-      p.resourceUrl !== '' && p.payer !== '' && p.payTo !== '' &&
-      (!evm || (RE.evmAddr.test(p.payer) && RE.evmAddr.test(p.payTo))) &&
+      RE.network.test(p.network) &&
+      p.resourceUrl !== '' && p.payTo !== '' &&
+      (!evm || RE.evmAddr.test(p.payTo)) &&
+      (!evm || p.payer === '' || RE.evmAddr.test(p.payer)) &&
       (!evm || p.transaction === '' || RE.evmTx.test(p.transaction)) &&
       !(p.transaction === '' && p.settlementRef === '') &&
       RE.digest.test(p.requirementsDigest) &&
@@ -254,6 +342,7 @@ function verifyInner(receipt, ctx, resolver) {
   if (!Array.isArray(p.bindings)) return reject('invalid_payload');
   // 7
   {
+    const evm = p.network.startsWith('eip155:');
     const bs = p.bindings;
     if (bs.length > 16) return reject('invalid_actionreceipt_binding');
     let prev = null;
@@ -262,6 +351,16 @@ function verifyInner(receipt, ctx, resolver) {
         || !RE.bindingType.test(b.type) || !RE.bindingValue.test(b.value)) {
         return reject('invalid_actionreceipt_binding');
       }
+      // the action-receipt: namespace is closed (spec 4.5.1, 4.5.2)
+      if (b.type.startsWith('action-receipt:')) {
+        if (b.type === BT_ADVERTISED) {
+          if (!RE.digest.test(b.value)) return reject('invalid_actionreceipt_binding');
+        } else if (b.type === BT_REVERSAL) {
+          if (evm && !RE.evmTx.test(b.value)) return reject('invalid_actionreceipt_binding');
+        } else {
+          return reject('invalid_actionreceipt_binding');
+        }
+      }
       if (prev !== null && !(prev < b.type)) return reject('invalid_actionreceipt_binding');
       prev = b.type;
     }
@@ -269,15 +368,14 @@ function verifyInner(receipt, ctx, resolver) {
 
   // ---- 5.4 a verifier that paid compares the URL it paid for
   let resourceCheck = 'not_compared';
-  const paid = isObj(ctx) ? ctx.paidResourceUrl : undefined;
-  if (isStr(paid) && paid !== '') {
-    if (p.resourceUrl !== paid) return reject('invalid_actionreceipt_resource_mismatch');
+  if (cfg.paid !== null) {
+    if (p.resourceUrl !== cfg.paid) return reject('invalid_actionreceipt_resource_mismatch');
     resourceCheck = 'compared';
   }
-  // ---- 5.4 signer authorization
-  if (!resolver.isAuthorized(kid, p.resourceUrl, p.payTo)) {
-    return reject('invalid_actionreceipt_signer');
-  }
+  // ---- 5.4 signer authorization: three answers
+  const answer = resolver.authorize(kid, p.resourceUrl, p.payTo);
+  if (answer === 'no_answer') return reject('invalid_actionreceipt_key_unresolved');
+  if (answer !== 'authorized') return reject('invalid_actionreceipt_signer');
 
   // ---- 5.5 key resolution
   const key = resolver.resolveKey(kid);
@@ -308,30 +406,33 @@ function verifyInner(receipt, ctx, resolver) {
   }
 
   // ---- 5.7 settlement success
-  const sr = isObj(ctx) ? ctx : {};
-  const present = (v) => isStr(v) && v !== '';
+  const sr = ctx;
   const evm = p.network.startsWith('eip155:');
-  const hasTx = present(sr.transaction);
-  const hasRef = present(sr.settlementRef);
-  if (sr.success !== true || !(hasTx || hasRef)) return reject('invalid_transaction_state');
+  const srTx = own(sr, 'transaction');
+  const srRef = own(sr, 'settlementRef');
+  const srPayer = own(sr, 'payer');
+  const srNet = own(sr, 'network');
+  const hasTx = present(srTx);
+  const hasRef = present(srRef);
+  if (own(sr, 'success') !== true || !(hasTx || hasRef)) return reject('invalid_transaction_state');
 
-  // ---- 5.8 settlement binding
+  // ---- 5.8 settlement binding (nothing but transaction and payer is normalized)
   const checks = { resourceUrl: resourceCheck };
   {
     const norm = (v) => (evm ? asciiLower(v) : v);
-    const txOk = hasTx ? p.transaction === norm(sr.transaction) : p.transaction === '';
-    const refOk = hasRef ? p.settlementRef === sr.settlementRef : p.settlementRef === '';
+    const txOk = hasTx ? p.transaction === norm(srTx) : p.transaction === '';
+    const refOk = hasRef ? p.settlementRef === srRef : p.settlementRef === '';
     let netOk = true;
-    if (isStr(sr.network) && RE.caip2.test(sr.network)) {
+    if (isStr(srNet) && RE.network.test(srNet)) {
       checks.network = 'compared';
-      netOk = p.network === sr.network;
+      netOk = p.network === srNet;
     } else {
       checks.network = 'not_compared';
     }
     let payerOk = true;
-    if (present(sr.payer)) {
+    if (present(srPayer)) {
       checks.payer = 'compared';
-      payerOk = p.payer === norm(sr.payer);
+      payerOk = p.payer === norm(srPayer);
     } else {
       checks.payer = 'not_compared';
     }
@@ -342,11 +443,11 @@ function verifyInner(receipt, ctx, resolver) {
 
   // ---- 5.9 payment requirements
   {
-    const acc = sr.accepted;
+    const acc = own(sr, 'accepted');
     if (isObj(acc) && inDomain(acc)) {
       const digest = 'sha256:' + sha256hex(jcs(acc));
-      const accPayTo = isObj(acc) && isStr(acc.payTo) ? (evm ? asciiLower(acc.payTo) : acc.payTo) : null;
-      const accNet = isObj(acc) ? acc.network : undefined;
+      const accPayTo = isStr(own(acc, 'payTo')) ? (evm ? asciiLower(acc.payTo) : acc.payTo) : null;
+      const accNet = own(acc, 'network');
       if (p.requirementsDigest !== digest || accNet !== p.network || accPayTo !== p.payTo) {
         return reject('invalid_actionreceipt_requirements_mismatch');
       }
@@ -359,27 +460,24 @@ function verifyInner(receipt, ctx, resolver) {
   }
 
   // ---- 5.10 freshness
-  const mode = sr.mode;
-  if (mode !== 'session' && mode !== 'archival') throw new Error('verifier mode not set');
-  if (!Number.isSafeInteger(sr.now)) throw new Error('verifier clock not set');
-  const age = sr.now - p.issuedAt;
-  {
-    const maxAge = Number.isFinite(sr.maxAgeSeconds) ? sr.maxAgeSeconds : 3600;
-    if (age < -60) return reject('invalid_actionreceipt_freshness');
-    if (mode === 'session' && age > maxAge) return reject('invalid_actionreceipt_freshness');
-    checks.freshness = mode === 'session' ? 'enforced' : 'reported';
-  }
+  const age = cfg.now - p.issuedAt;
+  if (age < -60) return reject('invalid_actionreceipt_freshness');
+  if (cfg.mode === 'session' && age > cfg.maxAge) return reject('invalid_actionreceipt_freshness');
+  checks.freshness = cfg.mode === 'session' ? 'enforced' : 'reported';
 
-  // ---- 5.11 bindings
-  const info = sr.advertisedInfo;
+  // ---- 5.11 bindings, and the advertisement as a whole
+  const info = own(sr, 'advertisedInfo');
+  const infoHeld = isObj(info) && inDomain(info);
+  let advertisement = infoHeld ? 'absent' : 'not_evaluated';
   const bindings = p.bindings.map((b) => {
     let status = 'not_evaluated';
-    if (b.type === 'action-receipt:advertised-info' && isObj(info) && inDomain(info)) {
+    if (b.type === BT_ADVERTISED && infoHeld) {
       let m = b.value === 'sha256:' + sha256hex(jcs(info));
       for (const n of ['scope', 'actionType']) {
         if (Object.hasOwn(info, n) && info[n] !== p.action[n]) m = false;
       }
       status = m ? 'matched' : 'mismatched';
+      advertisement = status;
     }
     return { type: b.type, status };
   });
@@ -396,8 +494,9 @@ function verifyInner(receipt, ctx, resolver) {
         resourceUrl: checks.resourceUrl,
         network: checks.network,
         payer: checks.payer,
-        payTo: checks.payTo,
         requirements: checks.requirements,
+        payTo: checks.payTo,
+        advertisement,
         freshness: checks.freshness,
       },
       supersedes: p.supersedes,
@@ -441,17 +540,16 @@ function runVectors() {
     results.set(v.file, { r, receipt });
     const problems = [];
     if (r.verdict !== v.expect) problems.push(`verdict ${r.verdict} != ${v.expect}`);
-    if (v.expect === 'REJECT' && r.verdict === 'REJECT' && r.reason !== v.reason) {
+    if (v.expect !== 'PASS' && r.verdict === v.expect && r.reason !== v.reason) {
       problems.push(`reason ${r.reason} != ${v.reason}`);
     }
-    if (v.expect === 'REJECT' && r.verdict !== 'REJECT') problems.push(`expected reason ${v.reason}`);
-    if (v.expect === 'PASS' && r.verdict === 'REJECT') problems.push(`got reason ${r.reason}`);
-    if (r.verdict === 'ERROR') problems.push(`error ${r.error}`);
+    if (v.expect === 'PASS' && r.verdict !== 'PASS') problems.push(`got reason ${r.reason}`);
+    if (r.verdict === 'ERROR' && v.expect !== 'ERROR') problems.push(`error ${r.error}`);
     if (v.expect === 'PASS' && r.verdict === 'PASS' && !isDeepStrictEqual(r.report, v.report)) {
       problems.push(`report ${JSON.stringify(r.report)} != ${JSON.stringify(v.report)}`);
     }
     const tag = problems.length ? 'DISAGREE' : 'ok      ';
-    const got = r.verdict === 'REJECT' ? `REJECT ${r.reason}` : r.verdict;
+    const got = r.verdict === 'PASS' ? r.verdict : `${r.verdict} ${r.reason}`;
     console.log(`${tag} ${v.file} [${v.context}] ${got}${problems.length ? '  <- ' + problems.join('; ') : ''}`);
     if (problems.length) bad.push(v.file); else agree++;
   }
@@ -478,7 +576,8 @@ function runVectors() {
   const total = manifest.vectors.length;
   console.log(`SUMMARY vectors ${agree}/${total} agree, ${bad.length} disagree; relations ${relOk}/${relOk + relBad} hold`);
   if (bad.length) console.log('DISAGREEMENTS: ' + bad.join(', '));
-  return bad.length === 0 && relBad === 0 ? 0 : 1;
+  if (total === 0) console.log('EMPTY MANIFEST: nothing was checked');
+  return total > 0 && bad.length === 0 && relBad === 0 ? 0 : 1;
 }
 
 // ------------------------------------------- worked example (spec 4.7)
@@ -487,6 +586,10 @@ function runExample() {
   const spec = readFileSync(join(HERE, 'action-receipt.md'), 'utf8');
   const start = spec.indexOf('**Worked example (normative).**');
   const end = spec.indexOf('## 5. Verification');
+  if (start < 0 || end < 0) {
+    console.log('NOT REPRODUCED worked example not found in action-receipt.md');
+    return 1;
+  }
   const sect = spec.slice(start, end);
   const blocks = [...sect.matchAll(/```\n([\s\S]*?)\n```/g)].map((m) => m[1]);
   const [accText, reqDigest, headerText, payloadText, receiptRef, compact] = blocks;
@@ -512,16 +615,19 @@ function runExample() {
   const segs = compact.split('.');
   say('compact segment 1 decodes to the printed header',
     b64urlDecode(segs[0])?.toString('utf8') === headerText);
+  say('printed header is in JCS form (spec 3: one spelling)',
+    jcs(JSON.parse(headerText)).equals(Buffer.from(headerText, 'utf8')));
   say('compact segment 2 decodes to the printed payload', b64urlDecode(segs[1])?.equals(payBytes) === true);
-  const key = createPublicKey({ key: Buffer.from(spki, 'base64'), format: 'der', type: 'spki' });
-  const sigOk = key.asymmetricKeyType === 'ed25519'
+  const pem = '-----BEGIN PUBLIC KEY-----\n' + spki + '\n-----END PUBLIC KEY-----\n';
+  const key = parsePublicKey(pem);
+  const sigOk = key !== null && key.asymmetricKeyType === 'ed25519'
     && cryptoVerify(null, Buffer.from(`${segs[0]}.${segs[1]}`, 'ascii'), key, b64urlDecode(segs[2]));
   say('Ed25519 compact JWS verifies under the printed public key', sigOk);
   // Full section 5 procedure on the example, with the printed key and the printed requirements.
-  const resolver = {
-    isAuthorized: (kid, url) => kid === 'did:web:api.example.com#ed25519' && url === 'https://api.example.com/v1/complete',
-    resolveKey: () => key,
-  };
+  const resolver = fixtureResolver({
+    'did:web:api.example.com#ed25519': pem,
+    '__service__:https://api.example.com/v1/complete': ['did:web:api.example.com#ed25519'],
+  });
   const ctx = {
     success: true,
     transaction: '0xabababababababababababababababababababababababababababababababab',
@@ -538,6 +644,18 @@ function runExample() {
   return fail === 0 ? 0 : 1;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+// Run as a program only when this file is the entry point. Compare real paths:
+// the module URL is resolved through symlinks (/tmp -> /private/tmp on macOS)
+// and argv[1] is as typed, so a string comparison silently ran nothing.
+function isMain() {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
+}
+
+if (isMain()) {
   process.exitCode = process.argv.includes('--example') ? runExample() : runVectors();
 }
