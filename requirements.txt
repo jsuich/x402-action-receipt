@@ -1,4 +1,8 @@
-# action-receipt reference suite — dependencies.
+# action-receipt reference suite — dependencies, pinned to the versions the
+# 0.4 cycle was run with (Python 3.14.8, Node v26.11.1; CI uses the versions in
+# .github/workflows/conformance.yml). Deterministic ECDSA (RFC 6979) needs
+# cryptography >= 42 with a backend that supports it; the vector generator and
+# the fuzzer refuse to fall back to random signatures.
 
-cryptography>=42     # REQUIRED: ES256/ES256K/EdDSA signature verification + vector generation
-rfc8785>=0.1         # RECOMMENDED: independent RFC 8785 implementation, cross-checked byte for byte
+cryptography==50.0.2   # REQUIRED: ES256/ES256K/EdDSA signature verification + vector generation
+rfc8785==0.1.4         # REQUIRED by the cycle: independent RFC 8785 implementation, cross-checked byte for byte
