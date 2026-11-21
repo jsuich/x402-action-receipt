@@ -383,7 +383,7 @@ function verifyInner(receipt, ctx, cfg, resolver) {
 
   // ---- 5.6 signature
   {
-    const sig = dec[2];
+    let sig = dec[2];
     const input = Buffer.from(`${segs[0]}.${segs[1]}`, 'ascii');
     let good = false;
     if (alg === 'EdDSA') {

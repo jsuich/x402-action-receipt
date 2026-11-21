@@ -1013,6 +1013,8 @@ C_REQ_FLOAT, C_REQ_NONOBJ, C_PAYER_EMPTY = (
 C_REQ_NET = "requirements_other_network"
 C_PAID, C_PAID_OTHER = "paid_this_resource", "paid_another_resource"
 C_ADVERT_NONSTRING = "advertised_scope_not_a_string"
+C_ADVERT_FLOAT = "advertised_info_outside_value_domain"
+ADVERTISED_FLOAT = dict(ADVERTISED_INFO, ttl=1.5)
 ADVERTISED_NONSTRING = {"willIssueReceipt": True, "scope": 5}
 ACCEPTED_OTHER_NETWORK = dict(ACCEPTED, network="eip155:1")
 # new in 0.4
@@ -1028,6 +1030,8 @@ C_REQ_UTF16 = "requirements_utf16_member_order"
 C_ABSENT_FORMS = "response_values_absent_forms"
 C_JUNK = "response_values_junk_types"
 C_NO_ID = "success_without_identifier"
+C_SUCCESS_FALSE = "success_false_with_transaction"
+C_SUCCESS_STRING = "success_is_the_string_true"
 C_PAID_EMPTY = "paid_resource_empty_string"
 C_ARCHIVAL_END = "archival_at_end_of_time"
 C_NOW_FLOAT = "clock_integer_valued_float"
@@ -1084,6 +1088,8 @@ CONTEXTS = {
     C_ADVERT_NONSTRING: _ctx(advertisedInfo=ADVERTISED_NONSTRING),
     # the verifier also holds the echoed extension info
     C_ADVERT: _ctx(advertisedInfo=ADVERTISED_INFO),
+    # the info held is not in the value domain: nothing about the advertisement is evaluated
+    C_ADVERT_FLOAT: _ctx(advertisedInfo=ADVERTISED_FLOAT),
     # ---- draft 0.4 ----
     # no maximum age given: the default 3600 applies (spec §5.10)
     C_DEFAULT_AGE: _ctx(maxAgeSeconds=_DROP),
@@ -1106,6 +1112,8 @@ CONTEXTS = {
     # x402 objects of the wrong type never make the verifier fail (spec §5)
     C_JUNK: _ctx(payer={"a": 1}, network=5, accepted="x", advertisedInfo=[ADVERTISED_INFO]),
     C_NO_ID: _ctx(transaction="", settlementRef=""),
+    C_SUCCESS_FALSE: _ctx(success=False),
+    C_SUCCESS_STRING: _ctx(success="true"),
     C_PAID_EMPTY: _ctx(paidResourceUrl=""),
     C_ARCHIVAL_END: _ctx(now=SAFE_INT_MAX, mode="archival"),
     C_NOW_FLOAT: _ctx(now=float(VERIFIER_NOW)),
@@ -1156,6 +1164,7 @@ SUITE = [
     ("pos_binding_advertised_actiontype_differs.json", PASS, None, C_ADVERT),
     ("pos_binding_advertised_scope_not_string.json", PASS, None, C_ADVERT_NONSTRING),
     ("pos_advertisement_absent.json", PASS, None, C_ADVERT),
+    ("pos_advertised_info_outside_domain.json", PASS, None, C_ADVERT_FLOAT),
     ("pos_requirements_not_held.json", PASS, None, C_NOREQ),
     ("pos_response_casing.json", PASS, None, C_CASE),
     ("pos_payer_absent.json", PASS, None, C_NOPAYER),
@@ -1307,9 +1316,12 @@ SUITE = [
     ("neg_sig_ecdsa_65_bytes.json", REJECT, R_SIG_INVALID, C_OK),
     ("neg_sig_ecdsa_der.json", REJECT, R_SIG_INVALID, C_OK),
     ("neg_sig_eddsa_key_for_es256.json", REJECT, R_SIG_INVALID, C_OK),
+    ("neg_sig_ec_key_for_eddsa.json", REJECT, R_SIG_INVALID, C_OK),
     # §5.7 settlement success
     ("neg_settlement_failed.json", REJECT, R_SETTLEMENT_FAILED, C_FAILED),
     ("neg_settlement_success_without_identifier.json", REJECT, R_SETTLEMENT_FAILED, C_NO_ID),
+    ("neg_settlement_success_false_with_transaction.json", REJECT, R_SETTLEMENT_FAILED, C_SUCCESS_FALSE),
+    ("neg_settlement_success_string_true.json", REJECT, R_SETTLEMENT_FAILED, C_SUCCESS_STRING),
     # §5.8 settlement binding
     ("neg_settlement_transaction_mismatch.json", REJECT, R_SETTLEMENT, C_OK),
     ("neg_settlement_ref_mismatch.json", REJECT, R_SETTLEMENT, C_BATCH),
@@ -1422,6 +1434,8 @@ EXPECT_REPORT = {
         "checks": {"advertisement": "mismatched"},
         "bindings": [{"type": BT_ADVERTISED, "status": "mismatched"}]},
     "pos_advertisement_absent.json": {"checks": {"advertisement": "absent"}},
+    "pos_advertised_info_outside_domain.json": {
+        "bindings": [{"type": BT_ADVERTISED, "status": _NE}]},
     "pos_requirements_not_held.json": {"checks": {"requirements": _NE, "payTo": "not_compared"}},
     "pos_payer_absent.json": {"checks": {"payer": "not_compared"}},
     "pos_payer_empty_string.json": {"checks": {"payer": "not_compared"}},
@@ -1593,6 +1607,8 @@ def regenerate_vectors() -> None:
       signed(base(action={"actionType": "inference.embedding"},
                   bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_INFO))}])))
     w("pos_advertisement_absent.json", signed(base()))
+    w("pos_advertised_info_outside_domain.json",
+      signed(base(bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_INFO))}])))
     for name in ("pos_requirements_not_held.json", "pos_response_casing.json",
                  "pos_payer_absent.json", "pos_archival_180d.json",
                  "pos_requirements_float_spelling.json", "pos_requirements_not_object.json",
@@ -1600,7 +1616,9 @@ def regenerate_vectors() -> None:
                  "neg_resource_mismatch.json", "pos_response_junk_types.json",
                  "pos_response_network_not_identifier.json", "pos_config_clock_integer_float.json",
                  "neg_resource_paid_empty_string.json", "neg_settlement_failed.json",
-                 "neg_settlement_success_without_identifier.json"):
+                 "neg_settlement_success_without_identifier.json",
+                 "neg_settlement_success_false_with_transaction.json",
+                 "neg_settlement_success_string_true.json"):
         w(name, signed(base()))
     # §3: other members of the receipt object are ignored and not signed
     w("pos_envelope_extra_member.json",
@@ -1880,6 +1898,9 @@ def regenerate_vectors() -> None:
     w("neg_sig_eddsa_key_for_es256.json",
       {"format": "jws", "signature": _sign_jws("EdDSA", KID_ED, ed, base_text.encode(),
                                                header={"alg": "ES256", "kid": KID_ED, "typ": TYP})})
+    # an Ed25519 signature checked under a P-256 key: the header names EdDSA and the EC kid
+    w("neg_sig_ec_key_for_eddsa.json",
+      {"format": "jws", "signature": _sign_jws("EdDSA", KID_ES256, ed, base_text.encode())})
     w("neg_order_signer_before_signature.json",
       signed(base(), "ES256", KID_EVIL, keys["EVIL"], sig_edit=lambda s: s[:10] + bytes([s[10] ^ 1]) + s[11:]))
     w("neg_order_signature_before_settlement.json",
@@ -2007,6 +2028,7 @@ def write_vectors_md(manifest) -> None:
         C_PAYER_EMPTY: "response `payer` is the empty string",
         C_REQ_NET: "response `network` is not a network identifier; accepted requirements name another network",
         C_ADVERT_NONSTRING: "the advertised `info` held has a `scope` that is not a string",
+        C_ADVERT_FLOAT: "the advertised `info` held contains `1.5`, outside the value domain",
         C_PAID: "the verifier made the payment and paid for this resource",
         C_PAID_OTHER: "the verifier made the payment and paid for a different resource",
         C_DEFAULT_AGE: "session mode with NO `maxAgeSeconds`: the default 3600 applies",
@@ -2021,6 +2043,8 @@ def write_vectors_md(manifest) -> None:
         C_ABSENT_FORMS: "response `transaction` is a number, `payer` has an unpaired surrogate, `network` null",
         C_JUNK: "response `payer` an object, `network` a number, requirements a string, advertised info an array",
         C_NO_ID: "`success: true` with neither a transaction nor a settlement reference",
+        C_SUCCESS_FALSE: "`success: false`, though the response names the transaction",
+        C_SUCCESS_STRING: "`success` is the string `\"true\"`, not the boolean",
         C_PAID_EMPTY: "the verifier paid, and the URL it gives is the empty string",
         C_ARCHIVAL_END: "archival mode, clock at 2^53 - 1",
         C_NOW_FLOAT: "clock given as the integer-valued JSON number `1703123500.0`",
