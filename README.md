@@ -77,11 +77,11 @@ the cycle; it is never counted as a pass.
 | python | the reference verifier reproduces the manifest, cross-checked against an independent RFC 8785 library |
 | python-a, node | each verifier, driven through the adapter protocol by `run_vectors.py`, reproduces the manifest, including follow-up cases it cannot look up by name |
 | example | the second verifier reproduces the spec's worked example from the spec text |
-| flips | each of 153 checks across both verifiers, disabled, is caught by a named vector |
+| flips | each of 194 checks across both verifiers, disabled, is caught by a named vector |
 | fuzz | the two verifiers agree on generated receipts, headers and configurations, and the oracle-free properties hold on both |
 | issuer | the reference issuer reproduces the exchange manifest; every receipt it issues, signed, verifies through both verifiers with the report §6.3 promises |
 | issuer-n | the second issuer reproduces the manifest under opaque ids, plus follow-ups and protocol cases |
-| issuer-fl | each of 133 issuer checks across both issuers, disabled, is caught by a named case |
+| issuer-fl | each of 163 issuer checks across both issuers, disabled, is caught by a named case |
 | issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |
 
 Each instrument has a control: the flip probes end with an unpatched run that
@@ -134,8 +134,10 @@ model, the test process, and fit with upstream x402. The main changes:
 - **One definition of a present value** for issuer and verifier. In 0.3 a
   to-the-letter issuer could emit receipts both verifiers rejected.
 - **The amount charged.** A new signed member, `chargedAmount`, carries the
-  amount the settlement result reports (`extra.chargedAmount`, else `amount`),
-  compared with the response like the settlement identifiers. Under `upto` and
+  amount the settlement result reports, from a location set per scheme (`amount`
+  under `exact` and `upto`, `extra.chargedAmount` under `batch-settlement`, none
+  otherwise), and a verifier that holds the accepted requirements compares it
+  with the response. Under `upto` and
   the batch schemes the accepted requirements are only a ceiling, so without it
   the receipt did not say what was charged. It is copied, never computed, and
   does not show the amount moved; the rail does.

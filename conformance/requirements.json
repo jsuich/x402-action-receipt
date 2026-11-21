@@ -1688,7 +1688,7 @@
       "section": "4.3",
       "level": "MUST",
       "text": "Under `batch-settlement` the charged amount is `SettlementResponse.extra.chargedAmount` and never the top-level `amount` (a deposit, a refund or a payout at close): with no `extra.chargedAmount` it is `\"\"`.",
-      "anchor": "| `batch-settlement` | `SettlementResponse.extra.chargedAmount` (never the top-level `amount`, which these schemes use for a deposit, a refund or a payout at close) |",
+      "anchor": "| `batch-settlement` | `SettlementResponse.extra.chargedAmount` (never the top-level `amount`, which the EVM and Solana bindings use for a deposit, a refund or a payout at close) |",
       "tested_by": "exchange",
       "exchanges": [
         "issue_batch_evm_refund_response.json",
@@ -2450,7 +2450,7 @@
       "section": "6.3",
       "level": "MUST",
       "text": "Every issued receipt, signed as \u00a76.3 says, passes both verifiers in the context of its own exchange with the report \u00a76.3 promises.",
-      "anchor": "That verifier returns `PASS` with requirements `matched`, `payTo` `compared`, and, if the issuer advertised, `checks.advertisement` `matched`.",
+      "anchor": "That verifier returns `PASS` with requirements `matched`, `payTo` `compared`, `chargedAmount` `compared` (when `accepted.scheme` is a string), and, if the issuer advertised, `checks.advertisement` `matched`.",
       "tested_by": "suite",
       "note": "issuer.py signs every issued payload and compares both verifiers' reports with the \u00a76.3 promise; fuzz_issuer.py property Q3 does the same for every generated exchange"
     },
@@ -2647,6 +2647,15 @@
       "level": "MUST NOT",
       "text": "Do not treat a settlement-mismatch rejection of a receipt with a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`.",
       "anchor": "a consumer MUST NOT treat a `invalid_actionreceipt_settlement_mismatch` on a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-14",
+      "role": "consumer",
+      "section": "5.8",
+      "level": "MUST NOT",
+      "text": "Do not treat a `chargedAmount` mismatch as a finding against the signer unless the `accepted` the verifier held also passes §5.9.",
+      "anchor": "This rule uses `accepted` before §5.9 binds it to the receipt, so a verifier holding the wrong `accepted` can reject here rather than in §5.9;",
       "tested_by": "consumer-behaviour"
     },
     {

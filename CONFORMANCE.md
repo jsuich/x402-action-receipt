@@ -30,9 +30,9 @@ completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 175 requirements: 142 tested, 33 not tested.
+- 176 requirements: 142 tested, 34 not tested.
   - 9 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
-  - 14 not tested, `consumer-behaviour`: binds how a result is used after verification.
+  - 15 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
@@ -339,6 +339,7 @@ every case; `suite` = a structural check of the suite itself.
 | C-11 | §4.5.1 | MUST NOT | Never let a binding change how a member of §4.1 is read. | not tested (`consumer-behaviour`) |
 | C-12 | §9 | SHOULD NOT | Do not read a signature failure on an old receipt as forgery unless the resolved key is known to be the one bound at issuedAt. | not tested (`consumer-behaviour`) |
 | C-13 | §5.8 | MUST NOT | Do not treat a settlement-mismatch rejection of a receipt with a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`. | not tested (`consumer-behaviour`) |
+| C-14 | §5.8 | MUST NOT | Do not treat a `chargedAmount` mismatch as a finding against the signer unless the `accepted` the verifier held also passes §5.9. | not tested (`consumer-behaviour`) |
 
 ## 5. Verifier requirements the suite does not test
 

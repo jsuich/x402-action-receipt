@@ -175,15 +175,16 @@ neither implementer had used:
 
 | Check | Result |
 |---|---|
-| `cycle.py --seeds 181,182,183 --n 3000` (final tree) | 12 of 12 stages pass, 0 void |
-| Verifier vectors | 256 (71 positive, 166 negative, 19 configuration), every report declared by hand; both verifiers agree on all of them through the adapter runner |
-| Issuer exchanges | 178 (63 issued, 115 refused); every issued payload, signed, passes both verifiers with the §6.3 report |
-| Verifier flips | 153 of 153 caught by a named vector (102 Python, 51 JavaScript) |
-| Issuer flips | 133 of 133 caught by a named case (79 Python, 54 JavaScript) |
+| `cycle.py --seeds 261,262,263 --n 3000` (final tree) | 12 of 12 stages pass, 0 void |
+| Verifier vectors | 298 (94 positive, 185 negative, 19 configuration), every report declared by hand; both verifiers agree on all of them through the adapter runner |
+| Issuer exchanges | 215 (92 issued, 123 refused); every issued payload, signed, passes both verifiers with the §6.3 report |
+| Verifier flips | 194 of 194 caught by a named vector (123 Python, 71 JavaScript) |
+| Issuer flips | 163 of 163 caught by a named case (95 Python, 68 JavaScript) |
 | Fuzzing | 9000 verifier cases and 9000 exchanges, 0 disagreements, 0 property violations |
 | Reviewer E's 14 surviving mutants | all killed by fixed cases |
 | New mutants by the implementers | verifier 19 of 20 killed by fixed vectors (survivor argued equivalent); issuer 18 of 18 after six witnesses were added (12 of 18 before) |
-| Mutants by the author | four (freshness skew `<=`, binding count 17, offered requirements compared by amount only, settlement-reference namespace matched without its `:`): all killed by fixed cases |
+| Mutants by the author | six (freshness skew `<=`, binding count 17, offered requirements compared by amount only, settlement-reference namespace matched without its `:`, `chargedAmount` precedence reversed, `auth-capture` given a `chargedAmount` row): all killed by fixed cases |
+| `chargedAmount` mutants | 20 by its implementer and a reviewer, all killed by named cases |
 | Pre-publication reviewer's 21 mutants on rules new in 0.4 | 4 survived the cycle before the fixes below; after them all 21 are killed by fixed cases, none by fuzzing alone |
 | Signing | 1200 signatures (400 per algorithm, 800 of them ECDSA with a stock randomized signer, low-`s` normalized), all pass both verifiers; without normalization 45 to 58 of 100 ECDSA signatures are rejected |
 | 0.3 implementations against the 0.4 suite | every B and D defect shows as a red vector |
@@ -215,6 +216,20 @@ publication and judged it not fit as it stood:
   independent (true only through 0.3), that every bound had both sides, and
   that the vectors are all `exact`-shaped. Corrected in §7, the README and this
   file.
+
+### `chargedAmount`
+
+Added on the principal's ruling of 2026-11-21 (F-M2). Its first design read
+`extra.chargedAmount` and fell back to the top-level `amount` whatever the
+scheme. A reviewer of that change alone found it wrong against upstream: on the
+EVM and Solana `batch-settlement` refund and close responses the top-level
+`amount` is a refund or a payout, so a conformant issuer signed a refund as the
+charge (reproduced with the reference issuer); under `auth-capture` it recorded
+the authorized hold, and the supersession rule then froze it. The lookup is now
+a per-scheme table (§4.3), `auth-capture` has no row, a verifier that does not
+hold `accepted` reports `checks.chargedAmount: not_compared`, and a superseding
+receipt is built from the original exchange (§6.4). The reviewer's upstream
+response shapes are fixed exchanges.
 
 Remaining limits, as stated in §7: every implementation came from one working
 session; `did:web` and authorization "as of `issuedAt`" are implemented nowhere;

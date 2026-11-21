@@ -324,13 +324,18 @@ for different things. Take `accepted.scheme`; the location is:
 | `accepted.scheme` | Charged amount |
 |---|---|
 | `exact`, `upto` | `SettlementResponse.amount` |
-| `batch-settlement` | `SettlementResponse.extra.chargedAmount` (never the top-level `amount`, which these schemes use for a deposit, a refund or a payout at close) |
+| `batch-settlement` | `SettlementResponse.extra.chargedAmount` (never the top-level `amount`, which the EVM and Solana bindings use for a deposit, a refund or a payout at close) |
 | any other | none |
 
 The value at that location when present (§4.6) is the charged amount; otherwise
 the exchange has none and `chargedAmount` is `""`. Scheme names are compared
 exactly. A value at a location the table does not name for the scheme is not a
 charged amount.
+
+The `batch-settlement` row follows the EVM and Solana bindings. The Cloudflare
+binding (`cloudflare:402`) reports its charge in the top-level `amount` and has
+no settlement identifier this draft recognizes, so it is not covered (§1.3); a
+draft that covers it adds a row for that network.
 
 Schemes with no row include `auth-capture`, whose settlement result reports an
 authorized hold at one step and a captured amount at another; this draft records
@@ -871,7 +876,11 @@ Reject with `invalid_actionreceipt_settlement_mismatch` if any of these fails:
   refuses such an exchange. A verifier that does not hold such an `accepted`
   cannot tell where the charged amount is, so it does not compare: the report
   records `chargedAmount: not_compared`, and the receipt's `chargedAmount`
-  constrains nothing.
+  constrains nothing. This rule uses `accepted` before §5.9 binds it to the
+  receipt, so a verifier holding the wrong `accepted` can reject here rather
+  than in §5.9; as for the settlement reference, a consumer MUST NOT treat a
+  `chargedAmount` mismatch as a finding against the signer unless the
+  `accepted` the verifier held also passes §5.9.
 - If the response has a `payer`, the receipt's `payer` equals it. Otherwise the
   report records `payer: not_compared`, and the receipt's `payer` (which may be
   `""`, or may come from the scheme payload) is not constrained here.
@@ -1176,7 +1185,8 @@ above, and a verifier following §5 that is given the same `SettlementResponse`
 and settlement reference, the same `accepted`, the same advertised `info` if
 there was one, a clock within the freshness bounds, and an authorization source
 that answers for the key. That verifier returns `PASS` with requirements
-`matched`, `payTo` `compared`, and, if the issuer advertised,
+`matched`, `payTo` `compared`, `chargedAmount` `compared` (when
+`accepted.scheme` is a string), and, if the issuer advertised,
 `checks.advertisement` `matched`. `resourceUrl` is compared when the verifier
 made the payment; `network` and `payer` are compared when the
 `SettlementResponse` carries them.
