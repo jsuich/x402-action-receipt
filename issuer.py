@@ -120,6 +120,23 @@ def settlement_reference(accepted, resp) -> str:
     return ""
 
 
+# `chargedAmount` (spec §4.6): a decimal integer of at most 78 digits, no leading zero
+RE_CHARGED_AMOUNT = re.compile(r"0|[1-9][0-9]{0,77}")
+
+
+def charged_amount(resp) -> str:
+    """The charged amount of the exchange (spec §4.3): the response's
+    `extra.chargedAmount` when present (§4.6), failing that its `amount` when
+    present, failing that `""`. Copied, never computed, and found the same way
+    under every scheme."""
+    extra = _obj(resp).get("extra")
+    value = extra.get("chargedAmount") if isinstance(extra, dict) else None
+    if _present(value):
+        return value
+    amount = _obj(resp).get("amount")
+    return amount if _present(amount) else ""
+
+
 def issue(exchange) -> tuple[dict | None, str | None]:
     """Return (payload, None) or (None, reason). Never raises on junk."""
     try:
@@ -184,6 +201,10 @@ def _issue(exchange):
             return None, X_GRAMMAR
         if transaction and not A.RE_EVM_TX.fullmatch(transaction):
             return None, X_GRAMMAR
+    # 7 the charged amount, as found (§4.3); out of grammar it is refused, never repaired
+    charged = charged_amount(resp)
+    if charged and not RE_CHARGED_AMOUNT.fullmatch(charged):
+        return None, X_GRAMMAR
     # 8 the statement is well formed
     action = _obj(st.get("action"))
     agent, action_type = action.get("agent"), action.get("actionType")
@@ -267,7 +288,7 @@ def _issue(exchange):
     payload = {
         "version": A.PROFILE_VERSION, "receiptId": receipt_id, "issuedAt": issued_at,
         "network": network, "resourceUrl": resource, "payer": payer, "payTo": pay_to,
-        "transaction": transaction, "settlementRef": reference,
+        "transaction": transaction, "settlementRef": reference, "chargedAmount": charged,
         "settlementStatus": status, "requirementsDigest": digest,
         "supersedes": supersedes,
         "action": {"agent": agent, "actionType": action_type, "scope": scope, "outcome": outcome},
@@ -355,7 +376,7 @@ ADVERT_SCHEMA = {
 ADVERT_DIGEST_LITERAL = "sha256:33df93fe0564655d6fa711a9b0b6a390396132ca577f0b7cfac2f6cd3dbffd76"
 INFO_EMPTY_DIGEST = "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
 INFO_WILL_FALSE_DIGEST = "sha256:1819870fb6c521d4f365597f37dc7372aeaae63b6d722416d09f93450ed175f0"
-REFUND_SUPERSEDES = "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2"
+REFUND_SUPERSEDES = "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60"
 
 SOL_NET = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
 SOL_PAYER = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
@@ -418,7 +439,7 @@ def base_exchange() -> dict:
             "extensions": {},
         },
         "settlementResponse": {"success": True, "transaction": A.SETTLEMENT_TX,
-                               "network": A.NETWORK, "payer": A.PAYER_CHECKSUM},
+                               "network": A.NETWORK, "payer": A.PAYER_CHECKSUM, "amount": "10000"},
         "statement": {
             "receiptId": A.RECEIPT_ID, "issuedAt": A.ISSUED_AT,
             "action": {"agent": "did:web:agent.example", "actionType": "inference.completion",
@@ -483,9 +504,10 @@ _SOL_BATCH_PAYLOAD = {"type": "voucher", "channelId": "chan-01",
                       "signature": "3sZq" + "1" * 84}
 _SOL_BATCH_RESPONSE = {"success": True, "transaction": "", "network": SOL_NET, "amount": "",
                        "extra": {"commitmentId": A.COMMITMENT_ID, "chargedAmount": "10000"}}
+# chargedAmount: the response's extra.chargedAmount; its top-level amount is ""
 _SOL_BATCH_EXPECT = {"network": SOL_NET, "payer": "", "payTo": A.SOL_PAY_TO, "transaction": "",
-                     "settlementRef": A.COMMITMENT_ID, "settlementStatus": "capturePending",
-                     "requirementsDigest": SOL_BATCH_DIGEST}
+                     "settlementRef": A.COMMITMENT_ID, "chargedAmount": "10000",
+                     "settlementStatus": "capturePending", "requirementsDigest": SOL_BATCH_DIGEST}
 _SOL_BATCH = dict(paymentPayload__accepted=ACC_SOL_BATCH, paymentPayload__payload=_SOL_BATCH_PAYLOAD,
                   paymentRequired__accepts=[A.ACCEPTED, ACC_SOL_BATCH],
                   settlementResponse=_SOL_BATCH_RESPONSE,
@@ -511,12 +533,14 @@ def sol_batch_on(network, scheme="batch-settlement"):
                      paymentRequired__accepts=[A.ACCEPTED, acc])
 _SVM = dict(paymentPayload__accepted=ACC_SVM_EXACT, paymentPayload__payload=_SVM_PAYLOAD,
             paymentRequired__accepts=[A.ACCEPTED, ACC_SVM_EXACT], settlementResponse=_SOL_RESPONSE)
+# chargedAmount: the SVM response reports no amount, so ""; never accepted.amount
 _SVM_EXPECT = {"network": SOL_NET, "payer": SOL_PAYER, "payTo": SOL_PAYTO, "transaction": SOL_TX,
-               "requirementsDigest": SVM_EXACT_DIGEST}
+               "chargedAmount": "", "requirementsDigest": SVM_EXACT_DIGEST}
 _CF = dict(paymentPayload__accepted=ACC_CF, paymentPayload__payload={"amount": "10000", "asset": "USD"},
            settlementResponse={"success": True, "transaction": A.CF_TX, "network": "cloudflare:402"})
+# chargedAmount: the Cloudflare response reports no amount, so ""
 _CF_EXPECT = {"network": "cloudflare:402", "payer": "", "payTo": "merchant", "transaction": A.CF_TX,
-              "requirementsDigest": CF_DIGEST}
+              "chargedAmount": "", "requirementsDigest": CF_DIGEST}
 _NO_RESOURCE = {"paymentRequired__resource": {"description": "Text completion"}}
 
 SUITE = [
@@ -563,7 +587,8 @@ SUITE = [
     E("issue_both_identifiers", dict(_SOL_BATCH_EXPECT, transaction=SOL_TX),
       **sol_batch({"transaction": SOL_TX})),
     # the reference is copied verbatim, case and all
-    E("issue_settlement_ref_upper_case_verbatim", dict(_SOL_BATCH_EXPECT, settlementRef=UPPER_REF),
+    E("issue_settlement_ref_upper_case_verbatim",
+      dict(_SOL_BATCH_EXPECT, settlementRef=UPPER_REF, chargedAmount=""),
       **sol_batch({"extra": {"commitmentId": UPPER_REF}})),
     E("issue_solana_batch_settlement", _SOL_BATCH_EXPECT, **_SOL_BATCH),
     # extra.commitmentId under a scheme or network with no row is not a reference
@@ -642,10 +667,33 @@ SUITE = [
     E("issue_surrogate_response_transaction", _SOL_BATCH_EXPECT,
       **sol_batch({"transaction": SOL_TX[:20] + "\ud800"})),
     E("issue_surrogate_response_payer", {}, settlementResponse__payer="\ud800" + A.PAYER[1:]),
-    E("issue_surrogate_settlement_reference", dict(_SOL_BATCH_EXPECT, transaction=SOL_TX, settlementRef=""),
+    E("issue_surrogate_settlement_reference",
+      dict(_SOL_BATCH_EXPECT, transaction=SOL_TX, settlementRef="", chargedAmount=""),
       **sol_batch({"transaction": SOL_TX, "extra": {"commitmentId": "batch\udfff"}})),
     E("issue_surrogate_authorization_from", {"payer": ""}, settlementResponse__payer=DELETE,
       paymentPayload__payload__authorization__from="0x\udc00"),
+    # ---- chargedAmount: found by §4.3, copied verbatim, never computed ----------
+    E("issue_charged_amount_from_response_amount", {"chargedAmount": "123456789"},
+      settlementResponse__amount="123456789"),
+    # the batch shape: extra.chargedAmount is the charge, the top-level amount a deposit
+    E("issue_charged_amount_extra_overrides_amount_solana_batch", dict(_SOL_BATCH_EXPECT, chargedAmount="2500"),
+      **sol_batch({"amount": "50000", "extra": {"commitmentId": A.COMMITMENT_ID, "chargedAmount": "2500"}})),
+    E("issue_charged_amount_extra_overrides_amount_cloudflare_batch", dict(_CF_EXPECT, chargedAmount="2500"),
+      **dict(_CF, settlementResponse={"success": True, "transaction": A.CF_TX, "network": "cloudflare:402",
+                                      "amount": "50000", "extra": {"chargedAmount": "2500"}})),
+    # neither is present: "", and not accepted.amount (10000)
+    E("issue_charged_amount_empty_no_amount", {"chargedAmount": ""}, settlementResponse__amount=DELETE),
+    E("issue_charged_amount_zero", {"chargedAmount": "0"}, settlementResponse__amount="0"),
+    E("issue_charged_amount_78_digits", {"chargedAmount": "9" * 78}, settlementResponse__amount="9" * 78),
+    # extra.chargedAmount absent in the sense of §4.6: the lookup falls back to amount
+    E("issue_charged_amount_extra_empty_falls_back", {"chargedAmount": "4200"},
+      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": ""}),
+    E("issue_charged_amount_extra_not_string_falls_back", {"chargedAmount": "4200"},
+      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": 2500}),
+    E("issue_charged_amount_extra_not_object_falls_back", {"chargedAmount": "4200"},
+      settlementResponse__amount="4200", settlementResponse__extra="2500"),
+    E("issue_charged_amount_amount_not_string", {"chargedAmount": ""}, settlementResponse__amount=10000),
+    E("issue_charged_amount_amount_surrogate", {"chargedAmount": ""}, settlementResponse__amount="1\ud800"),
     # ---- refused, step 1 ---------------------------------------------------
     E("refuse_settlement_failed", X_SETTLEMENT,
       settlementResponse={"success": False, "errorReason": "insufficient_funds", "transaction": "",
@@ -751,6 +799,14 @@ SUITE = [
     E("refuse_payer_out_of_grammar_evm", X_GRAMMAR, settlementResponse__payer="0x1234"),
     E("refuse_payer_from_authorization_out_of_grammar", X_GRAMMAR, settlementResponse__payer=DELETE,
       paymentPayload__payload__authorization__from="alice"),
+    # the charged amount found by §4.3 is out of grammar: refused, never repaired
+    E("refuse_charged_amount_79_digits", X_GRAMMAR, settlementResponse__amount="1" + "0" * 78),
+    E("refuse_charged_amount_leading_zero", X_GRAMMAR, settlementResponse__amount="010"),
+    E("refuse_charged_amount_non_digit", X_GRAMMAR, settlementResponse__amount="1e4"),
+    E("refuse_charged_amount_negative", X_GRAMMAR, settlementResponse__amount="-10000"),
+    # the value found is extra's, so extra's is the one judged (amount is in grammar)
+    E("refuse_charged_amount_extra_out_of_grammar", X_GRAMMAR,
+      settlementResponse__extra={"chargedAmount": "007"}),
     # ---- step 8, one exchange per sub-check -----------------------------------
     E("refuse_agent_empty", X_STATEMENT, statement__action__agent=""),
     E("refuse_agent_surrogate", X_STATEMENT, statement__action__agent="did:web:\udfff"),
@@ -837,6 +893,8 @@ SUITE = [
       statement__action__scope="write:model-x", statement__action__outcome="shipped"),
     E("refuse_order_9_before_10", X_ADVERT, **advert(ADVERT_INFO),
       statement__action__scope="write:model-x", statement__bindings=[{"type": "no-colon", "value": "1"}]),
+    E("refuse_order_charged_amount_before_statement", X_GRAMMAR, settlementResponse__amount="010",
+      statement__action__outcome="shipped"),
     E("refuse_order_settlement_before_statement", X_SETTLEMENT,
       settlementResponse__success=False, statement__receiptId="tooshort"),
 ]
@@ -874,7 +932,7 @@ def context_json(exchange: dict) -> dict:
     return {"paidResourceUrl": _obj(req.get("resource")).get("url"),
             "success": resp.get("success"), "transaction": resp.get("transaction"),
             "settlementRef": A.settlement_reference_of(_obj(x.get("paymentPayload")).get("accepted"), resp),
-            "network": resp.get("network"),
+            "network": resp.get("network"), "amount": resp.get("amount"), "extra": resp.get("extra"),
             "payer": resp.get("payer"), "accepted": _obj(x.get("paymentPayload")).get("accepted"),
             "advertisedInfo": ext.get("info") if isinstance(ext, dict) else None,
             "now": min(issued + 1, A.SAFE_INT_MAX), "maxAgeSeconds": 3600, "mode": "session"}

@@ -26,6 +26,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -51,6 +52,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -76,6 +78,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -101,6 +104,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -126,6 +130,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -151,6 +156,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -176,6 +182,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -201,6 +208,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -226,6 +234,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -251,6 +260,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -276,6 +286,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -301,6 +312,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -326,6 +338,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -351,6 +364,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -376,6 +390,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -401,6 +416,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -426,6 +442,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -451,6 +468,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -476,6 +494,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -501,6 +520,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "hedera:main_net",
         "payTo": "0.0.12345",
@@ -526,6 +546,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -551,6 +572,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -576,6 +598,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -601,6 +624,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -626,6 +650,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
@@ -651,6 +676,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "cloudflare:402",
         "payTo": "merchant",
@@ -676,6 +702,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
@@ -701,6 +728,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
@@ -726,6 +754,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
@@ -751,6 +780,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "cloudflare:402",
         "payTo": "merchant",
@@ -776,6 +806,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x",
         "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
@@ -806,6 +837,7 @@
             "value": "sha256:33df93fe0564655d6fa711a9b0b6a390396132ca577f0b7cfac2f6cd3dbffd76"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -836,6 +868,7 @@
             "value": "sha256:33df93fe0564655d6fa711a9b0b6a390396132ca577f0b7cfac2f6cd3dbffd76"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -866,6 +899,7 @@
             "value": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -896,6 +930,7 @@
             "value": "sha256:1819870fb6c521d4f365597f37dc7372aeaae63b6d722416d09f93450ed175f0"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -921,6 +956,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -946,6 +982,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -976,6 +1013,7 @@
             "value": "0xefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -985,7 +1023,7 @@
         "resourceUrl": "https://api.example.com/v1/complete",
         "settlementRef": "",
         "settlementStatus": "refunded",
-        "supersedes": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "supersedes": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "transaction": "0xabababababababababababababababababababababababababababababababab",
         "version": 1
       }
@@ -1006,6 +1044,7 @@
             "value": "0xefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1036,6 +1075,7 @@
             "value": "4aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789aBcDeFgHiJkLmNoPqRsTuVwXyZ1"
           }
         ],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
@@ -1074,6 +1114,7 @@
             "value": "sha256:8181818181818181818181818181818181818181818181818181818181818181"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1099,6 +1140,7 @@
           "outcome": "failed"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1124,6 +1166,7 @@
           "outcome": "partial"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1149,6 +1192,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1174,6 +1218,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1199,6 +1244,7 @@
           "outcome": "delivered"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1224,6 +1270,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1249,6 +1296,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1274,6 +1322,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 0,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1299,6 +1348,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 9007199254740991,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1389,6 +1439,7 @@
             "value": "1"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1479,6 +1530,7 @@
             "value": "1"
           }
         ],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1504,6 +1556,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1529,6 +1582,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1554,6 +1608,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1579,6 +1634,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1604,6 +1660,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1629,6 +1686,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -1654,6 +1712,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1679,6 +1738,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -1704,6 +1764,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
@@ -1729,6 +1790,7 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "",
         "issuedAt": 1703123456,
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
@@ -1754,10 +1816,297 @@
           "scope": "read:model-x"
         },
         "bindings": [],
+        "chargedAmount": "10000",
         "issuedAt": 1703123456,
         "network": "eip155:8453",
         "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
         "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_from_response_amount.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "123456789",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_extra_overrides_amount_solana_batch.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "2500",
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "settlementStatus": "capturePending",
+        "supersedes": "",
+        "transaction": "",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_extra_overrides_amount_cloudflare_batch.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "2500",
+        "issuedAt": 1703123456,
+        "network": "cloudflare:402",
+        "payTo": "merchant",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:344600e74e80d8402de2f2aefd0c2f8c0f2c2dd3a1bf1a242ca3cd87144818e6",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "cf-settlement-000000000001",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_empty_no_amount.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_zero.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "0",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_78_digits.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "999999999999999999999999999999999999999999999999999999999999999999999999999999",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_extra_empty_falls_back.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "4200",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_extra_not_string_falls_back.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "4200",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_extra_not_object_falls_back.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "4200",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_amount_not_string.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_charged_amount_amount_surrogate.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "chargedAmount": "",
+        "issuedAt": 1703123456,
+        "network": "eip155:8453",
+        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
+        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
         "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
         "resourceUrl": "https://api.example.com/v1/complete",
@@ -2045,6 +2394,31 @@
     },
     {
       "file": "refuse_payer_from_authorization_out_of_grammar.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_charged_amount_79_digits.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_charged_amount_leading_zero.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_charged_amount_non_digit.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_charged_amount_negative.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
+    },
+    {
+      "file": "refuse_charged_amount_extra_out_of_grammar.json",
       "issued": false,
       "reason": "identifier_out_of_grammar"
     },
@@ -2337,6 +2711,11 @@
       "file": "refuse_order_9_before_10.json",
       "issued": false,
       "reason": "advertisement_conflict"
+    },
+    {
+      "file": "refuse_order_charged_amount_before_statement.json",
+      "issued": false,
+      "reason": "identifier_out_of_grammar"
     },
     {
       "file": "refuse_order_settlement_before_statement.json",

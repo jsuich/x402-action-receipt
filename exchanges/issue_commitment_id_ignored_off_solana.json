@@ -60,6 +60,7 @@
     "transaction": "0xabababababababababababababababababababababababababababababababab",
     "network": "eip155:8453",
     "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+    "amount": "10000",
     "extra": {
       "commitmentId": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe"
     }

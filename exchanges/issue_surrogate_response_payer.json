@@ -59,7 +59,8 @@
     "success": true,
     "transaction": "0xabababababababababababababababababababababababababababababababab",
     "network": "eip155:8453",
-    "payer": "\ud800x857b06519e91e3a54538791bdbb0e22373e36b66"
+    "payer": "\ud800x857b06519e91e3a54538791bdbb0e22373e36b66",
+    "amount": "10000"
   },
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",

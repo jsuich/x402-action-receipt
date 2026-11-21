@@ -59,7 +59,8 @@
     "success": true,
     "transaction": "0XABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
     "network": "eip155:8453",
-    "payer": "0X857B06519E91E3A54538791BDBB0E22373E36B66"
+    "payer": "0X857B06519E91E3A54538791BDBB0E22373E36B66",
+    "amount": "10000"
   },
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",

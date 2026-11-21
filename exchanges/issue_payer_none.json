@@ -50,7 +50,8 @@
   "settlementResponse": {
     "success": true,
     "transaction": "0xabababababababababababababababababababababababababababababababab",
-    "network": "eip155:8453"
+    "network": "eip155:8453",
+    "amount": "10000"
   },
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",

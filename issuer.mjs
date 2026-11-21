@@ -59,6 +59,8 @@ const RE_RID = /^[A-Za-z0-9_-]{22,64}$/;
 const RE_REF = /^sha256:[0-9a-f]{64}$/;
 const RE_BTYPE = /^[a-z][a-z0-9+.-]{0,63}:[\x21-\x7e]{1,191}$/;
 const RE_BVALUE = /^[\x21-\x7e]{1,1024}$/;
+// chargedAmount (section 4.6): a decimal integer of at most 78 digits, no leading zero
+const RE_CHARGED = /^(?:0|[1-9][0-9]{0,77})$/;
 const OUTCOMES = ['delivered', 'partial', 'failed'];
 const STATUSES = ['settled', 'capturePending', 'reversed', 'refunded'];
 const MAX_SAFE = 2 ** 53 - 1;
@@ -81,6 +83,16 @@ function referenceOf(accepted, sr) {
   if (scheme !== 'batch-settlement' || typeof network !== 'string' || !network.startsWith('solana:')) return '';
   const v = get(get(sr, 'extra'), 'commitmentId');
   return present(v) ? v : '';
+}
+
+// The charged amount of the exchange (section 4.3): extra.chargedAmount when
+// present, else amount when present, else ''. Copied, never computed, whatever
+// the scheme.
+function chargedAmountOf(sr) {
+  const fromExtra = get(get(sr, 'extra'), 'chargedAmount');
+  if (present(fromExtra)) return fromExtra;
+  const amount = get(sr, 'amount');
+  return present(amount) ? amount : '';
 }
 
 function issue(ex) {
@@ -135,6 +147,9 @@ function issue(ex) {
     if (payer !== '' && !RE_ADDR.test(payer)) return refuse('identifier_out_of_grammar');
     if (transaction !== '' && !RE_TX.test(transaction)) return refuse('identifier_out_of_grammar');
   }
+  // the charged amount as found; out of grammar it is refused, never repaired
+  const chargedAmount = chargedAmountOf(sr);
+  if (chargedAmount !== '' && !RE_CHARGED.test(chargedAmount)) return refuse('identifier_out_of_grammar');
 
   // 8
   const action = get(st, 'action');
@@ -219,6 +234,7 @@ function issue(ex) {
     payTo,
     transaction,
     settlementRef,
+    chargedAmount,
     settlementStatus,
     requirementsDigest: digest(accepted),
     supersedes,
@@ -231,10 +247,10 @@ function issue(ex) {
 
 // ---------- section 6.3 self-check: sections 5.2 and 5.3 on the built payload ----------
 const TOP = ['version', 'receiptId', 'issuedAt', 'network', 'resourceUrl', 'payer', 'payTo', 'transaction',
-  'settlementRef', 'settlementStatus', 'requirementsDigest', 'supersedes', 'action', 'bindings'];
+  'settlementRef', 'chargedAmount', 'settlementStatus', 'requirementsDigest', 'supersedes', 'action', 'bindings'];
 const ACTION = ['agent', 'actionType', 'scope', 'outcome'];
 const STRINGS = ['receiptId', 'network', 'resourceUrl', 'payer', 'payTo', 'transaction', 'settlementRef',
-  'settlementStatus', 'requirementsDigest', 'supersedes'];
+  'chargedAmount', 'settlementStatus', 'requirementsDigest', 'supersedes'];
 const sameSet = (keys, want) => keys.length === want.length && want.every((k) => keys.includes(k));
 
 function selfCheck(p) {
@@ -262,6 +278,7 @@ function selfCheck(p) {
   }
   if (!RE_REF.test(p.requirementsDigest)) return false;
   if (p.supersedes && !RE_REF.test(p.supersedes)) return false;
+  if (p.chargedAmount && !RE_CHARGED.test(p.chargedAmount)) return false;
   if (!OUTCOMES.includes(p.action.outcome) || !STATUSES.includes(p.settlementStatus)) return false;
   if (!Array.isArray(p.bindings) || p.bindings.length > 16) return false;
   let prev = null;
