@@ -3,7 +3,7 @@
 cycle.py — one full test cycle, one exit code.
 
     python3 conformance/cycle.py                     # default: 3 fuzz seeds x 2000
-    python3 conformance/cycle.py --seeds 81,82 --n 5000
+    python3 conformance/cycle.py --seeds 151,152 --n 5000   # new seeds: CYCLES.md lists the spent ones
     python3 conformance/cycle.py --quick             # skip the flip probe and fuzzing
 
 Paths are resolved from this file, so the cycle can be started from any
@@ -22,13 +22,18 @@ anything, is reported as VOID, never as PASS:
   4 example    second verifier reproduces the spec's worked example from its text
   5 flips      each check of both verifiers, disabled, turns the vectors red
   6 fuzz       differential + metamorphic fuzzing across both verifiers; FAIL if
-               fewer cases ran than were asked for or a reason/operator never fired
+               a seed's run exits non-zero, fewer cases ran than were asked for,
+               or a reason/operator never fired on any seed
   7 issuer     reference issuer reproduces exchanges/MANIFEST.json, and every
                receipt it issues verifies in the context of its own exchange
     issuer-n   second issuer reproduces exchanges/MANIFEST.json
     issuer-fl  each step of the reference issuer, disabled, turns its suite red
     issuer-fz  the two issuers agree on generated exchanges, and every issued
-               receipt verifies through both verifiers
+               receipt verifies through both verifiers; FAIL if a seed's run exits
+               non-zero or reports a status other than PASS, a problem, or an
+               operator it never applied
+
+Seeds given twice are run once (`--seeds 7,7` is one seed).
 
 Exit 0 iff every stage that ran passed and no stage was VOID.
 """
@@ -80,7 +85,11 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     py = sys.executable
     node = shutil.which("node")
-    seeds = [s for s in a.seeds.split(",") if s.strip()]
+    seeds = list(dict.fromkeys(s.strip() for s in a.seeds.split(",") if s.strip()))
+    bad_seeds = [s for s in seeds if not s.lstrip("-").isdigit()]
+    if bad_seeds:
+        ap.error(f"--seeds must be integers, got {bad_seeds}")
+    seed_list = ",".join(seeds)
     rows, t0 = [], time.time()
 
     def stage(name, status, detail, t_start=None):
@@ -156,7 +165,7 @@ def main(argv=None) -> int:
             t = time.time()
             total = {"generated": 0, "requested": 0, "followups": 0, "disagreements": 0,
                      "property_violations": 0}
-            never, bad = None, False
+            never, bad, failed_seeds = None, False, []
             for seed in seeds:
                 cmd = [py, "-B", str(ROOT / "conformance" / "fuzz.py"), "--seed", seed, "--n", str(a.n), "--json"]
                 if a.save:
@@ -167,6 +176,8 @@ def main(argv=None) -> int:
                     stage("fuzz", "FAIL", f"seed {seed}: {last(r.stderr) or last(r.stdout)}", t)
                     bad = True
                     break
+                if r.returncode != 0:
+                    failed_seeds.append(f"{seed} (exit {r.returncode})")
                 for k in total:
                     total[k] += s[k]
                 # report only what NO seed exercised
@@ -176,7 +187,7 @@ def main(argv=None) -> int:
                 missed |= {"error:" + e for e in s.get("errors_never_hit", [])}
                 never = missed if never is None else never & missed
             if not bad:
-                detail = (f"seeds {a.seeds} x {a.n}: {total['generated']} of {total['requested']} cases + "
+                detail = (f"seeds {seed_list} x {a.n}: {total['generated']} of {total['requested']} cases + "
                           f"{total['followups']} follow-ups, {total['disagreements']} disagreements, "
                           f"{total['property_violations']} property violations")
                 if total["generated"] == 0:
@@ -184,10 +195,11 @@ def main(argv=None) -> int:
                 else:
                     short = total["generated"] < total["requested"]
                     ok = (total["disagreements"] == 0 and total["property_violations"] == 0
-                          and not short and not never)
+                          and not short and not never and not failed_seeds)
                     stage("fuzz", "PASS" if ok else "FAIL",
                           detail + (f"; fewer cases than requested" if short else "")
-                          + (f"; not exercised: {sorted(never)}" if never else ""), t)
+                          + (f"; not exercised: {sorted(never)}" if never else "")
+                          + (f"; fuzz.py failed for seed {', '.join(failed_seeds)}" if failed_seeds else ""), t)
 
     t = time.time()
     r = run([py, "-B", str(ROOT / "issuer.py")])
@@ -204,8 +216,10 @@ def main(argv=None) -> int:
     else:
         t = time.time()
         r = run([py, "-B", str(ROOT / "conformance" / "flip_issuer.py")])
-        stage("issuer-fl", "PASS" if r.returncode == 0 else "FAIL",
-              next((l for l in r.stdout.splitlines() if "flips caught" in l), last(r.stdout)), t)
+        summary = json_line(r.stdout, "flips")
+        ok = r.returncode == 0 and summary is not None and summary["flips"] > 0 and summary["control_ok"]
+        stage("issuer-fl", "PASS" if ok else "FAIL",
+              next((l for l in r.stdout.splitlines() if "flips caught" in l), last(r.stdout) or last(r.stderr)), t)
         if not node:
             stage("issuer-fz", "VOID", "node not found: no second issuer or verifier")
         elif a.n < MIN_FUZZ_N or not seeds:
@@ -213,7 +227,7 @@ def main(argv=None) -> int:
         else:
             t = time.time()
             tot = {"generated": 0, "round_trips": 0, "disagreements": 0, "property_violations": 0}
-            never, bad = None, False
+            never, bad, reported = None, False, []
             for seed in seeds:
                 cmd = [py, "-B", str(ROOT / "conformance" / "fuzz_issuer.py"), "--seed", seed, "--n", str(a.n), "--json"]
                 if a.save:
@@ -228,9 +242,19 @@ def main(argv=None) -> int:
                     tot[k] += s[k]
                 miss = set(s["refusals_never_hit"])
                 never = miss if never is None else never & miss
+                # the fuzzer's own verdict counts: any problem it reports fails the stage
+                why = list(s.get("problems") or [])
+                if s.get("operators_never_applied"):
+                    why.append(f"operators never applied: {s['operators_never_applied']}")
+                if s.get("status") != "PASS":
+                    why.append(f"status {s.get('status')}")
+                if r.returncode != 0:
+                    why.append(f"exit {r.returncode}")
+                if why:
+                    reported.append(f"seed {seed}: " + "; ".join(dict.fromkeys(why)))
             if not bad:
                 requested = a.n * len(seeds)
-                detail = (f"seeds {a.seeds} x {a.n}: {tot['generated']} of {requested} exchanges, "
+                detail = (f"seeds {seed_list} x {a.n}: {tot['generated']} of {requested} exchanges, "
                           f"{tot['round_trips']} round trips, {tot['disagreements']} disagreements, "
                           f"{tot['property_violations']} property violations")
                 if tot["generated"] == 0 or tot["round_trips"] == 0:
@@ -238,10 +262,11 @@ def main(argv=None) -> int:
                 else:
                     short = tot["generated"] < requested
                     ok = (tot["disagreements"] == 0 and tot["property_violations"] == 0
-                          and not short and not never)
+                          and not short and not never and not reported)
                     stage("issuer-fz", "PASS" if ok else "FAIL",
                           detail + ("; fewer exchanges than requested" if short else "")
-                          + (f"; not exercised: {sorted(never)}" if never else ""), t)
+                          + (f"; not exercised: {sorted(never)}" if never else "")
+                          + (f"; fuzz_issuer.py reported: {' | '.join(reported)}" if reported else ""), t)
 
     failed = [n for n, s, _ in rows if s == "FAIL"]
     void = [n for n, s, _ in rows if s == "VOID"]

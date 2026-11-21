@@ -326,7 +326,10 @@ def main() -> int:
     if FUZZ_N:
         print(f"fuzzer ({FUZZ_N} cases): {n - len(fuzz_missed)} of {n} flips detected")
         print("FUZZ MISSED:", fuzz_missed)
-    ok = caught == n and all(controls.values())
+    # an empty flip list (or one side's) shows nothing can fail: that is a failure
+    ok = n > 0 and bool(PY_FLIPS) and bool(JS_FLIPS) and caught == n and all(controls.values())
+    if not (PY_FLIPS and JS_FLIPS):
+        print("NO FLIPS: a flip list is empty, so nothing was shown to be able to fail")
     print(json.dumps({"flips": n, "caught": caught, "broken": broken, "missed": missed,
                       "control_ok": all(controls.values()),
                       "fuzz_missed": fuzz_missed if FUZZ_N else None}))
