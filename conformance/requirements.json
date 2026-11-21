@@ -161,7 +161,7 @@
       "section": "5",
       "level": "MUST",
       "text": "The paid resource URL is absent or a string.",
-      "anchor": "absent, or a string",
+      "anchor": "not supplied or `null`, meaning the verifier did not pay; or a string",
       "tested_by": "vector",
       "vectors": [
         "err_config_paid_url_number.json",
@@ -796,7 +796,7 @@
       "section": "5",
       "level": "MUST",
       "text": "Only a public key is a usable key: a private key, a certificate, or a PEM with anything around it is not.",
-      "anchor": "A private key or a certificate is not one",
+      "anchor": "A private key, a certificate, or a public",
       "tested_by": "vector",
       "vectors": [
         "neg_key_private_key_pem.json",

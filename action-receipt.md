@@ -617,14 +617,16 @@ configuration and have a contract:
 | Input | Contract |
 |---|---|
 | mode | exactly `session` or `archival` |
-| clock (`now`) | an integer number of Unix seconds |
-| maximum age | absent, meaning 3600, or an integer `>= 0` |
-| resource URL paid for | absent, or a string |
-| authorized key | a public key (for example a SubjectPublicKeyInfo PEM). A private key or a certificate is not one |
+| clock (`now`) | an integer number of Unix seconds in `[-(2^53 - 1), 2^53 - 1]`. A number whose value is an integer (`1703123500.0`) is one; a boolean is not |
+| maximum age | not supplied, meaning 3600; or an integer in `[0, 2^53 - 1]`. A maximum age supplied as `null` is outside the contract |
+| resource URL paid for | not supplied or `null`, meaning the verifier did not pay; or a string. `""` is a string, and is compared |
 
 A verifier given configuration outside this contract returns `ERROR`. It MUST
 NOT substitute a default or the nearest valid value: a mode it does not
 recognize is not `archival`, and a maximum age it cannot read is not 3600.
+
+What an authorization source returns for a key is not configuration. It comes
+from the signer's side, and anything that is not a usable public key is §5.5.
 
 **Outcomes.** Verification yields one of:
 
@@ -767,6 +769,12 @@ If `kid` is authorized but the verifier cannot obtain a usable key (the document
 is unreachable, the key has been rotated out and no record of it is held, or
 what was obtained is not a public key of a kind the verifier can use), reject
 with `invalid_actionreceipt_key_unresolved`.
+
+A **usable key** is a public key of a kind one of the three algorithms of §3
+uses: P-256, secp256k1 or Ed25519. A private key, a certificate, or a public
+key of any other kind (P-384, RSA, X25519, an unknown curve) is not usable and
+is rejected here. A usable key of the wrong kind for the header's `alg` is not
+rejected here: it is rejected by §5.6 with `invalid_actionreceipt_signature`.
 
 This code is **indeterminate**. It means the verifier could not check, not that
 the receipt is forged. A consumer MUST NOT treat it as a finding against the
@@ -928,6 +936,10 @@ Codes follow core §9 and the `invalid_<extension>_<check>` convention.
 | §5.8 | `invalid_actionreceipt_settlement_mismatch` |
 | §5.9 | `invalid_actionreceipt_requirements_mismatch` |
 | §5.10 | `invalid_actionreceipt_freshness` |
+
+`ERROR` carries no reason code on the wire. The conformance manifest and the
+adapter protocol distinguish two causes: `invalid_configuration` (outside the
+contract of §5) and `verifier_fault` (anything else).
 
 Every code issued before §5.6 describes bytes that are not yet authenticated. A
 canonicalization rejection has three possible causes: the issuer, an intermediary
@@ -1124,8 +1136,13 @@ Properties of the suite:
 
 - **Two-sided.** It asserts that both verdicts were observed and that every
   reason code of §5.13 was exercised.
-- **One fault per negative.** Each negative is a single mutation of a canonical
-  positive, so its reason code does not depend on anything but the order of §5.
+- **One fault per negative, except where order is the subject.** Each negative
+  is a single mutation of a canonical positive, so its reason code does not
+  depend on anything but the order of §5. The `neg_order_*` vectors carry two
+  faults on purpose, one in each of two adjacent steps, so that a verifier that
+  runs those steps in the wrong order gives the wrong code.
+- **Both sides of every bound.** Each length and count limit, and each numeric
+  bound, has a vector at the limit and one past it.
 - **Mutation matrix.** Each signed member of a positive is changed once and
   re-signed. The suite records whether the result still passes. The members that
   still pass are the issuer-asserted ones (§1.3): `receiptId`, `issuedAt`,
@@ -1146,11 +1163,18 @@ Properties of the suite:
 resolution of §5.4 and §5.5: `"__service__:<resourceUrl>"` and
 `"__payTo__:<payTo>|<resourceUrl>"` each map to an array of authorized key
 identifiers (a value that is not an array of strings authorizes nothing);
-`"__unavailable__:<resourceUrl>"` set to `true` says the authorization source
-gave no answer for that resource; and each key identifier maps to a
-SubjectPublicKeyInfo PEM public key. A key identifier that is authorized but has
-no entry, or whose entry is not such a key, exercises §5.5. It is not a wire
-format.
+`"__unavailable__:<resourceUrl>"` set to `true` (and only `true`) says the
+authorization source gave no answer for that resource, whatever the anchors
+list; and each key identifier maps to a SubjectPublicKeyInfo PEM public key. In
+the fixture a key is exactly one PEM block labelled `PUBLIC KEY`, with canonical
+base64 and DER that re-encodes to the same bytes. A key identifier that is
+authorized but has no entry, or whose entry is not such a key, exercises §5.5.
+It is not a wire format.
+
+The fixture supplies the response's settlement reference directly in the
+verification context. A verifier given a reference compares it (§5.8) without
+knowing the scheme; some `eip155` vectors use this to test that the reference
+is compared exactly, which §4.3 would not otherwise produce on that network.
 
 What conformance does and does not show:
 
