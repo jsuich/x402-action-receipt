@@ -9,7 +9,8 @@ How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --sav
 Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
 31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73, 81 to 83, 91 and 92, 101 to
 103 (the CI workflow's fixed seeds, run on every push), 111 to 113, 121 to 123,
-131 and 132, 141, 151 to 153, 161 and 162, 171 and 172, 181 to 183, 191 and 192.
+131 and 132, 141, 151 to 153, 161 and 162, 171 and 172, 181 to 183, 191 and 192,
+201 to 203, 211 and 212, 9001.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
@@ -202,6 +203,40 @@ not a detection, so it is not counted as a kill above. The mutant labelled M15
 by the reviewer (find the reference by the table) is now the correct
 behaviour; it was re-run reversed (the old out-of-band read) and is killed by
 eight exchanges.
+
+## Cycle 11 — 2026-11-21 (chargedAmount)
+
+Spec 0.4 added the member `chargedAmount` (§4.1, §4.3, §4.6, §5.8, §6.2 step 7,
+§6.3). All four implementations carry it; the worked example of §4.7 was
+recomputed with `action_receipt.py --worked` (662 bytes, new `receiptRef` and
+compact JWS). Every existing expectation was kept; existing payloads gained the
+member, with each exchange's value decided from its own response (EVM `exact`
+`10000` from `amount`; Solana batch `10000` from `extra.chargedAmount`, `""`
+where the exchange replaces `extra`; SVM `exact` and Cloudflare `""`).
+
+Nine hand-written mutants of the new rule were run in scratch copies, first
+through the full cycle (seeds 211 and 212, 3,000 each), then through the fixed
+stages alone:
+
+| # | Mutant | Killed by, before the fix | Fixed cases added |
+|---|---|---|---|
+| M01 | verifier reads `extra.chargedAmount` only on `solana:` | the issuer round trip and both fuzzers; no vector | `pos_charged_amount_from_extra_any_scheme`, `pos_charged_amount_from_extra_cloudflare` |
+| M02 | issuer strips leading zeros | `refuse_charged_amount_leading_zero`, `refuse_charged_amount_extra_out_of_grammar` | — |
+| M03 | Node issuer treats an `extra.chargedAmount` of `0` as missing | the issuer fuzzer only | `issue_charged_amount_extra_zero_overrides_amount`, `pos_charged_amount_extra_zero` |
+| M04 | Node verifier bound 77 digits | `pos_charged_amount_78_digits`, `issue_charged_amount_78_digits` | — |
+| M05 | Node verifier skips the comparison when the receipt's is `""` | `neg_settlement_charged_amount_dropped` | — |
+| M06 | issuer takes `accepted.amount` under `exact` when the response has none | `issue_charged_amount_empty_no_amount`, `issue_svm_exact` and six more | — |
+| M07 | verifier checks the grammar only on `eip155` | the verifier fuzzer only | `neg_schema_charged_amount_leading_zero_non_evm`, `refuse_charged_amount_leading_zero_svm` |
+| M08 | Node issuer checks the amount after step 8 | `refuse_order_charged_amount_before_statement` | — |
+| M09 | Node verifier compares amounts as integers | `neg_settlement_charged_amount_not_normalized` | — |
+
+None survived the full cycle. Three (M01, M03, M07) were caught by no named
+case; after the fixed cases above, all nine are killed by a named vector or
+exchange in the fixed stages (`cycle.py --quick`).
+
+Seeds 201 to 203, 3,000 each: all twelve stages passed. 280 vectors, 197
+exchanges, 173 verifier flips, 151 issuer flips, 165 requirements (133 tested).
+Seed 9001 ran each fuzzer once while the operators were written.
 
 ## Known limits of this process
 
