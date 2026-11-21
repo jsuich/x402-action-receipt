@@ -42,8 +42,9 @@ strongest evidence in the review.
    requirements and narrows the other claims in §1.2, §1.3, §5.14 and §9.
 4. **The lifecycle promised delivery it does not have.** Superseding receipts
    had no channel and no rules (A, C, D, F). 0.4 gives consumers rules for
-   honouring a supersession and removes the promise. Whether the lifecycle
-   should stay at all is open question 6.
+   honouring a supersession and removes the promise. The principal ruled on
+   2026-11-21 that the lifecycle stays; the delivery channel remains open
+   question 6.
 5. **The issuer and verifier used different definitions of a present value**
    (A predicted it; C reproduced it: a to-the-letter issuer emitted receipts
    both verifiers rejected). 0.4 has one definition, in §4.6.
@@ -143,7 +144,7 @@ with a case that fails if it regresses), **claim** (the spec now says less),
 | F-B2 | `payer` mandatory; Lightning forbids one | text + code: `payer` may be `""` |
 | F-B3 | `settlementRef` has no source | text: §4.3 table; uncovered schemes stated |
 | F-M1 | Payer fallback exists only for EIP-3009 | text: §4.3; else `""` |
-| F-M2 | Amount charged not stated | claim: §1.3; open question 5 |
+| F-M2 | Amount charged not stated | text + code: new member `chargedAmount` (§4.3, §5.8), on the principal's ruling of 2026-11-21 |
 | F-M3 | `settled` asserted where nothing moved | text: definitions; vector corrected |
 | F-M4, F-M5 | Supersession channel; lifecycle gaps | text: §4.3; open question 6 |
 | F-M6 | `failed` unreachable in the default flow | text: §4.2 |

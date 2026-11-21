@@ -133,12 +133,14 @@ model, the test process, and fit with upstream x402. The main changes:
   checks it against `accepts`.
 - **One definition of a present value** for issuer and verifier. In 0.3 a
   to-the-letter issuer could emit receipts both verifiers rejected.
+- **The amount charged.** A new signed member, `chargedAmount`, carries the
+  amount the settlement result reports (`extra.chargedAmount`, else `amount`),
+  compared with the response like the settlement identifiers. Under `upto` and
+  the batch schemes the accepted requirements are only a ceiling, so without it
+  the receipt did not say what was charged. It is copied, never computed, and
+  does not show the amount moved; the rail does.
 - **Claims narrowed.** What a verifier that did not pay learns; that the signer
   is not shown to be the party paid; that a receipt does not identify a payment.
-- **`chargedAmount`.** The payload carries the amount the settlement result
-  reports (`extra.chargedAmount`, else `amount`, else `""`), copied and never
-  computed, and a verifier compares it with the response like the settlement
-  identifiers. It does not show the amount moved; the rail does.
 - **Superseding receipts** have rules a consumer applies, and no longer promise
   a delivery channel the draft does not have.
 - **A test process that can fail**: flips across all four implementations,
