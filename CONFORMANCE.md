@@ -12,7 +12,7 @@ requirements the suite tests, and which it does not.
 adapter protocol of section 3, it reproduces every entry of
 `vectors/MANIFEST.json`: the verdict, the reason code on `REJECT`, the report
 on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
-`vectorsDigest` (currently `sha256:299cb37197fbe4352a5f1bc216eb5f84e9c0143f5ca0196a3ea4caacbf3fbc58`).
+`vectorsDigest` (currently `sha256:58961a608e206146050fa71bd09f34ba3190ddbbf2fa1b36859452a9a65d867d`).
 
 **Issuer.** An implementation conforms as an issuer if, driven through the
 issuer adapter protocol of section 3, it handles every exchange in
@@ -28,14 +28,14 @@ completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 101 requirements: 77 tested, 24 not tested.
+- 129 requirements: 102 tested, 27 not tested.
   - 4 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
-  - 9 not tested, `consumer-behaviour`: binds how a result is used after verification.
+  - 13 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
-  - 1 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
+  - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
-- 95 vectors, each named by at least one requirement.
+- 227 vectors, each named by at least one requirement.
 - 47 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
@@ -60,21 +60,38 @@ Output line:
 ```json
 {"id": "same string", "verdict": "PASS", "reason": null, "report": {...}}
 {"id": "same string", "verdict": "REJECT", "reason": "invalid_...", "report": null}
+{"id": "same string", "verdict": "ERROR", "reason": "invalid_configuration", "report": null}
 ```
 
-- `context` is the verifier input of spec §5. `paidResourceUrl` is present only
-  when the verifier made the payment. The next five members come from the
-  `SettlementResponse` and are unsigned. Any of these six may be absent, `null`
-  or of the wrong type; the verifier must not fail on that.
-- `mode` is `session` or `archival`, `now` is an integer and `maxAgeSeconds`,
-  when present, is a non-negative integer. The harness never sends anything
-  else for these three; behaviour outside that is not specified.
-- The key fixture is `vectors/keys.json` (spec §7).
-- `verdict` is `PASS`, `REJECT` or `ERROR`. `ERROR` is a verifier fault and is
-  always a conformance failure.
+- `context` is the verifier input of spec §5. Five of its members are x402
+  values from the `SettlementResponse` (`success`, `transaction`,
+  `settlementRef`, `network`, `payer`) and two are optional objects
+  (`accepted`, `advertisedInfo`); all are unsigned. Any of them may be absent,
+  `null` or of the wrong type, and nothing in them may make the verifier
+  return `ERROR` (spec §5).
+- The rest is the verifier's own configuration and has the contract of spec §5:
+  `mode` exactly `session` or `archival`; `now` an integer; `maxAgeSeconds`
+  absent (3600) or an integer `>= 0`; `paidResourceUrl` absent, `null` (the
+  verifier did not pay) or a string. Integers are read by value within
+  `±(2^53 - 1)`, so `1703123500.0` is an integer and `true` is not. A `null`
+  `maxAgeSeconds` is a value the verifier cannot read, not an absence. A
+  context outside this contract, or one that is not an object, gets
+  `ERROR` with reason `invalid_configuration`; the `err_config_*` vectors
+  test it. An `ERROR` on any other vector is a conformance failure.
+- The key fixture is `vectors/keys.json` (spec §7): `__service__:` and
+  `__payTo__:` entries are arrays of authorized kids (anything else authorizes
+  nothing), `__unavailable__:<resourceUrl>` set to `true` means the source gave
+  no answer, and a kid maps to a SubjectPublicKeyInfo PEM.
+- `verdict` is `PASS`, `REJECT` or `ERROR`; `reason` is set on `REJECT` and
+  `ERROR`.
 
 Two adapters are in `conformance/adapters/`: Python (the reference verifier)
 and Node (the second verifier, `verify.mjs`).
+`python3 conformance/run_vectors.py -- <adapter command>` drives any adapter
+over the manifest and compares every entry (verdict, reason, full report),
+with opaque case ids and metamorphic follow-ups; it never trusts the
+adapter's exit code. `python3 conformance/fuzz.py --adapter NAME=COMMAND`
+puts a third-party adapter in the differential fuzzer.
 
 ### Issuer adapter protocol
 
@@ -112,60 +129,84 @@ every case; `suite` = a structural check of the suite itself.
 
 | ID | Spec | Level | Requirement | Tested by |
 |---|---|---|---|---|
-| V-ORD-1 | §5 | MUST | Perform the steps in order and stop at the first failure. | suite: every negative vector is one mutation of a valid receipt, so its expected reason is the first failing step; the fuzzer compares the reason two implementations give for multi-fault inputs |
-| V-ERR-1 | §5 | MUST NOT | Do not raise on malformed input. | fuzz: property P6: no generated case may produce ERROR or an undeclared reason |
-| V-ERR-2 | §5 | MUST NOT | Do not report a verifier fault as a rejection. | not tested (`not-observable`) |
-| V-ENV-1 | §5.1 | MUST | Reject a receipt that is not a JWS-format object with three base64url segments and a JSON-object header. | `neg_not_jws_format`, `neg_header_not_object` |
+| V-ORD-1 | §5 | MUST | Perform the steps in order and stop at the first failure. | `neg_order_header_canonical_before_typ`, `neg_order_header_domain_before_typ`, `neg_order_typ_before_alg`, `neg_order_alg_before_header_members`, `neg_order_header_before_canonicalization`, `neg_order_canonicalization_before_schema`, `neg_order_version_before_member_set`, `neg_order_member_set_before_outcome`, `neg_order_outcome_before_status`, `neg_order_status_before_bindings_type`, `neg_order_binding_before_resource`, `neg_order_resource_before_signer`, `neg_order_signer_before_signature`, `neg_order_signature_before_settlement`, `neg_order_success_before_binding`, `neg_order_settlement_before_requirements`, `neg_order_requirements_before_freshness` |
+| V-ORD-2 | §5.3 | MUST | Check §5.3 in its stated order: integer `version`, `version == 1`, member set and grammar, outcome, status, bindings array, bindings. | `neg_order_version_before_member_set`, `neg_order_member_set_before_outcome`, `neg_order_outcome_before_status`, `neg_order_status_before_bindings_type`, `neg_order_canonicalization_before_schema` |
+| V-ERR-1 | §5 | MUST NOT | Never raise, and never return ERROR, because of anything in the receipt or the x402 objects. | fuzz: properties P6 and P7 on both implementations: ERROR only when the configuration is outside the contract; the generator mutates header member types and text (non-string alg, NaN, huge integers, deep nesting) and x402 values of every type; the cited vectors pin the reviewer B-2 inputs |
+| V-ERR-2 | §5 | MUST NOT | A verifier fault is ERROR, never reported as a rejection (and the reverse). | `err_config_mode_upper_case`, `err_config_mode_missing`, `err_config_mode_null`, `err_config_now_boolean`, `err_config_now_fraction`, `err_config_now_string`, `err_config_now_missing`, `err_config_now_unsafe_integer`, `err_config_max_age_negative`, `err_config_max_age_string`, `err_config_max_age_null`, `err_config_max_age_boolean`, `err_config_max_age_fraction`, `err_config_paid_url_number`, `err_config_paid_url_array`, `err_config_context_null`, `err_config_over_malformed_receipt` |
+| V-CFG-1 | §5 | MUST | Return ERROR for configuration outside the contract (mode, clock, maximum age, paid resource URL), whatever the receipt. | `err_config_mode_upper_case`, `err_config_mode_missing`, `err_config_mode_null`, `err_config_now_boolean`, `err_config_now_fraction`, `err_config_now_string`, `err_config_now_missing`, `err_config_now_unsafe_integer`, `err_config_max_age_negative`, `err_config_max_age_string`, `err_config_max_age_null`, `err_config_max_age_boolean`, `err_config_max_age_fraction`, `err_config_paid_url_number`, `err_config_paid_url_array`, `err_config_context_null`, `err_config_over_malformed_receipt` |
+| V-CFG-2 | §5 | MUST NOT | Never substitute a default or nearest valid value for configuration it cannot read. | `err_config_mode_upper_case`, `err_config_mode_null`, `err_config_mode_missing`, `err_config_max_age_null`, `err_config_max_age_string`, `err_config_max_age_boolean`, `err_config_max_age_fraction`, `err_config_max_age_negative` |
+| V-CFG-3 | §5 | MUST | The clock is an integer number of Unix seconds (read by value; a boolean is not one). | `err_config_now_boolean`, `err_config_now_fraction`, `err_config_now_string`, `err_config_now_missing`, `err_config_now_unsafe_integer`, `pos_config_clock_integer_float` |
+| V-CFG-4 | §5 | MUST | The paid resource URL is absent or a string. | `err_config_paid_url_number`, `err_config_paid_url_array`, `neg_resource_paid_empty_string` |
+| V-ENV-1 | §5.1 | MUST | Reject a receipt that is not a JWS-format object with a string signature of three base64url segments. | `neg_not_jws_format`, `neg_header_not_object`, `neg_compact_two_segments`, `neg_compact_four_segments`, `neg_signature_not_string` |
 | V-ENV-2 | §3 | MUST | Accept only the one base64url spelling of a byte string. | `neg_base64url_trailing_bits` |
-| V-ENV-3 | §5.1 | MUST NOT | Decode the header strictly as UTF-8 without a byte-order mark; never let a parser detect the encoding. | `neg_header_bom`, `neg_header_utf16` |
-| V-ENV-4 | §5.1 | MUST | Reject unless `typ` is `x402-action-receipt+jws`. | `neg_typ_missing`, `neg_typ_wrong` |
+| V-ENV-11 | §3 | MUST | Reject a compact string longer than 65536 characters. | `pos_compact_at_size_limit`, `neg_compact_over_size_limit` |
+| V-ENV-12 | §3 | MUST | Ignore any other member of the receipt object. | `pos_envelope_extra_member` |
+| V-ENV-3 | §5.1 | MUST | Reject a header with a byte-order mark, in another encoding, with a repeated member, with NaN, or out of order. | `neg_header_bom`, `neg_header_utf16`, `neg_header_duplicate_member`, `neg_header_nan_overwritten`, `neg_header_member_order` |
+| V-ENV-8 | §3 | MUST | The header has one spelling: its bytes are the JCS form of the header object. | `neg_header_whitespace`, `neg_header_member_order`, `neg_header_escaped_member_name`, `neg_header_duplicate_member`, `neg_order_header_canonical_before_typ` |
+| V-ENV-9 | §5.1 | MUST | The header passes the full canonical-bytes test of §5.2, value domain included, before `typ` is read. | `neg_order_header_domain_before_typ`, `neg_header_nan_overwritten`, `neg_order_header_canonical_before_typ` |
+| V-ENV-4 | §5.1 | MUST | Reject unless `typ` is the string `x402-action-receipt+jws`. | `neg_typ_missing`, `neg_typ_wrong`, `neg_typ_number` |
 | V-ENV-5 | §2.4 | MUST NOT | Never verify an action receipt as a base receipt or the reverse. | `neg_typ_missing` |
-| V-ENV-6 | §5.1 | MUST | Reject unless `alg` is ES256, ES256K or EdDSA. | `neg_unknown_alg` |
+| V-ENV-6 | §5.1 | MUST | Reject unless `alg` is ES256, ES256K or EdDSA. | `neg_unknown_alg`, `neg_alg_array`, `neg_alg_object`, `neg_alg_number`, `neg_alg_null` |
+| V-ENV-10 | §5.1 | MUST | An `alg` of any other type is rejected with the alg code, never an ERROR. | `neg_alg_array`, `neg_alg_object`, `neg_alg_number`, `neg_alg_null` |
 | V-ENV-7 | §5.1 | MUST | Reject unless the header has exactly `alg`, `kid`, `typ` and `kid` is a string. | `neg_header_extra_member`, `neg_kid_not_string` |
 | V-CAN-1 | §5.2 | MUST | Reject payload bytes that are not valid UTF-8 JSON. | `neg_canon_not_json`, `neg_canon_invalid_utf8` |
-| V-CAN-2 | §5.2 | MUST | Reject a payload outside the value domain: unsafe integers, unpaired surrogates, nesting deeper than 8. | `neg_canon_number_unsafe_integer`, `neg_canon_lone_surrogate`, `neg_canon_nesting_depth` |
+| V-CAN-2 | §5.2 | MUST | Reject a payload outside the value domain: unsafe integers, unpaired surrogates, nesting deeper than 8. | `neg_canon_number_unsafe_integer`, `neg_canon_issuedat_2_53`, `neg_canon_lone_surrogate`, `neg_canon_nesting_depth` |
 | V-CAN-3 | §5.2 | MUST | Reject payload bytes that are not exactly the JCS form of their value. | `neg_canon_member_order`, `neg_canon_whitespace`, `neg_canon_number_float`, `neg_canon_number_exponent`, `neg_canon_number_negative_zero`, `neg_canon_duplicate_member`, `neg_canon_escaped_ascii` |
-| V-CAN-4 | §5.2 | MUST | Check canonical bytes before any typing, and let any canonical JSON value through to the schema step. | `neg_canon_number_float`, `neg_schema_null`, `neg_schema_not_object` |
-| V-SCH-1 | §5.3 | MUST | Reject unless the payload is an object with exactly the listed members and an integer `version`. | `neg_schema_not_object`, `neg_schema_null`, `neg_schema_unknown_member`, `neg_schema_missing_member`, `neg_schema_version_boolean` |
-| V-SCH-2 | §5.3 | MUST | Reject any `version` other than 1, before interpreting other members. | `neg_unsupported_version` |
-| V-SCH-3 | §5.3 | MUST | Reject a member of the wrong type or outside its grammar. | `neg_schema_action_scalar`, `neg_schema_issuedat_string`, `neg_schema_issuedat_negative`, `neg_schema_no_settlement_id`, `neg_schema_receiptid_short`, `neg_schema_network_not_caip2`, `neg_schema_digest_base64url`, `neg_schema_supersedes_grammar` |
-| V-SCH-4 | §4.6 | MUST | Reject a signed member that is out of grammar; never repair it (EVM identifiers must already be lowercase). | `neg_schema_payer_checksum_case`, `neg_schema_transaction_uppercase` |
-| V-SCH-5 | §4.6 | MUST | Compare strings as exact code-point sequences; apply no normalization to signed members. | `pos_non_ascii_nfc`, `pos_non_ascii_nfd` |
+| V-CAN-4 | §5.2 | MUST | Check canonical bytes before any typing, and let any canonical JSON value through to the schema step. | `neg_canon_number_float`, `neg_schema_null`, `neg_schema_not_object`, `neg_order_canonicalization_before_schema`, `neg_order_header_before_canonicalization` |
+| V-SCH-1 | §5.3 | MUST | Reject unless the payload is an object with an integer `version` member. | `neg_schema_not_object`, `neg_schema_null`, `neg_schema_version_missing`, `neg_schema_version_string`, `neg_schema_version_boolean` |
+| V-SCH-2 | §5.3 | MUST | Reject any `version` other than 1, before the member set is checked. | `neg_unsupported_version`, `neg_order_version_before_member_set` |
+| V-SCH-3 | §5.3 | MUST | Reject a payload without exactly the listed members, a member of the wrong type, or one outside its grammar. | `neg_schema_unknown_member`, `neg_schema_missing_member`, `neg_schema_action_scalar`, `neg_schema_action_extra_member`, `neg_schema_scope_not_string`, `neg_schema_issuedat_string`, `neg_schema_issuedat_negative`, `neg_schema_no_settlement_id`, `neg_schema_receiptid_short`, `neg_schema_receiptid_21`, `neg_schema_receiptid_65`, `pos_receiptid_22`, `pos_receiptid_64`, `pos_issuedat_zero_archival`, `pos_issuedat_max_archival`, `neg_schema_network_not_caip2`, `neg_schema_resourceurl_empty`, `neg_schema_payto_empty_non_evm`, `neg_schema_payto_evm_grammar`, `neg_schema_agent_empty`, `neg_schema_actiontype_empty`, `neg_schema_digest_base64url`, `neg_schema_supersedes_grammar` |
+| V-SCH-8 | §4.6 | MUST | A network identifier has a 3 to 32 character namespace and a 1 to 32 character reference; non-CAIP-2 identifiers such as `cloudflare:402` are valid. | `pos_network_namespace_3`, `pos_network_namespace_32`, `pos_network_reference_32`, `neg_schema_network_namespace_2`, `neg_schema_network_namespace_33`, `neg_schema_network_reference_33`, `pos_network_cloudflare_empty_payer` |
+| V-SCH-9 | §4.6 | MUST | `payer` may be empty on any network; on eip155 a non-empty `payer` is lowercase hex. | `pos_payer_empty_evm`, `pos_network_cloudflare_empty_payer`, `pos_batch_committed`, `neg_schema_payer_checksum_case` |
+| V-SCH-10 | §4.6 | MUST | The EVM rules apply only when `network` begins `eip155:`; a network that merely looks similar gets none of them. | `pos_network_lookalike_not_evm`, `neg_settlement_non_evm_case_not_folded` |
+| V-SCH-4 | §4.6 | MUST | Reject a signed member that is out of grammar; never repair it (EVM identifiers must already be lowercase). | `neg_schema_payer_checksum_case`, `neg_schema_transaction_uppercase`, `neg_schema_payto_evm_grammar` |
+| V-SCH-5 | §4.6 | MUST | Compare strings as exact code-point sequences; apply no normalization to signed members. | `pos_non_ascii_nfc`, `pos_non_ascii_nfd`, `pos_binding_advertised_scope_nfd`, `neg_resource_paid_unicode_normalization` |
 | V-SCH-6 | §5.3 | MUST | Accept each listed `outcome` and reject any other. | `neg_invalid_outcome`, `neg_outcome_retired_refused`, `neg_outcome_retired_disputed`, `pos_outcome_failed`, `pos_outcome_partial` |
-| V-SCH-7 | §5.3 | MUST | Accept each listed `settlementStatus` and reject any other. | `neg_invalid_status`, `pos_capture_pending`, `pos_reversed`, `pos_refunded_supersedes` |
-| V-BND-1 | §5.3 | MUST | Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count. | `neg_binding_unsorted`, `neg_binding_duplicate_type`, `neg_binding_extra_member`, `neg_binding_type_grammar`, `neg_binding_value_non_ascii`, `neg_binding_too_many` |
-| V-BND-2 | §4.5.1 | MUST NOT | Do not reject a receipt for an unrecognized binding type; report it as not evaluated. | `pos_bindings_unheld`, `pos_bindings_composed` |
-| V-BND-3 | §5.11 | MUST | No binding status changes the verdict. | `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs` |
-| V-BND-4 | §4.5.2 | MUST | Evaluate `action-receipt:advertised-info` when the advertised `info` is held: digest, then `scope` and `actionType` equality. | `pos_bindings_composed`, `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs`, `pos_binding_advertised_scope_not_string` |
-| V-AUT-1 | §5.4 | MUST | Reject unless `kid` is authorized for the receipt's resource by the service or the recipient anchor. | `neg_signer_unauthorized`, `neg_signer_unknown_kid`, `pos_payto_signer` |
+| V-SCH-7 | §5.3 | MUST | Accept each listed `settlementStatus` and reject any other. | `neg_invalid_status`, `pos_capture_pending`, `pos_reversed`, `pos_refunded_supersedes`, `pos_batch_committed` |
+| V-SCH-11 | §5.3 | MUST | Reject with `invalid_payload` when `bindings` is not an array. | `neg_schema_bindings_not_array`, `neg_order_status_before_bindings_type` |
+| V-BND-1 | §5.3 | MUST | Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count; accept one at every bound. | `neg_binding_unsorted`, `neg_binding_duplicate_type`, `neg_binding_extra_member`, `neg_binding_type_grammar`, `neg_binding_value_non_ascii`, `neg_binding_too_many`, `neg_binding_prefix_65`, `neg_binding_name_192`, `neg_binding_value_1025`, `pos_bindings_16`, `pos_binding_prefix_64`, `pos_binding_name_191`, `pos_binding_value_1024`, `neg_order_binding_before_resource` |
+| V-BND-5 | §5.3 | MUST | The `action-receipt:` namespace is closed: only the two types of §4.5.2, each with its value form. | `neg_binding_reserved_unknown_type`, `neg_binding_advertised_value_form`, `neg_binding_reversal_value_form_evm`, `pos_binding_reversal_non_evm_value`, `pos_binding_namespace_lookalike` |
+| V-BND-2 | §4.5.1 | MUST NOT | Do not reject a receipt for an unrecognized binding type; report it as not evaluated. | `pos_bindings_unheld`, `pos_bindings_composed`, `pos_binding_namespace_lookalike` |
+| V-BND-3 | §5.11 | MUST | No binding status changes the verdict. | `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs`, `pos_binding_advertised_actiontype_differs` |
+| V-BND-4 | §4.5.2 | MUST | Evaluate `action-receipt:advertised-info` when the advertised `info` is held in the value domain: digest, then `scope` and `actionType` equality. | `pos_bindings_composed`, `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs`, `pos_binding_advertised_actiontype_differs`, `pos_binding_advertised_scope_not_string`, `pos_advertised_info_outside_domain` |
+| V-BND-6 | §4.5.2 | MUST | `action-receipt:reversal-transaction` is never evaluated offline. | `pos_refunded_supersedes`, `pos_binding_reversal_non_evm_value` |
+| V-ADV-1 | §5.11 | MUST | Report `checks.advertisement`: not_evaluated without held info, absent without the binding, else the binding's status. | `pos_advertisement_absent`, `pos_bindings_composed`, `pos_binding_advertised_digest_differs`, `pos_es256_valid`, `pos_advertised_info_outside_domain`, `pos_bindings_unheld` |
+| V-AUT-1 | §5.4 | MUST | Reject with the signer code when the source answered and `kid` is not among the keys it lists for the resource. | `neg_signer_unauthorized`, `neg_signer_unknown_kid`, `pos_payto_signer`, `neg_order_signer_before_signature`, `neg_order_resource_before_signer` |
+| V-AUT-5 | §5.4 | MUST NOT | When the authorization source gives no answer, reject as unresolved, never as a signer finding. | `neg_authorization_no_answer`, `neg_authorization_no_answer_listed`, `pos_authorization_marker_not_true` |
+| V-AUT-6 | §7 | MUST | In the key fixture an authorization entry that is not an array of strings authorizes nothing. | `neg_signer_anchor_string`, `neg_signer_anchor_object`, `neg_signer_anchor_mixed_array`, `neg_signer_anchor_number` |
 | V-AUT-2 | §5.4 | MUST | Treat both anchors as scoped to the resource. | `neg_signer_payto_wrong_resource` |
-| V-AUT-3 | §5.4 | MUST NOT | Do not dereference a location that only the receipt names. | not tested (`needs-network`) |
+| V-AUT-3 | §5.4 | MUST NOT | Never take the location of authorization data from `kid`; a `did:web` kid on another host is not authorized under (a). | not tested (`needs-network`) |
 | V-AUT-4 | §5.4 | MUST | In archival mode, judge authorization as of `issuedAt`. | not tested (`needs-network`) |
-| V-KEY-1 | §5.5 | MUST | Report an authorized key that cannot be obtained or parsed as unresolved, not as a bad signature. | `neg_key_unresolved`, `neg_key_unusable` |
-| V-SIG-1 | §5.6 | MUST | Verify the signature over the first two segments under the resolved key. | `neg_sig_tampered_payload`, `pos_es256_valid`, `pos_es256k_valid`, `pos_eddsa_valid` |
-| V-SIG-2 | §5.6 | MUST | Require the key's type and curve to match `alg`. | `neg_sig_wrong_curve` |
-| V-SIG-3 | §3 | MUST | Require 64-byte low-s ECDSA signatures. | `neg_sig_high_s` |
-| V-SET-1 | §5.7 | MUST | Reject unless settlement succeeded and provides an identifier. | `neg_settlement_failed` |
-| V-SET-2 | §5.8 | MUST | The receipt's `transaction` equals the response's when the response has one. | `neg_settlement_transaction_mismatch`, `neg_settlement_dropped_transaction` |
+| V-KEY-1 | §5.5 | MUST | Report an authorized key that cannot be obtained, or is not a usable public key, as unresolved, not as a bad signature. | `neg_key_unresolved`, `neg_key_unusable`, `neg_key_unknown_algorithm`, `neg_key_unsupported_curve`, `neg_key_unusable_curve_p384` |
+| V-KEY-2 | §5 | MUST | Only a public key is a usable key: a private key, a certificate, or a PEM with anything around it is not. | `neg_key_private_key_pem`, `neg_key_certificate`, `neg_key_pem_leading_spaces` |
+| V-SIG-1 | §5.6 | MUST | Verify the signature over the first two segments under the resolved key. | `neg_sig_tampered_payload`, `pos_es256_valid`, `pos_es256k_valid`, `pos_eddsa_valid`, `neg_order_signature_before_settlement` |
+| V-SIG-2 | §5.6 | MUST | Require the key's type and curve to match `alg`. | `neg_sig_wrong_curve`, `neg_sig_eddsa_key_for_es256`, `neg_sig_ec_key_for_eddsa` |
+| V-SIG-3 | §3 | MUST | Require 64-byte low-s ECDSA signatures. | `neg_sig_high_s`, `neg_sig_ecdsa_65_bytes`, `neg_sig_ecdsa_der` |
+| V-SET-1 | §5.7 | MUST | Reject unless `success` is the boolean true and the response provides an identifier. | `neg_settlement_failed`, `neg_settlement_success_without_identifier`, `neg_settlement_success_false_with_transaction`, `neg_settlement_success_string_true`, `neg_order_success_before_binding` |
+| V-SET-2 | §5.8 | MUST | The receipt's `transaction` equals the response's when the response has one. | `neg_settlement_transaction_mismatch`, `neg_settlement_dropped_transaction`, `neg_order_settlement_before_requirements` |
 | V-SET-3 | §5.8 | MUST | The receipt carries no `transaction` the response does not have. | `neg_settlement_uncorroborated_transaction` |
-| V-SET-4 | §5.8 | MUST | The receipt's `settlementRef` equals the response's settlement reference when it has one. | `neg_settlement_ref_mismatch`, `pos_batch_settled` |
-| V-SET-5 | §5.8 | MUST | Compare `network` when the response's is in CAIP-2 form. | `neg_settlement_network_mismatch` |
-| V-SET-6 | §5.8 | MUST | Compare `payer` when the response has one; otherwise record that it was not compared. | `neg_settlement_payer_mismatch`, `pos_payer_absent` |
+| V-SET-4 | §5.8 | MUST | The receipt's `settlementRef` equals the response's settlement reference when it has one. | `neg_settlement_ref_mismatch`, `neg_settlement_dropped_ref`, `pos_batch_committed`, `pos_settlement_ref_with_transaction` |
+| V-SET-10 | §5.8 | MUST | The receipt carries no `settlementRef` the response does not have. | `neg_settlement_uncorroborated_ref` |
+| V-SET-5 | §5.8 | MUST | Compare `network` when the response's is a network identifier; otherwise record that it was not compared. | `neg_settlement_network_mismatch`, `pos_response_network_not_identifier`, `pos_response_junk_types` |
+| V-SET-6 | §5.8 | MUST | Compare `payer` when the response has one; otherwise record that it was not compared. | `neg_settlement_payer_mismatch`, `neg_settlement_payer_dropped`, `pos_payer_absent` |
 | V-SET-7 | §5.8 | MUST | Lowercase the response's `transaction` and `payer` on `eip155` networks before comparing. | `pos_response_casing` |
-| V-SET-8 | §5.8 | MUST | Treat an absent member, `null` and the empty string alike as 'has none'. | `pos_payer_empty_string`, `pos_payer_absent` |
-| V-REQ-1 | §5.9 | MUST | When the accepted requirements are held, `requirementsDigest` must equal their digest. | `neg_requirements_amount_changed` |
+| V-SET-9 | §5.8 | MUST | Normalize nothing else: a settlement reference and every value off eip155 are compared exactly. | `neg_settlement_ref_case_not_folded`, `pos_settlement_ref_evm_exact_case`, `neg_settlement_non_evm_case_not_folded`, `pos_network_lookalike_not_evm` |
+| V-SET-8 | §4.6 | MUST | A value read from an unsigned object is present only as a non-empty string of well-formed Unicode; anything else is absent. | `pos_payer_empty_string`, `pos_payer_absent`, `pos_response_absent_forms`, `pos_response_junk_types` |
+| V-REQ-1 | §5.9 | MUST | When the accepted requirements are held, `requirementsDigest` must equal their digest. | `neg_requirements_amount_changed`, `neg_order_requirements_before_freshness` |
+| V-REQ-6 | §4.6 | MUST | Canonicalize with members sorted by UTF-16 code units, not code points. | `pos_requirements_utf16_order` |
 | V-REQ-2 | §5.9 | MUST | The accepted `network` must equal the receipt's. | `neg_requirements_network_mismatch` |
 | V-REQ-3 | §5.9 | MUST | The accepted `payTo`, lowercased on `eip155`, must equal the receipt's. | `neg_requirements_payto_mismatch` |
 | V-REQ-4 | §5.9 | MUST | When requirements are not held, or are not a JSON object in the value domain, record that they were not evaluated. | `pos_requirements_not_held`, `pos_requirements_not_object` |
 | V-REQ-5 | §4.6 | MUST | Judge numbers by value, not spelling: `60.0` is the integer 60. | `pos_requirements_float_spelling` |
-| V-FRS-1 | §5.10 | MUST | Reject a receipt dated more than 60 seconds in the future, in both modes. | `neg_freshness_future_archival` |
-| V-FRS-2 | §5.10 | MUST | In session mode, reject a receipt older than the maximum age. | `neg_freshness_stale` |
-| V-FRS-3 | §5.10 | MUST | In archival mode, report age and do not reject on it. | `pos_archival_180d` |
-| V-RPT-1 | §5.12 | MUST | Return the report with every PASS. | suite: the full report of every positive vector is compared with the manifest, and the reports that carry a 'not compared' or 'not evaluated' reading are also declared by hand in the suite |
-| V-RPT-2 | §4.7 | MUST | `receiptRef` is the hash of the payload bytes and covers neither header nor signature. | matrix: sameReceiptRef and distinctReceiptRef relations in the manifest; fuzz property P1 |
-| V-RPT-3 | §4.3 | MUST | Two payments that differ only in `receiptId` are two receipts. | `pos_batch_settled`, `pos_batch_second_payment` |
+| V-FRS-1 | §5.10 | MUST | Reject a receipt dated more than 60 seconds in the future, in both modes. | `neg_freshness_future_archival`, `pos_freshness_future_60`, `neg_freshness_future_61` |
+| V-FRS-2 | §5.10 | MUST | In session mode, reject a receipt older than the maximum age. | `neg_freshness_stale`, `pos_freshness_max_age_100`, `neg_freshness_max_age_101` |
+| V-FRS-4 | §5.10 | MUST | With no maximum age configured, the maximum age is 3600 seconds. | `pos_freshness_default_max_age_3600`, `neg_freshness_default_max_age_3601` |
+| V-FRS-3 | §5.10 | MUST | In archival mode, report age and do not reject on it. | `pos_archival_180d`, `pos_issuedat_zero_archival`, `pos_issuedat_max_archival` |
+| V-RPT-1 | §5.12 | MUST | Return the report with every PASS. | `pos_es256_valid`, `pos_es256k_valid`, `pos_eddsa_valid`, `pos_payto_signer`, `pos_outcome_failed`, `pos_outcome_partial`, `pos_batch_committed`, `pos_batch_second_payment`, `pos_capture_pending`, `pos_reversed`, `pos_refunded_supersedes`, `pos_bindings_composed`, `pos_bindings_unheld`, `pos_binding_advertised_digest_differs`, `pos_binding_advertised_scope_differs`, `pos_binding_advertised_actiontype_differs`, `pos_binding_advertised_scope_not_string`, `pos_binding_advertised_scope_nfd`, `pos_advertisement_absent`, `pos_advertised_info_outside_domain`, `pos_requirements_not_held`, `pos_response_casing`, `pos_payer_absent`, `pos_archival_180d`, `pos_non_ascii_nfc`, `pos_non_ascii_nfd`, `pos_requirements_float_spelling`, `pos_requirements_not_object`, `pos_payer_empty_string`, `pos_resource_paid`, `pos_envelope_extra_member`, `pos_compact_at_size_limit`, `pos_network_namespace_3`, `pos_network_namespace_32`, `pos_network_reference_32`, `pos_network_lookalike_not_evm`, `pos_network_cloudflare_empty_payer`, `pos_receiptid_22`, `pos_receiptid_64`, `pos_bindings_16`, `pos_binding_prefix_64`, `pos_binding_name_191`, `pos_binding_value_1024`, `pos_binding_reversal_non_evm_value`, `pos_binding_namespace_lookalike`, `pos_issuedat_zero_archival`, `pos_issuedat_max_archival`, `pos_freshness_future_60`, `pos_freshness_default_max_age_3600`, `pos_freshness_max_age_100`, `pos_settlement_ref_evm_exact_case`, `pos_settlement_ref_with_transaction`, `pos_requirements_utf16_order`, `pos_response_absent_forms`, `pos_response_junk_types`, `pos_response_network_not_identifier`, `pos_payer_empty_evm`, `pos_authorization_marker_not_true`, `pos_config_clock_integer_float` |
+| V-RPT-2 | §4.7 | MUST | `receiptRef` is the hash of the payload bytes and covers neither header nor signature. | matrix: sameReceiptRef and distinctReceiptRef relations in the manifest; the suite checks each positive's receiptRef against the payload segment's hash; fuzz property P1 on both implementations |
+| V-RPT-3 | §4.3 | MUST | Two statements that differ only in `receiptId` are two receipts. | `pos_batch_committed`, `pos_batch_second_payment` |
 | V-RPT-4 | §7 | MUST | Every signed member is covered: changing any one changes `receiptRef`, and the members the context constrains are rejected. | matrix: the 17-member mutation matrix, with a guard that fails a mutation that changes nothing |
-| V-ROL-1 | §5.4 | MUST | A verifier that made the payment rejects a receipt whose `resourceUrl` is not the URL it paid for. | `neg_resource_mismatch`, `pos_resource_paid` |
+| V-ROL-1 | §5.4 | MUST | A verifier that made the payment rejects a receipt whose `resourceUrl` is not, as an exact string, the URL it paid for. | `neg_resource_mismatch`, `pos_resource_paid`, `neg_resource_paid_empty_string`, `neg_resource_paid_unicode_normalization` |
 | V-ROL-2 | §5.14 | MUST | A non-requesting verifier says that its inputs were recorded copies. | not tested (`consumer-behaviour`) |
 | V-ROL-3 | §5.14 | SHOULD | When resolving on the rail, confirm the chain, success, asset, amount, payer and recipient. | not tested (`needs-network`) |
 | V-ROL-4 | §5.14 | SHOULD NOT | Do not assume the transaction's submitter is the payee. | not tested (`needs-network`) |
@@ -217,19 +258,22 @@ every case; `suite` = a structural check of the suite itself.
 |---|---|---|---|---|
 | C-1 | §4.3 | MUST | Read `settlementStatus`; a passing receipt does not mean 'paid'. | not tested (`consumer-behaviour`) |
 | C-2 | §4.3 | MUST NOT | Do not read payment status as delivery evidence, or outcome as payment evidence. | not tested (`consumer-behaviour`) |
-| C-3 | §4.3 | MUST | Obtain the latest receipt or resolve on the rail when current state matters. | not tested (`consumer-behaviour`) |
 | C-4 | §4.5.1 | MUST NOT | Do not treat a binding that was not evaluated, or mismatched, as verified. | not tested (`consumer-behaviour`) |
-| C-5 | §4.7 | MUST | Count payments by network and settlement identifier, never by `receiptRef` or `receiptId`. | not tested (`consumer-behaviour`) |
 | C-6 | §5.5 | MUST NOT | Do not treat an unresolved key as a finding against the signer. | not tested (`consumer-behaviour`) |
 | C-7 | §5.12 | MUST NOT | Do not read PASS as covering what the report marks not compared or not evaluated. | not tested (`consumer-behaviour`) |
 | C-8 | §9 | MUST NOT | Do not use a client-chosen identifier as the sole link between receipt and settlement. | not tested (`consumer-behaviour`) |
+| C-3 | §4.3 | MUST NOT | Do not rely on a receipt for the current state of a payment; resolve the settlement on the rail. | not tested (`consumer-behaviour`) |
+| C-5 | §4.7 | MUST NOT | Never count payments by `receiptRef` or `receiptId`. | not tested (`consumer-behaviour`) |
+| C-9 | §4.3 | MUST | Treat B as superseding A only when both pass, B names A's receiptRef, the settlement members are equal and the status pair is permitted; otherwise treat them as unrelated. | not tested (`consumer-behaviour`) |
+| C-10 | §4.3 | MUST NOT | Do not pick one of two receipts that each validly supersede the same receipt. | not tested (`consumer-behaviour`) |
+| C-11 | §4.5.1 | MUST NOT | Never let a binding change how a member of §4.1 is read. | not tested (`consumer-behaviour`) |
+| C-12 | §9 | SHOULD NOT | Do not read a signature failure on an old receipt as forgery unless the resolved key is known to be the one bound at issuedAt. | not tested (`consumer-behaviour`) |
 
 ## 5. Verifier requirements the suite does not test
 
-9 requirements bind a verifier and have no test here:
+8 requirements bind a verifier and have no test here:
 
-- V-ERR-2 (§5): Do not report a verifier fault as a rejection. Reason: `not-observable`.
-- V-AUT-3 (§5.4): Do not dereference a location that only the receipt names. Reason: `needs-network`.
+- V-AUT-3 (§5.4): Never take the location of authorization data from `kid`; a `did:web` kid on another host is not authorized under (a). Reason: `needs-network`.
 - V-AUT-4 (§5.4): In archival mode, judge authorization as of `issuedAt`. Reason: `needs-network`.
 - V-ROL-2 (§5.14): A non-requesting verifier says that its inputs were recorded copies. Reason: `consumer-behaviour`.
 - V-ROL-3 (§5.14): When resolving on the rail, confirm the chain, success, asset, amount, payer and recipient. Reason: `needs-network`.
@@ -246,17 +290,18 @@ A stage that cannot run is reported as VOID and fails the cycle.
 | Stage | What it establishes |
 |---|---|
 | trace | this document matches the spec and the suite (checks T1 to T7 in `conformance/trace.py`) |
-| python | the reference verifier reproduces the manifest, with an independent RFC 8785 library cross-checking every canonicalization |
-| node | the second verifier reproduces the manifest |
+| python | the reference verifier's own suite: hand-declared verdicts, reasons and full reports, the mutation matrix, `receiptRef` relations, an independent RFC 8785 library cross-checking every canonicalization |
+| python-a | the Python adapter, driven by `run_vectors.py`, reproduces every manifest entry |
+| node | the Node adapter, driven by `run_vectors.py`, reproduces every manifest entry |
 | example | the second verifier reproduces the spec's worked example from the spec text |
-| flips | every check of the reference verifier, disabled, turns the suite red |
-| fuzz | the two verifiers agree on generated cases, and six oracle-free properties hold |
+| flips | every listed check of either verifier, disabled, makes a named vector disagree |
+| fuzz | the two verifiers agree on generated cases and seven oracle-free properties hold on both; VOID below 500 cases per seed, FAIL if fewer cases ran than requested or a reason code, the configuration `ERROR` or an operator never fired |
 | issuer | the reference issuer reproduces the exchange manifest, and every receipt it issues verifies in the context of its own exchange |
 | issuer-n | the second issuer reproduces the exchange manifest |
 | issuer-fl | every step of the reference issuer, disabled, turns its suite red |
 | issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |
 
-`python3 flip_probe.py . <scratch> --fuzz N` additionally measures the fuzzer:
-how many disabled checks it detects in N cases.
+`python3 flip_probe.py <repo> <scratch> --fuzz N` additionally measures the
+fuzzer: how many disabled checks it detects in N cases.
 
 The history of cycles, with what each found, is in `conformance/CYCLES.md`.

@@ -3,7 +3,7 @@
   "version": 1,
   "specDraft": "0.4",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT (and on ERROR), and the report on PASS. keys.json is a test fixture standing in for authorization and key resolution. vectorsDigest is the sha256 over the JCS form of {file name: sha256 hex of the file} for every vector file and keys.json.",
-  "vectorsDigest": "sha256:403c1d79fa3f5bd0cf4a15eae1790acd7c132b90cb0ac1ea131af4c8729b7a96",
+  "vectorsDigest": "sha256:58961a608e206146050fa71bd09f34ba3190ddbbf2fa1b36859452a9a65d867d",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -737,6 +737,58 @@
         }
       },
       "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "paid_resource_nfc": {
+      "paidResourceUrl": "https://api.example.com/v1/caf\u00e9",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised_scope_nfc": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "actionType": "inference.completion",
+        "scope": "lire:mod\u00e8le-x"
+      },
       "now": 1703123500,
       "maxAgeSeconds": 3600,
       "mode": "session"
@@ -1644,6 +1696,34 @@
       "context": "advertised_scope_not_a_string",
       "report": {
         "receiptRef": "sha256:fe664fd35fa59acda82dd588f2af62d089e076caadf9a14202868691bb4a593c",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "mismatched",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_advertised_scope_nfd.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_scope_nfc",
+      "report": {
+        "receiptRef": "sha256:4f3757f825e8e4d868d395f976d7355b45dd3cc4d60170a4f3f07dae7ccae918",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2722,6 +2802,24 @@
       "context": "ok"
     },
     {
+      "file": "neg_compact_two_segments.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_compact_four_segments.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signature_not_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
       "file": "neg_header_not_object.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
@@ -3200,6 +3298,12 @@
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_resource_mismatch",
       "context": "paid_resource_empty_string"
+    },
+    {
+      "file": "neg_resource_paid_unicode_normalization.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_resource_mismatch",
+      "context": "paid_resource_nfc"
     },
     {
       "file": "neg_signer_unauthorized.json",

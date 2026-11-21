@@ -1033,6 +1033,13 @@ C_NO_ID = "success_without_identifier"
 C_SUCCESS_FALSE = "success_false_with_transaction"
 C_SUCCESS_STRING = "success_is_the_string_true"
 C_PAID_EMPTY = "paid_resource_empty_string"
+C_PAID_NFC = "paid_resource_nfc"
+C_ADVERT_NFC = "advertised_scope_nfc"
+RESOURCE_NFC = unicodedata.normalize("NFC", "https://api.example.com/v1/café")
+RESOURCE_NFD = unicodedata.normalize("NFD", "https://api.example.com/v1/café")
+SCOPE_NFC = unicodedata.normalize("NFC", "lire:modèle-x")
+SCOPE_NFD = unicodedata.normalize("NFD", "lire:modèle-x")
+ADVERTISED_NFC = dict(ADVERTISED_INFO, scope=SCOPE_NFC)
 C_ARCHIVAL_END = "archival_at_end_of_time"
 C_NOW_FLOAT = "clock_integer_valued_float"
 C_RESP_NET_OTHER_FORM = "response_network_not_an_identifier"
@@ -1115,6 +1122,9 @@ CONTEXTS = {
     C_SUCCESS_FALSE: _ctx(success=False),
     C_SUCCESS_STRING: _ctx(success="true"),
     C_PAID_EMPTY: _ctx(paidResourceUrl=""),
+    # no Unicode normalization of signed members (spec §4.6): NFC is not NFD
+    C_PAID_NFC: _ctx(paidResourceUrl=RESOURCE_NFC),
+    C_ADVERT_NFC: _ctx(advertisedInfo=ADVERTISED_NFC),
     C_ARCHIVAL_END: _ctx(now=SAFE_INT_MAX, mode="archival"),
     C_NOW_FLOAT: _ctx(now=float(VERIFIER_NOW)),
     C_RESP_NET_OTHER_FORM: _ctx(network="Base Mainnet"),
@@ -1163,6 +1173,7 @@ SUITE = [
     ("pos_binding_advertised_scope_differs.json", PASS, None, C_ADVERT),
     ("pos_binding_advertised_actiontype_differs.json", PASS, None, C_ADVERT),
     ("pos_binding_advertised_scope_not_string.json", PASS, None, C_ADVERT_NONSTRING),
+    ("pos_binding_advertised_scope_nfd.json", PASS, None, C_ADVERT_NFC),
     ("pos_advertisement_absent.json", PASS, None, C_ADVERT),
     ("pos_advertised_info_outside_domain.json", PASS, None, C_ADVERT_FLOAT),
     ("pos_requirements_not_held.json", PASS, None, C_NOREQ),
@@ -1208,6 +1219,9 @@ SUITE = [
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
     ("neg_compact_over_size_limit.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_compact_two_segments.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_compact_four_segments.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_signature_not_string.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_not_object.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_bom.json", REJECT, R_MALFORMED, C_OK),
     ("neg_header_utf16.json", REJECT, R_MALFORMED, C_OK),
@@ -1291,6 +1305,7 @@ SUITE = [
     # §5.4 resource and signer authorization
     ("neg_resource_mismatch.json", REJECT, R_RESOURCE, C_PAID_OTHER),
     ("neg_resource_paid_empty_string.json", REJECT, R_RESOURCE, C_PAID_EMPTY),
+    ("neg_resource_paid_unicode_normalization.json", REJECT, R_RESOURCE, C_PAID_NFC),
     ("neg_signer_unauthorized.json", REJECT, R_SIGNER_UNAUTH, C_OK),
     ("neg_signer_unknown_kid.json", REJECT, R_SIGNER_UNAUTH, C_OK),
     ("neg_signer_payto_wrong_resource.json", REJECT, R_SIGNER_UNAUTH, C_OK),
@@ -1434,6 +1449,9 @@ EXPECT_REPORT = {
         "checks": {"advertisement": "mismatched"},
         "bindings": [{"type": BT_ADVERTISED, "status": "mismatched"}]},
     "pos_advertisement_absent.json": {"checks": {"advertisement": "absent"}},
+    "pos_binding_advertised_scope_nfd.json": {
+        "checks": {"advertisement": "mismatched"},
+        "bindings": [{"type": BT_ADVERTISED, "status": "mismatched"}]},
     "pos_advertised_info_outside_domain.json": {
         "bindings": [{"type": BT_ADVERTISED, "status": _NE}]},
     "pos_requirements_not_held.json": {"checks": {"requirements": _NE, "payTo": "not_compared"}},
@@ -1607,6 +1625,10 @@ def regenerate_vectors() -> None:
       signed(base(action={"actionType": "inference.embedding"},
                   bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_INFO))}])))
     w("pos_advertisement_absent.json", signed(base()))
+    w("pos_binding_advertised_scope_nfd.json",
+      signed(base(action={"scope": SCOPE_NFD},
+                  bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_NFC))}])))
+    w("neg_resource_paid_unicode_normalization.json", signed(base(resourceUrl=RESOURCE_NFD)))
     w("pos_advertised_info_outside_domain.json",
       signed(base(bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_INFO))}])))
     for name in ("pos_requirements_not_held.json", "pos_response_casing.json",
@@ -1717,6 +1739,9 @@ def regenerate_vectors() -> None:
     assert respelled != good
     assert base64.urlsafe_b64decode(respelled.split(".")[2] + "==") == b64url_decode(s_ok)
     w("neg_base64url_trailing_bits.json", {"format": "jws", "signature": respelled})
+    w("neg_compact_two_segments.json", {"format": "jws", "signature": good.rsplit(".", 1)[0]})
+    w("neg_compact_four_segments.json", {"format": "jws", "signature": good + "." + s_ok})
+    w("neg_signature_not_string.json", {"format": "jws", "signature": good.split(".")})
     w("neg_header_not_object.json",
       {"format": "jws", "signature": f"{b64url(_canon(['ES256', KID_ES256, TYP]).encode())}.{p_ok}.{s_ok}"})
     # every header negative below is SIGNED, so only the header rule can reject it
@@ -2046,6 +2071,8 @@ def write_vectors_md(manifest) -> None:
         C_SUCCESS_FALSE: "`success: false`, though the response names the transaction",
         C_SUCCESS_STRING: "`success` is the string `\"true\"`, not the boolean",
         C_PAID_EMPTY: "the verifier paid, and the URL it gives is the empty string",
+        C_PAID_NFC: "the verifier paid for the NFC spelling of a URL the receipt writes in NFD",
+        C_ADVERT_NFC: "the advertised `info` held has the NFC spelling of a scope the receipt writes in NFD",
         C_ARCHIVAL_END: "archival mode, clock at 2^53 - 1",
         C_NOW_FLOAT: "clock given as the integer-valued JSON number `1703123500.0`",
         C_RESP_NET_OTHER_FORM: "response `network` is `Base Mainnet`, not a network identifier",
