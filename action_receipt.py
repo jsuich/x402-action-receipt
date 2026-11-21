@@ -209,12 +209,13 @@ PROFILE_VERSION = 1
 TYP = "x402-action-receipt+jws"
 HEADER_KEYS = {"alg", "kid", "typ"}
 TOP_KEYS = {"version", "receiptId", "issuedAt", "network", "resourceUrl", "payer", "payTo",
-            "transaction", "settlementRef", "settlementStatus", "requirementsDigest",
+            "transaction", "settlementRef", "chargedAmount", "settlementStatus", "requirementsDigest",
             "supersedes", "action", "bindings"}
 ACTION_KEYS = {"agent", "actionType", "scope", "outcome"}
 BINDING_KEYS = {"type", "value"}
 STRING_TOP_FIELDS = {"receiptId", "network", "resourceUrl", "payer", "payTo", "transaction",
-                     "settlementRef", "settlementStatus", "requirementsDigest", "supersedes"}
+                     "settlementRef", "chargedAmount", "settlementStatus", "requirementsDigest",
+                     "supersedes"}
 OUTCOMES = {"delivered", "partial", "failed"}                                # SERVICE delivery
 SETTLEMENT_STATUSES = {"settled", "capturePending", "reversed", "refunded"}  # PAYMENT lifecycle
 MAX_BINDINGS = 16
@@ -229,6 +230,9 @@ RE_CAIP2 = RE_NETWORK        # name kept for issuer.py; the grammar is the 0.4 o
 RE_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 RE_EVM_ADDRESS = re.compile(r"0x[0-9a-f]{40}")
 RE_EVM_TX = re.compile(r"0x[0-9a-f]{64}")
+# `chargedAmount` (spec §4.6): "" (tested apart), or a decimal integer of at most
+# 78 digits with no leading zero
+RE_CHARGED_AMOUNT = re.compile(r"0|[1-9][0-9]{0,77}")
 RE_BINDING_TYPE = re.compile(r"[a-z][a-z0-9+.-]{0,63}:[\x21-\x7e]{1,191}")
 RE_BINDING_VALUE = re.compile(r"[\x21-\x7e]{1,1024}")
 
@@ -302,8 +306,9 @@ ABSENT = _Absent()
 class Context:
     """What the verifier holds besides the receipt (spec §5).
 
-    success / transaction / settlement_ref / network / payer : from the
-        SettlementResponse (core §5.3). UNSIGNED input: checks against it are
+    success / transaction / settlement_ref / network / payer / amount / extra :
+        from the SettlementResponse (core §5.3); `amount` and `extra` are the
+        response's members of those names, read for the charged amount (§4.3). UNSIGNED input: checks against it are
         consistency checks, not independent corroboration. Any value is legal
         here; a malformed one is absent or rejected, never an ERROR.
     accepted : the PaymentRequirements object the client accepted
@@ -323,13 +328,15 @@ class Context:
     def __init__(self, success: bool, transaction: str = "", settlement_ref: str = "",
                  network=None, payer=None, accepted=None, advertised_info=None,
                  now: int = 0, max_age_s=ABSENT, mode: str = "session",
-                 paid_resource_url=None):
+                 paid_resource_url=None, amount=None, extra=None):
         self.paid_resource_url = paid_resource_url   # set only by a verifier that paid
         self.success = success
         self.transaction = transaction
         self.settlement_ref = settlement_ref
         self.network = network
         self.payer = payer
+        self.amount = amount
+        self.extra = extra
         self.accepted = accepted
         self.advertised_info = advertised_info
         self.now = now
@@ -402,6 +409,17 @@ def settlement_reference_of(accepted, settlement_response) -> str:
     return value if _has(value) else ""
 
 
+def charged_amount_of(amount, extra) -> str:
+    """The charged amount of a SettlementResponse (spec §4.3), from its `amount`
+    and `extra` members: `extra.chargedAmount` when present (§4.6), failing that
+    `amount` when present, failing that `""`. The lookup does not depend on the
+    scheme, and nothing is normalized."""
+    charged = extra.get("chargedAmount") if isinstance(extra, dict) else None
+    if _has(charged):
+        return charged
+    return amount if _has(amount) else ""
+
+
 def _is_evm(network: str) -> bool:
     return isinstance(network, str) and network.startswith("eip155:")
 
@@ -466,6 +484,8 @@ def validate_payload(payload) -> str | None:
     if not RE_DIGEST.fullmatch(payload["requirementsDigest"]):
         return R_MALFORMED
     if payload["supersedes"] and not RE_DIGEST.fullmatch(payload["supersedes"]):
+        return R_MALFORMED
+    if payload["chargedAmount"] and not RE_CHARGED_AMOUNT.fullmatch(payload["chargedAmount"]):
         return R_MALFORMED
     if action["outcome"] not in OUTCOMES:
         return R_INVALID_OUTCOME
@@ -649,6 +669,13 @@ def _verify(receipt, ctx, cfg, key_registry):
         checks["network"] = "compared"
     else:
         checks["network"] = "not_compared"
+    # the charged amount, both ways like the identifiers; nothing is normalized
+    charged = charged_amount_of(ctx.amount, ctx.extra)
+    if charged:
+        if payload["chargedAmount"] != charged:
+            return REJECT, R_SETTLEMENT, {}
+    elif payload["chargedAmount"]:
+        return REJECT, R_SETTLEMENT, {}
     if _has(ctx.payer):
         if payload["payer"] != _norm_unsigned(network, ctx.payer):
             return REJECT, R_SETTLEMENT, {}
@@ -857,6 +884,7 @@ ISSUED_AT = 1703123456
 VERIFIER_NOW = 1703123500
 RECEIPT_ID = "Zm9yLXRlc3Rpbmctb25seS0wMQ"
 RECEIPT_ID_2 = "Zm9yLXRlc3Rpbmctb25seS0wMg"
+CHARGED = "10000"     # SettlementResponse.amount of the canonical exchange (spec §8)
 
 ACCEPTED = {
     "scheme": "exact", "network": NETWORK, "amount": "10000",
@@ -928,7 +956,8 @@ def _base_payload(**overrides) -> dict:
     action.update(overrides.pop("action", {}))
     p = {"version": PROFILE_VERSION, "receiptId": RECEIPT_ID, "issuedAt": ISSUED_AT,
          "network": NETWORK, "resourceUrl": RESOURCE, "payer": PAYER, "payTo": PAY_TO,
-         "transaction": SETTLEMENT_TX, "settlementRef": "", "settlementStatus": "settled",
+         "transaction": SETTLEMENT_TX, "settlementRef": "", "chargedAmount": CHARGED,
+         "settlementStatus": "settled",
          "requirementsDigest": requirements_digest(ACCEPTED), "supersedes": "",
          "action": action, "bindings": []}
     p.update(overrides)
@@ -1021,7 +1050,8 @@ _DROP = object()
 
 def _ctx(**kw) -> dict:
     c = {"paidResourceUrl": None, "success": True, "transaction": SETTLEMENT_TX,
-         "settlementRef": "", "network": NETWORK, "payer": PAYER, "accepted": ACCEPTED,
+         "settlementRef": "", "network": NETWORK, "payer": PAYER, "amount": CHARGED,
+         "accepted": ACCEPTED,
          "advertisedInfo": None, "now": VERIFIER_NOW, "maxAgeSeconds": 3600, "mode": "session"}
     c.update(kw)
     return {k: v for k, v in c.items() if v is not _DROP}
@@ -1036,6 +1066,7 @@ def context_from_json(c):
     return Context(
         success=c.get("success"), transaction=c.get("transaction"),
         settlement_ref=c.get("settlementRef"), network=c.get("network"), payer=c.get("payer"),
+        amount=c.get("amount"), extra=c.get("extra"),
         accepted=c.get("accepted"), advertised_info=c.get("advertisedInfo"),
         now=c.get("now", ABSENT),
         max_age_s=c["maxAgeSeconds"] if "maxAgeSeconds" in c else ABSENT,
@@ -1121,6 +1152,22 @@ C_ERR = {
     "paid_url_array": _ctx(paidResourceUrl=[RESOURCE]),
 }
 C_NULL = "context_null"
+# the charged amount (spec §4.3, §4.6, §5.8)
+C_NO_AMOUNT = "response_no_charged_amount"
+C_AMOUNT_ZERO = "response_amount_zero"
+C_AMOUNT_78 = "response_amount_78_digits"
+C_AMOUNT_79 = "response_amount_79_digits"
+C_AMOUNT_LEADING_ZERO = "response_amount_leading_zero"
+C_AMOUNT_NON_DIGIT = "response_amount_non_digit"
+C_AMOUNT_NEGATIVE = "response_amount_negative"
+C_AMOUNT_NOT_STRING = "response_amount_not_a_string"
+C_CHARGED_EXTRA = "batch_charged_amount_in_extra"
+C_CHARGED_EXTRA_EMPTY = "extra_charged_amount_empty"
+C_CHARGED_EXTRA_NUMBER = "extra_charged_amount_not_a_string"
+C_EXTRA_NOT_OBJECT = "extra_not_an_object"
+AMOUNT_78 = "9" * 78
+AMOUNT_79 = "1" + "0" * 78
+BATCH_CHARGED = "2500"       # the charge for this request; the top-level amount is the deposit
 
 CONTEXTS = {
     C_OK: _ctx(),
@@ -1200,6 +1247,22 @@ CONTEXTS = {
     C_ADVERT_DEPTH8: _ctx(advertisedInfo=ADVERTISED_DEPTH8),
     C_ADVERT_DEPTH9: _ctx(advertisedInfo=ADVERTISED_DEPTH9),
     C_NULL: None,
+    C_NO_AMOUNT: _ctx(amount=_DROP),
+    C_AMOUNT_ZERO: _ctx(amount="0"),
+    C_AMOUNT_78: _ctx(amount=AMOUNT_78),
+    C_AMOUNT_79: _ctx(amount=AMOUNT_79),
+    C_AMOUNT_LEADING_ZERO: _ctx(amount="010"),
+    C_AMOUNT_NON_DIGIT: _ctx(amount="1e4"),
+    C_AMOUNT_NEGATIVE: _ctx(amount="-10000"),
+    C_AMOUNT_NOT_STRING: _ctx(amount=10000),
+    # a batch scheme: extra.chargedAmount is the charge, the top-level amount something else
+    C_CHARGED_EXTRA: _ctx(transaction="", settlementRef=COMMITMENT_ID, network=SOL_NET, payer=None,
+                          accepted=ACCEPTED_SOL, amount=CHARGED,
+                          extra={"commitmentId": COMMITMENT_ID, "chargedAmount": BATCH_CHARGED}),
+    # extra.chargedAmount absent in the sense of §4.6: the lookup falls back to `amount`
+    C_CHARGED_EXTRA_EMPTY: _ctx(extra={"chargedAmount": ""}),
+    C_CHARGED_EXTRA_NUMBER: _ctx(extra={"chargedAmount": 2500}),
+    C_EXTRA_NOT_OBJECT: _ctx(extra=BATCH_CHARGED),
     **{"config_" + k: v for k, v in C_ERR.items()},
 }
 
@@ -1297,6 +1360,15 @@ SUITE = [
     ("pos_advertised_info_depth_8.json", PASS, None, C_ADVERT_DEPTH8),
     ("pos_advertised_info_depth_9_not_evaluated.json", PASS, None, C_ADVERT_DEPTH9),
     ("pos_binding_printable_edges.json", PASS, None, C_OK),
+    # chargedAmount (spec §4.3, §4.6, §5.8)
+    ("pos_charged_amount_empty_no_amount.json", PASS, None, C_NO_AMOUNT),
+    ("pos_charged_amount_zero.json", PASS, None, C_AMOUNT_ZERO),
+    ("pos_charged_amount_78_digits.json", PASS, None, C_AMOUNT_78),
+    ("pos_charged_amount_from_extra.json", PASS, None, C_CHARGED_EXTRA),
+    ("pos_charged_amount_extra_empty_falls_back.json", PASS, None, C_CHARGED_EXTRA_EMPTY),
+    ("pos_charged_amount_extra_not_string_falls_back.json", PASS, None, C_CHARGED_EXTRA_NUMBER),
+    ("pos_charged_amount_extra_not_object_falls_back.json", PASS, None, C_EXTRA_NOT_OBJECT),
+    ("pos_charged_amount_response_amount_not_string.json", PASS, None, C_AMOUNT_NOT_STRING),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
@@ -1373,6 +1445,11 @@ SUITE = [
     ("neg_schema_digest_base64url.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_supersedes_grammar.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_bindings_not_array.json", REJECT, R_MALFORMED, C_OK),
+    ("neg_schema_charged_amount_79_digits.json", REJECT, R_MALFORMED, C_AMOUNT_79),
+    ("neg_schema_charged_amount_leading_zero.json", REJECT, R_MALFORMED, C_AMOUNT_LEADING_ZERO),
+    ("neg_schema_charged_amount_non_digit.json", REJECT, R_MALFORMED, C_AMOUNT_NON_DIGIT),
+    ("neg_schema_charged_amount_negative.json", REJECT, R_MALFORMED, C_AMOUNT_NEGATIVE),
+    ("neg_schema_charged_amount_not_string.json", REJECT, R_MALFORMED, C_AMOUNT_NOT_STRING),
     ("neg_unsupported_version.json", REJECT, R_UNSUPPORTED_VERSION, C_OK),
     ("neg_invalid_outcome.json", REJECT, R_INVALID_OUTCOME, C_OK),
     ("neg_outcome_retired_refused.json", REJECT, R_INVALID_OUTCOME, C_OK),
@@ -1444,6 +1521,15 @@ SUITE = [
     ("neg_settlement_dropped_ref.json", REJECT, R_SETTLEMENT, C_BOTH),
     ("neg_settlement_ref_case_not_folded.json", REJECT, R_SETTLEMENT, C_EVM_REF_UPPER),
     ("neg_settlement_non_evm_case_not_folded.json", REJECT, R_SETTLEMENT, C_LOOKALIKE),
+    ("neg_settlement_charged_amount_mismatch.json", REJECT, R_SETTLEMENT, C_OK),
+    ("neg_settlement_charged_amount_dropped.json", REJECT, R_SETTLEMENT, C_OK),
+    ("neg_settlement_charged_amount_uncorroborated.json", REJECT, R_SETTLEMENT, C_NO_AMOUNT),
+    ("neg_settlement_charged_amount_top_level_when_extra.json", REJECT, R_SETTLEMENT, C_CHARGED_EXTRA),
+    ("neg_settlement_charged_amount_extra_number_not_read.json", REJECT, R_SETTLEMENT,
+     C_CHARGED_EXTRA_NUMBER),
+    ("neg_settlement_charged_amount_response_out_of_grammar.json", REJECT, R_SETTLEMENT,
+     C_AMOUNT_LEADING_ZERO),
+    ("neg_settlement_charged_amount_not_normalized.json", REJECT, R_SETTLEMENT, C_AMOUNT_LEADING_ZERO),
     # §5.9 payment requirements
     ("neg_requirements_amount_changed.json", REJECT, R_REQUIREMENTS, C_OK),
     ("neg_requirements_payto_mismatch.json", REJECT, R_REQUIREMENTS, C_OK),
@@ -1604,6 +1690,7 @@ EXPECT_REPORT = {
     "pos_advertised_info_depth_9_not_evaluated.json": {
         "bindings": [{"type": BT_ADVERTISED, "status": _NE}]},
     "pos_binding_printable_edges.json": {"bindings": [{"type": "a:!~", "status": _NE}]},
+    "pos_charged_amount_from_extra.json": {"settlementStatus": "capturePending", "checks": _BATCH_CHECKS},
 }
 
 
@@ -1649,6 +1736,7 @@ MUTATIONS = [
     ("payTo", lambda p: p.update(payTo=_OTHER_ADDR), R_REQUIREMENTS),
     ("transaction", lambda p: p.update(transaction="0x" + "cd" * 32), R_SETTLEMENT),
     ("settlementRef", lambda p: p.update(settlementRef="batch:other"), R_SETTLEMENT),
+    ("chargedAmount", lambda p: p.update(chargedAmount="9999"), R_SETTLEMENT),
     ("settlementStatus", lambda p: p.update(settlementStatus="refunded"), None),
     ("requirementsDigest", lambda p: p.update(requirementsDigest="sha256:" + "00" * 32),
      R_REQUIREMENTS),
@@ -1880,6 +1968,30 @@ def regenerate_vectors() -> None:
       signed(base(bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(_canon(ADVERTISED_DEPTH9).encode())}])))
     # binding characters at both ends of 0x21..0x7E
     w("pos_binding_printable_edges.json", signed(base(bindings=[{"type": "a:!~", "value": "!~"}])))
+    # chargedAmount (spec §4.3, §4.6, §5.8): each receipt differs from the canonical
+    # one in chargedAmount only, and each context in what the response reports
+    w("pos_charged_amount_empty_no_amount.json", signed(base(chargedAmount="")))
+    w("pos_charged_amount_zero.json", signed(base(chargedAmount="0")))
+    w("pos_charged_amount_78_digits.json", signed(base(chargedAmount=AMOUNT_78)))
+    w("pos_charged_amount_from_extra.json", signed(_sol_payload(chargedAmount=BATCH_CHARGED)))
+    w("pos_charged_amount_extra_empty_falls_back.json", signed(base(), "EdDSA", KID_ED))
+    w("pos_charged_amount_extra_not_string_falls_back.json", signed(base(), "ES256K", KID_ES256K))
+    w("pos_charged_amount_extra_not_object_falls_back.json",
+      signed(base(), "ES256", KID_PAYTO, keys["PAYTO"]))
+    w("pos_charged_amount_response_amount_not_string.json", signed(base(chargedAmount="")))
+    w("neg_schema_charged_amount_79_digits.json", signed(base(chargedAmount=AMOUNT_79)))
+    w("neg_schema_charged_amount_leading_zero.json", signed(base(chargedAmount="010")))
+    w("neg_schema_charged_amount_non_digit.json", signed(base(chargedAmount="1e4")))
+    w("neg_schema_charged_amount_negative.json", signed(base(chargedAmount="-10000")))
+    w("neg_schema_charged_amount_not_string.json", signed(base(chargedAmount=10000)))
+    w("neg_settlement_charged_amount_mismatch.json", signed(base(chargedAmount="9999")))
+    w("neg_settlement_charged_amount_dropped.json", signed(base(chargedAmount="")))
+    w("neg_settlement_charged_amount_uncorroborated.json", signed(base()))
+    w("neg_settlement_charged_amount_top_level_when_extra.json", signed(_sol_payload()))
+    w("neg_settlement_charged_amount_extra_number_not_read.json",
+      signed(base(chargedAmount=BATCH_CHARGED)))
+    w("neg_settlement_charged_amount_response_out_of_grammar.json", signed(base(chargedAmount="")))
+    w("neg_settlement_charged_amount_not_normalized.json", signed(base(chargedAmount="10")))
 
     # ---- §5.1 envelope and header ----
     good = _sign_jws("ES256", KID_ES256, es, base_text.encode())
@@ -2247,6 +2359,19 @@ def write_vectors_md(manifest) -> None:
         C_REQ_DEPTH9: "accepted requirements nested 9 levels deep, outside the value domain",
         C_ADVERT_DEPTH8: "the advertised `info` held is nested 8 levels deep",
         C_ADVERT_DEPTH9: "the advertised `info` held is nested 9 levels deep, outside the value domain",
+        C_NO_AMOUNT: "response carries no `amount` and no `extra`: no charged amount",
+        C_AMOUNT_ZERO: "response `amount` is `0`",
+        C_AMOUNT_78: "response `amount` has 78 digits, the most the grammar admits",
+        C_AMOUNT_79: "response `amount` has 79 digits",
+        C_AMOUNT_LEADING_ZERO: "response `amount` is `010`, with a leading zero",
+        C_AMOUNT_NON_DIGIT: "response `amount` is `1e4`",
+        C_AMOUNT_NEGATIVE: "response `amount` is `-10000`",
+        C_AMOUNT_NOT_STRING: "response `amount` is the number 10000, not a string: no charged amount",
+        C_CHARGED_EXTRA: ("Solana batch commitment; `extra.chargedAmount` 2500 beside a different "
+                          "top-level `amount`"),
+        C_CHARGED_EXTRA_EMPTY: "response `extra.chargedAmount` is the empty string; `amount` 10000",
+        C_CHARGED_EXTRA_NUMBER: "response `extra.chargedAmount` is the number 2500; `amount` 10000",
+        C_EXTRA_NOT_OBJECT: "response `extra` is a string, not an object; `amount` 10000",
     }
     for k in C_ERR:
         notes["config_" + k] = f"configuration outside the contract: {k.replace('_', ' ')}"
@@ -2418,6 +2543,11 @@ _DEFAULT_REPORT_OK = {
     "pos_settlement_ref_evm_exact_case.json", "pos_requirements_utf16_order.json",
     "pos_authorization_marker_not_true.json", "pos_config_clock_integer_float.json",
     "pos_requirements_max_safe_integer.json", "pos_requirements_depth_8.json",
+    "pos_charged_amount_empty_no_amount.json", "pos_charged_amount_zero.json",
+    "pos_charged_amount_78_digits.json", "pos_charged_amount_extra_empty_falls_back.json",
+    "pos_charged_amount_extra_not_string_falls_back.json",
+    "pos_charged_amount_extra_not_object_falls_back.json",
+    "pos_charged_amount_response_amount_not_string.json",
 }
 
 

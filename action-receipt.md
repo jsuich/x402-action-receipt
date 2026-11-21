@@ -601,16 +601,16 @@ JWS protected header:
 {"alg":"EdDSA","kid":"did:web:api.example.com#ed25519","typ":"x402-action-receipt+jws"}
 ```
 
-JWS payload (638 bytes):
+JWS payload (662 bytes):
 
 ```
-{"action":{"actionType":"inference.completion","agent":"did:web:agent.example","outcome":"delivered","scope":"read:model-x"},"bindings":[],"issuedAt":1703123456,"network":"eip155:8453","payTo":"0x209693bc6afc0c5328ba36faf03c514ef312287c","payer":"0x857b06519e91e3a54538791bdbb0e22373e36b66","receiptId":"Zm9yLXRlc3Rpbmctb25seS0wMQ","requirementsDigest":"sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc","resourceUrl":"https://api.example.com/v1/complete","settlementRef":"","settlementStatus":"settled","supersedes":"","transaction":"0xabababababababababababababababababababababababababababababababab","version":1}
+{"action":{"actionType":"inference.completion","agent":"did:web:agent.example","outcome":"delivered","scope":"read:model-x"},"bindings":[],"chargedAmount":"10000","issuedAt":1703123456,"network":"eip155:8453","payTo":"0x209693bc6afc0c5328ba36faf03c514ef312287c","payer":"0x857b06519e91e3a54538791bdbb0e22373e36b66","receiptId":"Zm9yLXRlc3Rpbmctb25seS0wMQ","requirementsDigest":"sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc","resourceUrl":"https://api.example.com/v1/complete","settlementRef":"","settlementStatus":"settled","supersedes":"","transaction":"0xabababababababababababababababababababababababababababababababab","version":1}
 ```
 
 `receiptRef`:
 
 ```
-sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2
+sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60
 ```
 
 Signed with the Ed25519 key whose public key is
@@ -619,7 +619,7 @@ base64). Ed25519 signatures are deterministic, so the compact string reproduces
 exactly:
 
 ```
-eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDp3ZWI6YXBpLmV4YW1wbGUuY29tI2VkMjU1MTkiLCJ0eXAiOiJ4NDAyLWFjdGlvbi1yZWNlaXB0K2p3cyJ9.eyJhY3Rpb24iOnsiYWN0aW9uVHlwZSI6ImluZmVyZW5jZS5jb21wbGV0aW9uIiwiYWdlbnQiOiJkaWQ6d2ViOmFnZW50LmV4YW1wbGUiLCJvdXRjb21lIjoiZGVsaXZlcmVkIiwic2NvcGUiOiJyZWFkOm1vZGVsLXgifSwiYmluZGluZ3MiOltdLCJpc3N1ZWRBdCI6MTcwMzEyMzQ1NiwibmV0d29yayI6ImVpcDE1NTo4NDUzIiwicGF5VG8iOiIweDIwOTY5M2JjNmFmYzBjNTMyOGJhMzZmYWYwM2M1MTRlZjMxMjI4N2MiLCJwYXllciI6IjB4ODU3YjA2NTE5ZTkxZTNhNTQ1Mzg3OTFiZGJiMGUyMjM3M2UzNmI2NiIsInJlY2VpcHRJZCI6IlptOXlMWFJsYzNScGJtY3RiMjVzZVMwd01RIiwicmVxdWlyZW1lbnRzRGlnZXN0Ijoic2hhMjU2OjkyOGVmOGVlNWY1ZGY3YTMyNWRjNWE1ZTJkYmQ5YTNjZGY4OWFiNzFmZTI4ZGVjN2M3MTNlNmVmZGQzNmFhYmMiLCJyZXNvdXJjZVVybCI6Imh0dHBzOi8vYXBpLmV4YW1wbGUuY29tL3YxL2NvbXBsZXRlIiwic2V0dGxlbWVudFJlZiI6IiIsInNldHRsZW1lbnRTdGF0dXMiOiJzZXR0bGVkIiwic3VwZXJzZWRlcyI6IiIsInRyYW5zYWN0aW9uIjoiMHhhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIiwidmVyc2lvbiI6MX0.3Cim_I_UfWkIMPo3NC9yevQbR0Gk4NmYsnz4sxT52FFR_zX40mQjDA22UEdmAV_KNRz2EgzE33WOPdRxY5GOBQ
+eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDp3ZWI6YXBpLmV4YW1wbGUuY29tI2VkMjU1MTkiLCJ0eXAiOiJ4NDAyLWFjdGlvbi1yZWNlaXB0K2p3cyJ9.eyJhY3Rpb24iOnsiYWN0aW9uVHlwZSI6ImluZmVyZW5jZS5jb21wbGV0aW9uIiwiYWdlbnQiOiJkaWQ6d2ViOmFnZW50LmV4YW1wbGUiLCJvdXRjb21lIjoiZGVsaXZlcmVkIiwic2NvcGUiOiJyZWFkOm1vZGVsLXgifSwiYmluZGluZ3MiOltdLCJjaGFyZ2VkQW1vdW50IjoiMTAwMDAiLCJpc3N1ZWRBdCI6MTcwMzEyMzQ1NiwibmV0d29yayI6ImVpcDE1NTo4NDUzIiwicGF5VG8iOiIweDIwOTY5M2JjNmFmYzBjNTMyOGJhMzZmYWYwM2M1MTRlZjMxMjI4N2MiLCJwYXllciI6IjB4ODU3YjA2NTE5ZTkxZTNhNTQ1Mzg3OTFiZGJiMGUyMjM3M2UzNmI2NiIsInJlY2VpcHRJZCI6IlptOXlMWFJsYzNScGJtY3RiMjVzZVMwd01RIiwicmVxdWlyZW1lbnRzRGlnZXN0Ijoic2hhMjU2OjkyOGVmOGVlNWY1ZGY3YTMyNWRjNWE1ZTJkYmQ5YTNjZGY4OWFiNzFmZTI4ZGVjN2M3MTNlNmVmZGQzNmFhYmMiLCJyZXNvdXJjZVVybCI6Imh0dHBzOi8vYXBpLmV4YW1wbGUuY29tL3YxL2NvbXBsZXRlIiwic2V0dGxlbWVudFJlZiI6IiIsInNldHRsZW1lbnRTdGF0dXMiOiJzZXR0bGVkIiwic3VwZXJzZWRlcyI6IiIsInRyYW5zYWN0aW9uIjoiMHhhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiYWJhYmFiIiwidmVyc2lvbiI6MX0.x6nVGfImaC6BxqkqD2HDeGwifz1PvOKbQDhpqhX1r53m-sID5LWgbXp9ujSrTx3hR7AS9ylrTQIcW4nDt_PEDA
 ```
 
 The settlement transaction in this example is a placeholder, not a real

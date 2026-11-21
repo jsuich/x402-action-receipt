@@ -31,6 +31,8 @@ def context_from_json(c):
         settlement_ref=c.get("settlementRef"),
         network=c.get("network"),
         payer=c.get("payer"),
+        amount=c.get("amount"),
+        extra=c.get("extra"),
         accepted=c.get("accepted"),
         advertised_info=c.get("advertisedInfo"),
         now=c.get("now", A.ABSENT),

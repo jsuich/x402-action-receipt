@@ -142,6 +142,7 @@ const RE = {
   network: /^[-a-z0-9]{3,32}:[-_a-zA-Z0-9]{1,32}$/,   // a "network identifier"
   evmAddr: /^0x[0-9a-f]{40}$/,
   evmTx: /^0x[0-9a-f]{64}$/,
+  chargedAmount: /^(?:0|[1-9][0-9]{0,77})$/,   // "" is allowed apart (spec 4.6)
   digest: /^sha256:[0-9a-f]{64}$/,
   bindingType: /^[a-z][a-z0-9+.-]{0,63}:[\x21-\x7e]{1,191}$/,
   bindingValue: /^[\x21-\x7e]{1,1024}$/,
@@ -149,7 +150,7 @@ const RE = {
 
 const PAYLOAD_MEMBERS = [
   'version', 'receiptId', 'issuedAt', 'network', 'resourceUrl', 'payer', 'payTo',
-  'transaction', 'settlementRef', 'settlementStatus', 'requirementsDigest',
+  'transaction', 'settlementRef', 'chargedAmount', 'settlementStatus', 'requirementsDigest',
   'supersedes', 'action', 'bindings',
 ];
 const ACTION_MEMBERS = ['agent', 'actionType', 'scope', 'outcome'];
@@ -317,7 +318,7 @@ function verifyInner(receipt, ctx, cfg, resolver) {
     const a = p.action;
     if (!isObj(a) || !hasExactly(a, ACTION_MEMBERS)) return reject('invalid_payload');
     const strs = [p.receiptId, p.network, p.resourceUrl, p.payer, p.payTo, p.transaction,
-      p.settlementRef, p.settlementStatus, p.requirementsDigest, p.supersedes,
+      p.settlementRef, p.chargedAmount, p.settlementStatus, p.requirementsDigest, p.supersedes,
       a.agent, a.actionType, a.scope, a.outcome];
     if (!strs.every(isStr)) return reject('invalid_payload');
     const evm = p.network.startsWith('eip155:');
@@ -332,6 +333,7 @@ function verifyInner(receipt, ctx, cfg, resolver) {
       !(p.transaction === '' && p.settlementRef === '') &&
       RE.digest.test(p.requirementsDigest) &&
       (p.supersedes === '' || RE.digest.test(p.supersedes)) &&
+      (p.chargedAmount === '' || RE.chargedAmount.test(p.chargedAmount)) &&
       a.agent !== '' && a.actionType !== '';
     if (!ok) return reject('invalid_payload');
   }
@@ -412,6 +414,11 @@ function verifyInner(receipt, ctx, cfg, resolver) {
   const srRef = own(sr, 'settlementRef');
   const srPayer = own(sr, 'payer');
   const srNet = own(sr, 'network');
+  // the charged amount (spec 4.3): extra.chargedAmount when present, else amount
+  // when present, else none; whatever the scheme
+  const srExtraCharged = own(own(sr, 'extra'), 'chargedAmount');
+  const srAmount = own(sr, 'amount');
+  const srCharged = present(srExtraCharged) ? srExtraCharged : (present(srAmount) ? srAmount : '');
   const hasTx = present(srTx);
   const hasRef = present(srRef);
   if (own(sr, 'success') !== true || !(hasTx || hasRef)) return reject('invalid_transaction_state');
@@ -429,6 +436,8 @@ function verifyInner(receipt, ctx, cfg, resolver) {
     } else {
       checks.network = 'not_compared';
     }
+    // compared both ways, like the identifiers; nothing is normalized
+    const chargedOk = srCharged !== '' ? p.chargedAmount === srCharged : p.chargedAmount === '';
     let payerOk = true;
     if (present(srPayer)) {
       checks.payer = 'compared';
@@ -436,7 +445,7 @@ function verifyInner(receipt, ctx, cfg, resolver) {
     } else {
       checks.payer = 'not_compared';
     }
-    if (!(txOk && refOk && netOk && payerOk)) {
+    if (!(txOk && refOk && netOk && chargedOk && payerOk)) {
       return reject('invalid_actionreceipt_settlement_mismatch');
     }
   }
@@ -606,7 +615,9 @@ function runExample() {
   const d = 'sha256:' + sha256hex(accBytes);
   say('requirementsDigest from printed bytes', d === reqDigest, d);
   const payBytes = Buffer.from(payloadText, 'utf8');
-  say('payload is 638 bytes', payBytes.length === 638, `(${payBytes.length})`);
+  // the byte count the spec states for the printed payload, read from its sentence
+  const stated = Number((sect.match(/JWS payload \((\d+) bytes\)/) || [])[1]);
+  say(`payload is ${stated} bytes, as the spec states`, payBytes.length === stated, `(${payBytes.length})`);
   say('printed payload is in JCS form', jcs(JSON.parse(payloadText)).equals(payBytes));
   say('payload.requirementsDigest equals the printed digest',
     JSON.parse(payloadText).requirementsDigest === reqDigest);
@@ -633,6 +644,7 @@ function runExample() {
     transaction: '0xabababababababababababababababababababababababababababababababab',
     network: 'eip155:8453',
     payer: '0x857b06519E91e3A54538791bDbb0E22373e36b66',
+    amount: '10000',
     accepted: JSON.parse(accText),
     advertisedInfo: null,
     now: 1703123500,

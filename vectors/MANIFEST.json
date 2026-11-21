@@ -3,7 +3,7 @@
   "version": 1,
   "specDraft": "0.4",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT (and on ERROR), and the report on PASS. keys.json is a test fixture standing in for authorization and key resolution. vectorsDigest is the sha256 over the JCS form of {file name: sha256 hex of the file} for every vector file and keys.json.",
-  "vectorsDigest": "sha256:c9df09a25e63d93e7720cc456110360b052907cbca22746b1ed1b77ef2bf05fb",
+  "vectorsDigest": "sha256:35a4cca39e729f40437c3d74a9350c516d8187fa54b4675f67a3ae56ff1d8cd9",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -15,6 +15,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -39,6 +40,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -63,6 +65,7 @@
       "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
       "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       "payer": null,
+      "amount": "10000",
       "accepted": {
         "scheme": "batch-settlement",
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
@@ -84,6 +87,7 @@
       "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
       "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       "payer": null,
+      "amount": "10000",
       "accepted": {
         "scheme": "batch-settlement",
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
@@ -105,6 +109,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": null,
       "advertisedInfo": null,
       "now": 1703123500,
@@ -118,6 +123,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -142,6 +148,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0X857b06519E91e3A54538791bDbb0E22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -166,6 +173,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": null,
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -190,6 +198,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -214,6 +223,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -238,6 +248,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": [],
       "advertisedInfo": null,
       "now": 1703123500,
@@ -251,6 +262,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -275,6 +287,7 @@
       "settlementRef": "",
       "network": "base",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:1",
@@ -299,6 +312,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -323,6 +337,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -347,6 +362,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -374,6 +390,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -402,6 +419,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -431,6 +449,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -454,6 +473,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -478,6 +498,7 @@
       "settlementRef": "",
       "network": null,
       "payer": null,
+      "amount": "10000",
       "accepted": null,
       "advertisedInfo": null,
       "now": 1703123500,
@@ -491,6 +512,7 @@
       "settlementRef": "",
       "network": "eip1559:1",
       "payer": "0x857B06519E91E3A54538791BDBB0E22373E36B66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip1559:1",
@@ -515,6 +537,7 @@
       "settlementRef": "",
       "network": "cloudflare:402",
       "payer": null,
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "cloudflare:402",
@@ -539,6 +562,7 @@
       "settlementRef": "BATCH:VOUCHER:9F3C1D0A-0000-4A11-B2CC-SETTLEMENT-ROOT-01",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -563,6 +587,7 @@
       "settlementRef": "Batch:Voucher:9F3C1D0A-Root-01",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -587,6 +612,7 @@
       "settlementRef": "",
       "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       "payer": null,
+      "amount": "10000",
       "accepted": {
         "scheme": "batch-settlement",
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
@@ -608,6 +634,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -634,6 +661,7 @@
       "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
       "network": null,
       "payer": "\ud800",
+      "amount": "10000",
       "accepted": {
         "scheme": "batch-settlement",
         "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
@@ -657,6 +685,7 @@
       "payer": {
         "a": 1
       },
+      "amount": "10000",
       "accepted": "x",
       "advertisedInfo": [
         {
@@ -676,6 +705,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -700,6 +730,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -724,6 +755,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -748,6 +780,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -772,6 +805,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -796,6 +830,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -824,6 +859,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -848,6 +884,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -872,6 +909,7 @@
       "settlementRef": "",
       "network": "Base Mainnet",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -895,6 +933,7 @@
       "transaction": "0xabababababababababababababababababababababababababababababababab",
       "settlementRef": "",
       "network": "eip155:8453",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -919,6 +958,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -943,6 +983,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -967,6 +1008,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -991,6 +1033,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1015,6 +1058,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1040,6 +1084,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1065,6 +1110,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1100,6 +1146,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1137,6 +1184,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1180,6 +1228,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1219,6 +1268,313 @@
       "mode": "session"
     },
     "context_null": null,
+    "response_no_charged_amount": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_zero": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "0",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_78_digits": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "999999999999999999999999999999999999999999999999999999999999999999999999999999",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_79_digits": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "1000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_leading_zero": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "010",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_non_digit": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "1e4",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_negative": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "-10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": 10000,
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "batch_charged_amount_in_extra": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "",
+      "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "payer": null,
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "amount": "10000",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "maxTimeoutSeconds": 60,
+        "extra": {}
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "commitmentId": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "chargedAmount": "2500"
+      }
+    },
+    "extra_charged_amount_empty": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": ""
+      }
+    },
+    "extra_charged_amount_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": 2500
+      }
+    },
+    "extra_not_an_object": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": "2500"
+    },
     "config_mode_upper_case": {
       "paidResourceUrl": null,
       "success": true,
@@ -1226,6 +1582,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1250,6 +1607,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1273,6 +1631,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1297,6 +1656,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1321,6 +1681,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1345,6 +1706,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1369,6 +1731,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1392,6 +1755,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1416,6 +1780,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1440,6 +1805,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1464,6 +1830,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1488,6 +1855,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1512,6 +1880,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1536,6 +1905,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1560,6 +1930,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1584,6 +1955,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1610,6 +1982,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1635,7 +2008,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1658,7 +2031,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1681,7 +2054,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1704,7 +2077,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1727,7 +2100,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:f6e3956487bf0a1d00cf58a787eaa48d8a493e84d6d1ed19b74404fb3bafff7f",
+        "receiptRef": "sha256:ebd3f12f862cc77653f0c5d6aa85aebee204719445cd3989549b23a23fb8e750",
         "outcome": "failed",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1750,7 +2123,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:ed054f645aefd8b1f343f7500f897d049c9282bf0a182ce43e131ea1be56cea7",
+        "receiptRef": "sha256:bd4ee7db5c824079253a11981b99f138b018754ab958a1792bde8343a67ec17f",
         "outcome": "partial",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1773,7 +2146,7 @@
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:b4e0b131ce2092fa8cbe0b2c7053352e4cb8f4f798fe2c330a8c83b17fdf1337",
+        "receiptRef": "sha256:d00ffa023c7fd6fcf51cfef0825f6c18fc0c41e7c97d0b37707229fde3a4c3eb",
         "outcome": "delivered",
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
@@ -1796,7 +2169,7 @@
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:67b762f1dfa21e9decae47828e4914ba93a9d1585193cc29cfaa7d91119b87ce",
+        "receiptRef": "sha256:06f869d3d4f479e618f3dca2c945444aad24b36acaf730a4b65f4bfb97114149",
         "outcome": "delivered",
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
@@ -1819,7 +2192,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:54ae7570791d2a434ffb7c304571c6ea59255dee7b5b8036a7776c2cc063834c",
+        "receiptRef": "sha256:830961fa8d65790f6b09f13ed0432f21a5f0d08d4a4a62bd0856d3eb4cf77bcc",
         "outcome": "delivered",
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
@@ -1842,7 +2215,7 @@
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:4c5cca8e08a39fd2b48578a58c2f8d38f825f2ef3c91fe52c5a7d0a0640efb49",
+        "receiptRef": "sha256:97b3e4c627347c7c3879a7816f5473b5710c3566ddd6b7cc258fe3fc487d130c",
         "outcome": "delivered",
         "settlementStatus": "reversed",
         "ageSeconds": 44,
@@ -1855,7 +2228,7 @@
           "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
-        "supersedes": "sha256:b4e0b131ce2092fa8cbe0b2c7053352e4cb8f4f798fe2c330a8c83b17fdf1337",
+        "supersedes": "sha256:d00ffa023c7fd6fcf51cfef0825f6c18fc0c41e7c97d0b37707229fde3a4c3eb",
         "bindings": []
       }
     },
@@ -1865,7 +2238,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:95859f85938652a0ad0c0fca7f5763c30e6da7cb30599848d1c56953ca72ce0d",
+        "receiptRef": "sha256:fd487e7af1bc5fd98cb3814f24c09a6adc8efc280142c3280597aa3c9e83c9ed",
         "outcome": "delivered",
         "settlementStatus": "refunded",
         "ageSeconds": 44,
@@ -1878,7 +2251,7 @@
           "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
-        "supersedes": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "supersedes": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "bindings": [
           {
             "type": "action-receipt:reversal-transaction",
@@ -1893,7 +2266,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:f3c3828f3d3f693cf755038e66da8bc50bab55bdf8e1a5998917411cd89bcf6a",
+        "receiptRef": "sha256:c0436b75977c0ffe9220370e1c1edfbef82be7c0d444d577cf41b9d46265fab8",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1941,7 +2314,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:f3c3828f3d3f693cf755038e66da8bc50bab55bdf8e1a5998917411cd89bcf6a",
+        "receiptRef": "sha256:c0436b75977c0ffe9220370e1c1edfbef82be7c0d444d577cf41b9d46265fab8",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1989,7 +2362,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:6e2cf6e26f9c7473d4d02a4a8e06fd810776f59461e5b1738695a78179dd68cc",
+        "receiptRef": "sha256:f2ad023c81b90b53369b3a24cfb87d09eda364a77303cdaef3eb9d8e953e4ee4",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2017,7 +2390,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:56ffe4b810da2ec560bf6f30fc14c57776edf8a918da31a73205922768b0ecf5",
+        "receiptRef": "sha256:44bc36acf606c6eab9cf98db30f1b5cc385f6495a4c914a6032072df91f66bdc",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2045,7 +2418,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:fda84f7431fe04cd0d18d3bc46697b7c9535a3c401c629bcba0b783b6c80c646",
+        "receiptRef": "sha256:e1807a8912b2ae143ba86b9c1f34dfca44c01e4c6fd4c87372098fd69b7c89ec",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2073,7 +2446,7 @@
       "reason": null,
       "context": "advertised_scope_not_a_string",
       "report": {
-        "receiptRef": "sha256:fe664fd35fa59acda82dd588f2af62d089e076caadf9a14202868691bb4a593c",
+        "receiptRef": "sha256:b043b46c558681f1b6f3602f15a7e13cc81a2e4a4de3d5fd7d0cb0769b906052",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2101,7 +2474,7 @@
       "reason": null,
       "context": "advertised_scope_nfc",
       "report": {
-        "receiptRef": "sha256:4f3757f825e8e4d868d395f976d7355b45dd3cc4d60170a4f3f07dae7ccae918",
+        "receiptRef": "sha256:70d5814a86c2c7bbf940efe82c4654414fcd6b84b95f367be690415f1d7493d1",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2129,7 +2502,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2152,7 +2525,7 @@
       "reason": null,
       "context": "advertised_info_outside_value_domain",
       "report": {
-        "receiptRef": "sha256:8b76f9bd38030af77fe88eb2c3ccb7ca9cace6c69d1b44db0e0b125a0c1c01cb",
+        "receiptRef": "sha256:cd6a7e3245b716fa9214912d34040f41aa85e2dd733bcc58de45be4281dc872d",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2180,7 +2553,7 @@
       "reason": null,
       "context": "no_requirements",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2203,7 +2576,7 @@
       "reason": null,
       "context": "response_casing",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2226,7 +2599,7 @@
       "reason": null,
       "context": "response_transaction_upper_case_prefix",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2249,7 +2622,7 @@
       "reason": null,
       "context": "no_payer",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2272,7 +2645,7 @@
       "reason": null,
       "context": "archival",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 15552000,
@@ -2295,7 +2668,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:ac97f20be6976a1f16c95269258b6fe54dfc17712d1b963847ed24233f19617d",
+        "receiptRef": "sha256:b7c47c9789d5b349d0dbe65ac061ec8dd0a068a80b98c7d239a53cc519f69162",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2318,7 +2691,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:a6b4629e2fe5083a79444b35feceb08885a8f0474f39f1072a49499850687a9c",
+        "receiptRef": "sha256:d38a231a6ae76c4297f4821929c88ab05d402e3212dcc6f305a9deed4bd4f587",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2341,7 +2714,7 @@
       "reason": null,
       "context": "requirements_float_spelling",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2364,7 +2737,7 @@
       "reason": null,
       "context": "requirements_not_object",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2387,7 +2760,7 @@
       "reason": null,
       "context": "payer_empty_string",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2410,7 +2783,7 @@
       "reason": null,
       "context": "paid_this_resource",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2433,7 +2806,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2456,7 +2829,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:c4026cbda124af5c36de67256a51519e2d2df7d5ff58e95af08c8be6871c7079",
+        "receiptRef": "sha256:20c516379d90bc724988c509dbb960cfbace3aa595a46645cc4719a80e8d540b",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2479,7 +2852,7 @@
       "reason": null,
       "context": "settlement_transaction_only",
       "report": {
-        "receiptRef": "sha256:ae0856eca63db6231f6dc8a1fa79730260646a4f1dc6414d45060508d1675cca",
+        "receiptRef": "sha256:fbba4811de9d30ac3989cb4864010fdc31e41cd4ddd6788ade1f6c24f4d5e92b",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2502,7 +2875,7 @@
       "reason": null,
       "context": "settlement_transaction_only",
       "report": {
-        "receiptRef": "sha256:5e9bcf78606d6cb1bd111ee0f4985b01130eb520cb8d9bfeed87a8f654152501",
+        "receiptRef": "sha256:a0266b544c4fec88801d9b83c5fab9e8981d9efae47ba6df45ee917dbc417cfa",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2525,7 +2898,7 @@
       "reason": null,
       "context": "settlement_transaction_only",
       "report": {
-        "receiptRef": "sha256:d7accb7bd934ffd651afe58875ed704109ac31aaec04acaa1558e4e49de81d71",
+        "receiptRef": "sha256:ca71d350ad2a277646b9df32fbe5aba29d322bcd32ae44dcb611669fdf519967",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2548,7 +2921,7 @@
       "reason": null,
       "context": "lookalike_network",
       "report": {
-        "receiptRef": "sha256:3415040e01e08917a8d8f35b6c8e38dcb771fea6470e15ae18004b49400c853e",
+        "receiptRef": "sha256:d780a5d62f3016fd46a195b57b69948b652896a7db6a79e3378a0483df4986d9",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2571,7 +2944,7 @@
       "reason": null,
       "context": "cloudflare_network",
       "report": {
-        "receiptRef": "sha256:28bc46838c527a35b64926b5c87f4f28e5f4eefda19d615cf021a156fe2b152a",
+        "receiptRef": "sha256:2c1760179ca6411354aeb685238a1b627df31aff1d17670009f4a4475eefe875",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2594,7 +2967,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:100966a6de2242709a15aedd53c8786b5d5952e36d755efb780c3cb023fbd983",
+        "receiptRef": "sha256:4cf11266d0965e619ceeda7ab8589e22fb084ee0a2cc604807bc370bb0cbac75",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2617,7 +2990,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:512d1f8469136339b3e0ee9f48c612e19c868010de237f279c13c67e6da5cc49",
+        "receiptRef": "sha256:43fc496e27609cbba746831927385258e19fc3f43cbb1ab2e808b390cd1a1e36",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2640,7 +3013,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:870aea06180bf394a1a6ae81532c3a7fbaeccef8d31a7a4898b829ada4a5a355",
+        "receiptRef": "sha256:31b1ed7292f626fb3a8ef2625c34399300240193ad6781641e9310743d7f5a5f",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2728,7 +3101,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:55cedbb4dce2597591c1273fa4b2e1959bcbb403f4bf492befa2d1d404363820",
+        "receiptRef": "sha256:468812c7187004ffa8ffab0c2a02b4f747066c8a2948748d646fc1ac959da3a7",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2756,7 +3129,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:b2f1e540b113e0f591df5fdcf4e208e5aae4614890aadf9f7b501946396a3c3a",
+        "receiptRef": "sha256:fd2faa7d6c2b938b76845f510e12a44ff5f03af5b9adb83d6f2c67e1bddf23ed",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2784,7 +3157,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:c99a440a5dd530da385aae40c0b04a8d48b86d0f088d9cb8eaf93a9f118b4540",
+        "receiptRef": "sha256:8767e683cd4f64f5876824ae02f3b9d4dcbad52684a5b0d62dd5e9968dc39747",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2812,7 +3185,7 @@
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:1928180010db0cdb2408fa67cee1f79601bb413d81b2868438824c957e88fdb2",
+        "receiptRef": "sha256:dfe06363e0b22e5a47919978a98e3cc744f65e700c12f1eb6a0788e1007b74d2",
         "outcome": "delivered",
         "settlementStatus": "reversed",
         "ageSeconds": 44,
@@ -2840,7 +3213,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:07d9eb0d320ce457e16c27448acb1c5023b022e6f4ce69c09c59f37a8ac24d01",
+        "receiptRef": "sha256:522350a84d209dd9af3ddffdb7e06e50e8385897e798cb521526cb1531009f52",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -2868,7 +3241,7 @@
       "reason": null,
       "context": "archival",
       "report": {
-        "receiptRef": "sha256:f5e074607d9007d1d69e0a63e1f51bbefc46f647b26eb5c2795fc618fe58f966",
+        "receiptRef": "sha256:474e0990db2f569887127ab4314d39a6f2231afd5e1ec2a2a73677e1fe55d01f",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 1718675456,
@@ -2891,7 +3264,7 @@
       "reason": null,
       "context": "archival_at_end_of_time",
       "report": {
-        "receiptRef": "sha256:fb07dc3b1d9e997d94bc01c6e2f398c032e74313694da865cd1c71ebb4aea8fa",
+        "receiptRef": "sha256:28fcba692f3a6dfbe1d2f3d0b0bdc43e749e5ae707f7178550e02308c8570dfb",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 0,
@@ -2914,7 +3287,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:8eb22d90498072c2adb47b7d54ccc1b539fcf1bf3b000ba398a90926ea16e144",
+        "receiptRef": "sha256:d11c74ee2e08b742eb9bdccca8cdc08acfc9ea0492949e7b04edbc0d4583055c",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": -60,
@@ -2937,7 +3310,7 @@
       "reason": null,
       "context": "session_default_max_age",
       "report": {
-        "receiptRef": "sha256:656594f488cc9ace938a5d528c6750e1d59e245f371441eda40295fc3d6a7568",
+        "receiptRef": "sha256:6c4963df0cd87181cd2d52b51755cb23583bbc3caf22f83d26c90b2c9431e74d",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 3600,
@@ -2960,7 +3333,7 @@
       "reason": null,
       "context": "session_max_age_100",
       "report": {
-        "receiptRef": "sha256:a4c646c25df05bbc350446a23e0e1ca335b99079c7ad7baf1988fa7ab40c24fd",
+        "receiptRef": "sha256:9659ed0ccb00a33e50058df255b9f8fb3d3963ed09ad5667a54c6b5c338ef5df",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 100,
@@ -2983,7 +3356,7 @@
       "reason": null,
       "context": "evm_settlement_reference_mixed_case",
       "report": {
-        "receiptRef": "sha256:0b810818b5fdb1f23619a97aebcfce0b437bdd039a32f1260e2e2a31b98d0e75",
+        "receiptRef": "sha256:9f0b127fa673b8b4e6da03b2229e8000c279aa7d5e3cf283981339d756e14030",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3006,7 +3379,7 @@
       "reason": null,
       "context": "both",
       "report": {
-        "receiptRef": "sha256:6b0b4ebae77956d4a0d088fec18b1240edaf5fb7f7c777940615f53b986389dc",
+        "receiptRef": "sha256:391245e5016b33e4a324c058ba160e7b30010482f25231ce40e4048acd6e1b9e",
         "outcome": "delivered",
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
@@ -3029,7 +3402,7 @@
       "reason": null,
       "context": "requirements_utf16_member_order",
       "report": {
-        "receiptRef": "sha256:d249e7066409406d495dfbbcbd6dc0f86fb71d5fe3e1d21b2e422536a58992b7",
+        "receiptRef": "sha256:c11db3b3ecd9d089c188c50d6be83821434490921461e8f72d31afb3db70caba",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3052,7 +3425,7 @@
       "reason": null,
       "context": "response_values_absent_forms",
       "report": {
-        "receiptRef": "sha256:b4e0b131ce2092fa8cbe0b2c7053352e4cb8f4f798fe2c330a8c83b17fdf1337",
+        "receiptRef": "sha256:d00ffa023c7fd6fcf51cfef0825f6c18fc0c41e7c97d0b37707229fde3a4c3eb",
         "outcome": "delivered",
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
@@ -3075,7 +3448,7 @@
       "reason": null,
       "context": "response_values_junk_types",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3098,7 +3471,7 @@
       "reason": null,
       "context": "response_network_not_an_identifier",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3121,7 +3494,7 @@
       "reason": null,
       "context": "no_payer_receipt_payer_empty",
       "report": {
-        "receiptRef": "sha256:2c7a9a926039dc24da89697265f187ec6524a8dff925ab42417f4155e280ffc6",
+        "receiptRef": "sha256:b5f03860998913fe5f6d0c7e2d88d61d265cb5c733847a81da6fa25c714e74b7",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3144,7 +3517,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:6adc2651c9c3baeb423c06fa1e75513a29418061bff9715844dc5d28d31af150",
+        "receiptRef": "sha256:79c03dee02d8d125e4e91d45110ac213fe174a06dceea70ff2e3b2daa48a69ec",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3167,7 +3540,7 @@
       "reason": null,
       "context": "clock_integer_valued_float",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3190,7 +3563,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:b7e5bf23e10cfbcffcc3d2be82a20a26087a24158a1f517a09b5d78dccd2933a",
+        "receiptRef": "sha256:85fd08c2d45fe2de6ab3af7b733a53f2db571e6ec10e85db732b1260c3322b0c",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3222,7 +3595,7 @@
       "reason": null,
       "context": "archival_clock_negative",
       "report": {
-        "receiptRef": "sha256:f5e074607d9007d1d69e0a63e1f51bbefc46f647b26eb5c2795fc618fe58f966",
+        "receiptRef": "sha256:474e0990db2f569887127ab4314d39a6f2231afd5e1ec2a2a73677e1fe55d01f",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": -1,
@@ -3245,7 +3618,7 @@
       "reason": null,
       "context": "session_max_age_0",
       "report": {
-        "receiptRef": "sha256:4e69b68f9cd6ef4a8a0028845e7cf406d7862db160b3becbf846d7c50ea02a87",
+        "receiptRef": "sha256:d25a43a6aa3084d522851e3cd73173c72c0d226d6571a289724adc47b8370779",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 0,
@@ -3268,7 +3641,7 @@
       "reason": null,
       "context": "session_max_age_max_clock_max",
       "report": {
-        "receiptRef": "sha256:f5e074607d9007d1d69e0a63e1f51bbefc46f647b26eb5c2795fc618fe58f966",
+        "receiptRef": "sha256:474e0990db2f569887127ab4314d39a6f2231afd5e1ec2a2a73677e1fe55d01f",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 9007199254740991,
@@ -3291,7 +3664,7 @@
       "reason": null,
       "context": "requirements_max_safe_integer",
       "report": {
-        "receiptRef": "sha256:7960ccb6f96319087fe28d323d69ecab857220bac80d1504c0191751e8396e11",
+        "receiptRef": "sha256:3c81cf43573bed9234c37ba933c501d4a0108bde1420be10bccfc2f5ef4df967",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3314,7 +3687,7 @@
       "reason": null,
       "context": "requirements_unsafe_integer",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3337,7 +3710,7 @@
       "reason": null,
       "context": "requirements_depth_8",
       "report": {
-        "receiptRef": "sha256:9b2b098877f768266ceeec8e470d7598fad2e7645f5ab7fb9636058ce273d9d2",
+        "receiptRef": "sha256:7d9d5f66b2020ebffdab47154bc198fc738a4d2a2f021b04b34456cdca90639d",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3360,7 +3733,7 @@
       "reason": null,
       "context": "requirements_depth_9",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3383,7 +3756,7 @@
       "reason": null,
       "context": "advertised_info_depth_8",
       "report": {
-        "receiptRef": "sha256:2e5a59093ade8deae0eebdbce7b9156463a4021d1c5e9a2a13c83d10edcebe55",
+        "receiptRef": "sha256:0d63e4a87202df8a7d61fae15ff72300923a632c59c151b634f03b44bc88f4df",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3411,7 +3784,7 @@
       "reason": null,
       "context": "advertised_info_depth_9",
       "report": {
-        "receiptRef": "sha256:c7acb723bb65c81661baf333b53fe57d7fa06bb91316241a82edb7a7dece3079",
+        "receiptRef": "sha256:3c7f6ab45cfb366095d65fd9ed8fc08c3924e11d41a409a45442186b3d5ac675",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3439,7 +3812,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:b7b598b9ada2ca84d8faadf5c359cfa5f9493edb2a59d38bd55415318da49a4d",
+        "receiptRef": "sha256:2f46220eee3c68b85590c80296916cedaedf62922106f738c3ee9a816bfe4e95",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -3459,6 +3832,190 @@
             "status": "not_evaluated"
           }
         ]
+      }
+    },
+    {
+      "file": "pos_charged_amount_empty_no_amount.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_no_charged_amount",
+      "report": {
+        "receiptRef": "sha256:ccbaf90ddf2fdb59770360ca439fa157d968954afa2b28b79f6b5cdbe8e7b3b1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_zero.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_zero",
+      "report": {
+        "receiptRef": "sha256:f632ab0d82feba3ce76c3f6318f36a0c7930c29392656de281d4e2e6d5706701",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_78_digits.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_78_digits",
+      "report": {
+        "receiptRef": "sha256:3d25efba32cc17badb746c80fba1fb970db169196da954fe9893628c9d3de997",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_from_extra.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_charged_amount_in_extra",
+      "report": {
+        "receiptRef": "sha256:ff86f5c45cf37508733fed6e1136da5d763bea37421c961bddca1c3040f158ae",
+        "outcome": "delivered",
+        "settlementStatus": "capturePending",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_extra_empty_falls_back.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "extra_charged_amount_empty",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_extra_not_string_falls_back.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "extra_charged_amount_not_a_string",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_extra_not_object_falls_back.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "extra_not_an_object",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_response_amount_not_string.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_not_a_string",
+      "report": {
+        "receiptRef": "sha256:ccbaf90ddf2fdb59770360ca439fa157d968954afa2b28b79f6b5cdbe8e7b3b1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
       }
     },
     {
@@ -3900,6 +4457,36 @@
       "context": "ok"
     },
     {
+      "file": "neg_schema_charged_amount_79_digits.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_79_digits"
+    },
+    {
+      "file": "neg_schema_charged_amount_leading_zero.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_leading_zero"
+    },
+    {
+      "file": "neg_schema_charged_amount_non_digit.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_non_digit"
+    },
+    {
+      "file": "neg_schema_charged_amount_negative.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_negative"
+    },
+    {
+      "file": "neg_schema_charged_amount_not_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_not_a_string"
+    },
+    {
       "file": "neg_unsupported_version.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_version",
@@ -4294,6 +4881,48 @@
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_settlement_mismatch",
       "context": "lookalike_network"
+    },
+    {
+      "file": "neg_settlement_charged_amount_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_charged_amount_dropped.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_charged_amount_uncorroborated.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "response_no_charged_amount"
+    },
+    {
+      "file": "neg_settlement_charged_amount_top_level_when_extra.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch_charged_amount_in_extra"
+    },
+    {
+      "file": "neg_settlement_charged_amount_extra_number_not_read.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "extra_charged_amount_not_a_string"
+    },
+    {
+      "file": "neg_settlement_charged_amount_response_out_of_grammar.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "response_amount_leading_zero"
+    },
+    {
+      "file": "neg_settlement_charged_amount_not_normalized.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "response_amount_leading_zero"
     },
     {
       "file": "neg_requirements_amount_changed.json",
