@@ -183,7 +183,7 @@ neither implementer had used:
 | Reviewer E's 14 surviving mutants | all killed by fixed cases |
 | New mutants by the implementers | verifier 19 of 20 killed by fixed vectors (survivor argued equivalent); issuer 18 of 18 after six witnesses were added (12 of 18 before) |
 | Mutants by the author | three (freshness skew `<=`, binding count 17, offered requirements compared by amount only): all killed by fixed cases |
-| ECDSA signing | 1200 signatures with a stock randomized signer, low-`s` normalized, all pass both verifiers; without normalization 45 to 58 of 100 are rejected |
+| Signing | 1200 signatures (400 per algorithm, 800 of them ECDSA with a stock randomized signer, low-`s` normalized), all pass both verifiers; without normalization 45 to 58 of 100 ECDSA signatures are rejected |
 | 0.3 implementations against the 0.4 suite | every B and D defect shows as a red vector |
 
 One defect introduced during the fix: commit `d920250` added a paragraph to

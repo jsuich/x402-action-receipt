@@ -24,9 +24,9 @@ tagged (`draft-0.2.1`; 0.3 is the parent of this revision).
 | `VECTORS.md` | Vector index, generated from the same tables the suite runs |
 | `flip_probe.py` | Disables each verifier check in turn and requires the suite to go red |
 | `issuer.py` | Reference issuer (spec §6) and the issuer conformance suite |
-| `issuer.mjs` | Second issuer, JavaScript, written from the spec text and the exchange inputs alone |
+| `issuer.mjs` | Second issuer, JavaScript. Written from the spec text and the exchange inputs alone through draft 0.3; revised for 0.4 together with `issuer.py` |
 | `exchanges/` | Issuer conformance: what a server holds when it issues, and the payload or refusal expected |
-| `verify.mjs` | Second verifier, JavaScript (Node built-ins only), written from the spec text and the vectors without sight of `action_receipt.py` |
+| `verify.mjs` | Second verifier, JavaScript (Node built-ins only). Written from the spec text and the vectors without sight of `action_receipt.py` through draft 0.3; revised for 0.4 together with it |
 | `CONFORMANCE.md` | What conformance means: classes, the adapter protocol, and every requirement with the vectors that test it. Generated |
 | `conformance/requirements.json` | The requirements catalogue `CONFORMANCE.md` is rendered from |
 | `conformance/trace.py` | Checks the catalogue against the spec and the suite; `trace_selftest.py` checks the checker |
@@ -72,7 +72,7 @@ the cycle; it is never counted as a pass.
 
 | Stage | Establishes |
 |---|---|
-| trace | every normative sentence of the spec is covered by a requirement, every vector and exchange by a requirement, cited cases exist, no two vectors are the same case, `vectorsDigest` matches the files, and `CONFORMANCE.md` is current |
+| trace | every sentence of the spec with an RFC 2119 keyword is covered by a requirement, every vector and exchange by a requirement, cited cases exist, no two vectors are the same case, `vectorsDigest` matches the files, and `CONFORMANCE.md` is current |
 | trace-st | the trace reports each kind of planted defect, and its control passes |
 | python | the reference verifier reproduces the manifest, cross-checked against an independent RFC 8785 library |
 | python-a, node | each verifier, driven through the adapter protocol by `run_vectors.py`, reproduces the manifest, including follow-up cases it cannot look up by name |

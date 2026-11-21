@@ -301,11 +301,20 @@ payload. An issuer MUST NOT use as `settlementRef` a value the settlement result
 did not carry, and MUST NOT compute one. A scheme whose result has an empty
 `transaction` and no row here is not covered (§1.3).
 
+**The settlement reference of an exchange** is found by this table and nothing
+else: take `accepted.scheme` and `accepted.network`; if a row matches (the
+`*` matches any reference after the namespace), the reference is the value at
+that row's location in the `SettlementResponse` when present (§4.6); otherwise
+the exchange has no settlement reference. A value at that location under a
+scheme or network with no row is not a settlement reference. The issuer and a
+verifier that holds `accepted` find the same one.
+
 **`payer`.** The payer is `SettlementResponse.payer`. When the response has
-none, it is the payer the scheme's payment payload names: for the EVM `exact`
-scheme with an EIP-3009 authorization, `PaymentPayload.payload.authorization.from`.
-A scheme that names its payer elsewhere defines that source in its own
-specification. When neither source has one, `payer` is `""`. That is expected on
+none, it is `PaymentPayload.payload.authorization.from`, on any network, when
+present: the EIP-3009 authorization of the EVM `exact` scheme is where x402
+puts a payer in the payment payload today. When neither has one, `payer` is
+`""`. A scheme that names its payer elsewhere would need a row of its own, as
+§4.3's settlement references do; this draft defines none. That is expected on
 a rail that reveals no stable payer (the Lightning binding of `exact` requires
 `SettlementResponse.payer` to be omitted), and it means the receipt says nothing
 about who paid.
@@ -815,10 +824,15 @@ Reject with `invalid_actionreceipt_settlement_mismatch` if any of these fails:
 
 The second half of the first two rules means a receipt cannot carry an identifier
 the response does not corroborate, and cannot silently drop one the response has.
-A verifier applies the settlement-reference rule with the reference §4.3 names
-for the scheme. A verifier that does not know the scheme's row has no settlement
-reference to supply, and correctly rejects a receipt that carries one: it cannot
-corroborate it.
+A verifier applies the settlement-reference rule with the settlement reference
+of the exchange (§4.3), which it can find only if it holds `accepted`. A
+verifier that does not hold `accepted` has no settlement reference to supply,
+and rejects a receipt that carries one because it cannot corroborate it. That
+rejection says the verifier lacked an input, not that the signer erred: a
+consumer MUST NOT treat a `invalid_actionreceipt_settlement_mismatch` on a
+non-empty `settlementRef` as a finding against the signer unless the verifier
+held `accepted`. A verifier that will see receipts for a scheme with a
+settlement reference should keep the `PaymentPayload`.
 
 ### 5.9 Payment requirements
 
@@ -984,6 +998,10 @@ The issuer is the resource server. To issue a receipt it holds:
 - its **statement**: the four `action` members, `settlementStatus`, and
   optionally `supersedes`, a reversal transaction and further bindings;
 - a fresh `receiptId` (§4.3) and its clock.
+
+Step 8 checks the `receiptId` and `issuedAt` along with the statement, because
+an issuer that generated them wrongly must refuse as surely as one given a
+wrong statement. The conformance exchanges supply all of them together.
 
 The statement is the issuer's own: this document does not say how a server
 decides what it did. It says only what form the statement takes and what the
@@ -1154,10 +1172,13 @@ Properties of the suite:
   the vector index is generated from the tables the suite runs.
 - **Each check can fail.** `flip_probe.py` disables each check of the verifier
   in turn and requires the suite to go red.
-- **Implementable from this text.** A second verifier was written in JavaScript
-  from this file and the vectors alone, without sight of the reference code, and
-  reproduced the manifest. The places where that implementer had to choose
-  between readings were then closed in this text.
+- **Implementable from this text.** Through draft 0.3, a second verifier and a
+  second issuer were written in JavaScript from this file and the vectors or
+  exchanges alone, without sight of the reference code, and reproduced the
+  manifests; the places where those implementers had to choose between readings
+  were closed in this text. For draft 0.4 each side was revised by one
+  implementer who changed both of its implementations, so they are no longer
+  independent of each other.
 
 `vectors/keys.json` is a test fixture. It stands in for the authorization and key
 resolution of §5.4 and §5.5: `"__service__:<resourceUrl>"` and
@@ -1171,10 +1192,12 @@ base64 and DER that re-encodes to the same bytes. A key identifier that is
 authorized but has no entry, or whose entry is not such a key, exercises §5.5.
 It is not a wire format.
 
-The fixture supplies the response's settlement reference directly in the
-verification context. A verifier given a reference compares it (§5.8) without
-knowing the scheme; some `eip155` vectors use this to test that the reference
-is compared exactly, which §4.3 would not otherwise produce on that network.
+The verifier fixture supplies the response's settlement reference directly in
+the verification context, standing in for the lookup of §4.3. A verifier given a
+reference compares it (§5.8) without knowing the scheme; some `eip155` vectors
+use this to test that the reference is compared exactly, which §4.3 would not
+otherwise produce on that network. The issuer exchanges do not do this: an
+issuer finds the reference itself, by §4.3.
 
 What conformance does and does not show:
 
@@ -1184,7 +1207,13 @@ What conformance does and does not show:
   signatures), or that `receiptId` values are unpredictable.
 - Every implementation in the repository came from one working session. Their
   agreement with each other is weaker evidence than agreement with an
-  implementation written elsewhere.
+  implementation written elsewhere. Both verifiers also use OpenSSL for
+  signature checks (Python `cryptography` and Node `crypto`), so a defect there
+  would be common to both.
+- Some defects are caught only by the differential fuzzers, which compare an
+  implementation with the repository's own. A third-party implementation is
+  tested against the fixed manifests, and should also be run through the fuzzers
+  as an extra adapter.
 - The exchanges and vectors are `exact`-shaped messages. Networks other than
   `eip155` appear, but no vector was produced by another scheme's SDK.
 
@@ -1374,7 +1403,7 @@ a salted commitment and keep the salt with the receipt.
 ## 12. Open questions
 
 1. Should `outcome` distinguish a service the server declined to perform from one
-   it attempted and could not complete? Draft 0.3 does not: no implementation or
+   it attempted and could not complete? This draft does not: no implementation or
    proposal reviewed for it draws that line.
 2. Should the payload carry a per-signer sequence number, so that a gap in a
    server's receipts is detectable?
@@ -1401,13 +1430,15 @@ a salted commitment and keep the salt with the receipt.
 |---|---|---|---|
 | 0.1 – 0.2.1 | 2026-07-19 | Initial drafts: JWS profile, settlement binding by transaction or settlement reference, payment lifecycle, reason codes, `actionRef` over a 13-field tuple. | Josh Suich |
 | 0.3 | 2026-11-19 | Breaking. `actionRef` removed from the payload; `receiptRef` is the hash of the signed payload bytes, in `sha256:` hex form. Added `receiptId`, `requirementsDigest`, `supersedes`, `bindings`. Required `typ` header and a closed header. Canonical-bytes check moved ahead of schema typing. EVM identifiers lowercase; comparison semantics stated. Authorization before key resolution; unresolved keys reported separately. Session and archival freshness. Verification report. Non-goals stated. Circularity code removed (covered by the closed schema). `outcome` is `delivered`, `partial` or `failed`; `refused` and `disputed` are retired. §6 is a ten-step issuing procedure with refusal reasons. A verifier that paid checks the URL it paid for. | Josh Suich |
-
 | 0.4 | 2026-11-20 | Breaking, after an independent review of 0.3 (six reviewers; `conformance/REVIEW-0.4.md`). The header has one spelling (JCS). `payer` may be `""`; the network grammar admits x402's non-CAIP-2 identifiers; `settlementRef` has a named source per scheme. The issuer refuses requirements it did not offer (`requirements_not_offered`); `payer_unavailable` is retired. One definition of a present value for issuer and verifier. `version` is checked before the member set. The `action-receipt:` binding namespace is closed and its values have a form. An authorization source that gives no answer is `key_unresolved`, not `signer`. The verifier's own inputs have a contract; outside it the result is `ERROR`. `checks.advertisement` added to the report. Supersession has consumer rules and no promised delivery. Signing requirements moved into §6.3. A 65536-character bound. Claims narrowed: what a non-requesting verifier learns, the signer is not shown to be the payee, the amount charged is not stated, a payment is not identified, schemes without an identifier are not covered. | Josh Suich |
 
 Payload `version` remains `1`: no earlier draft was adopted, and a 0.2.x receipt
 fails §5.1 (no `typ`) under this text, so the two cannot be confused. A 0.3
-receipt is a valid 0.4 receipt unless it relied on something 0.4 removed (a
-header that was not in JCS form, an unlisted `action-receipt:` binding).
+receipt is a valid 0.4 receipt unless it relied on something 0.4 removed or
+bounded: a header not in JCS form; an `action-receipt:` binding of an unlisted
+type, or whose value lacks its form (an `advertised-info` value that is not a
+digest, or on `eip155` a `reversal-transaction` that is not lowercase 64-hex); a
+compact string over 65536 characters.
 
 Prepared with AI assistance; the reference verifier and vectors were run and
 cross-checked as described in §7.
