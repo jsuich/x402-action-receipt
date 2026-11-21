@@ -373,8 +373,9 @@ these hold, and otherwise MUST treat the two as unrelated:
 
 - both pass §5 under authorization for the same `resourceUrl`;
 - `B.supersedes` equals the `receiptRef` of `A`;
-- `network`, `resourceUrl`, `payTo`, `payer`, `transaction`, `settlementRef` and
-  `requirementsDigest` are equal in the two;
+- `network`, `resourceUrl`, `payTo`, `payer`, `transaction`, `settlementRef`,
+  `chargedAmount` and `requirementsDigest` are equal in the two (a refund
+  returns what was charged; it does not change what the settlement charged);
 - the pair (`A.settlementStatus`, `B.settlementStatus`) is one of:
   the same value twice; `capturePending` then `settled`; `capturePending` then
   `reversed`; `settled` then `refunded`.
@@ -630,8 +631,8 @@ transaction.
 **Inputs.** The verifier holds the receipt and:
 
 - the `SettlementResponse` (core §5.3): `success`, `transaction`, `network`,
-  optionally `payer`, and the scheme's settlement reference where §4.3 names
-  one;
+  optionally `payer`, `amount` and `extra` (for `chargedAmount`, §4.3), and the
+  scheme's settlement reference where §4.3 names one;
 - optionally the `PaymentRequirements` the client accepted;
 - optionally the `info` object the server advertised (§2.3);
 - if the verifier made the payment itself, **the resource URL it paid for**:
@@ -935,7 +936,7 @@ the report has exactly this shape:
 
 ```json
 {
-  "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+  "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
   "outcome": "delivered",
   "settlementStatus": "settled",
   "ageSeconds": 44,
