@@ -5,14 +5,44 @@
   "did:web:api.example.com#payto": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVp7ZLEKMDN0F5o7FRw9nE1WxZ8NZ\nIh8CoIIf//iu4m1yJXgqyoONxVDf7/0iuOTV11W/NaXbt0OGi6xamxI/+Q==\n-----END PUBLIC KEY-----\n",
   "did:web:evil.example#k": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqFs6rW86NG2FUjFBy0NOHK9MZCsr\nPMlSywemNctqHfG8va22a66Osl7Kkviwi2e+AsxzYVDdf/zT8BnIdfn/3g==\n-----END PUBLIC KEY-----\n",
   "did:web:api.example.com#unusable": "not a public key",
+  "did:web:api.example.com#private-key-pem": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgERERERERERERERER\nERERERERERERERERERERERERERGhRANCAAQCF+YX8LZEOSgnj5aZnmmiOk8sFSvf\nbWzfZuW4AoLU7RlKfevLl3EtLdo8qFqodlpW9F/HWFmWUvKJfGUwbleU\n-----END PRIVATE KEY-----\n",
+  "did:web:api.example.com#certificate": "-----BEGIN CERTIFICATE-----\nMIHgMIGToAMCAQICAQEwBQYDK2VwMBoxGDAWBgNVBAMMD2FwaS5leGFtcGxlLmNv\nbTAeFw0yMDAxMDEwMDAwMDBaFw00MDAxMDEwMDAwMDBaMBoxGDAWBgNVBAMMD2Fw\naS5leGFtcGxlLmNvbTAqMAUGAytlcAMhAO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5\nNjbBRhSshzfRMAUGAytlcANBANkPNE/Set+7JQYXxYs1LrExu91QSASMerEZAHQR\nUcLn/+PyEttUVYrr7ZNp/nXUivC0VZZVdvAZg6hiHvDwKgw=\n-----END CERTIFICATE-----\n",
+  "did:web:api.example.com#unknown-algorithm": "-----BEGIN PUBLIC KEY-----\nMCowBQYDKgMEAyEABwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=\n-----END PUBLIC KEY-----\n",
+  "did:web:api.example.com#unsupported-curve": "-----BEGIN PUBLIC KEY-----\nMEIwFAYHKoZIzj0CAQYJKyQDAwIIAQEBAyoABAEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBAQEBAQEBAQEBAQEBAQEBAQE=\n-----END PUBLIC KEY-----\n",
+  "did:web:api.example.com#p384": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEdkP13snKWwBTlyqdRjFbbPlMI52OdhVB\ncflu/TuhJ4s4Sa8sD84BZrizqBumHBkRPHPTxBsBtghwWB9HzjGK4iunDg7MYY2U\nrS9568azJA1UEt3RC9QcdEZqo76EK0FG\n-----END PUBLIC KEY-----\n",
+  "did:web:api.example.com#pem-leading-spaces": "   -----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9E=\n-----END PUBLIC KEY-----\n",
   "__service__:https://api.example.com/v1/complete": [
     "did:web:api.example.com#es256",
     "did:web:api.example.com#es256k",
     "did:web:api.example.com#ed25519",
     "did:web:api.example.com#rotated",
-    "did:web:api.example.com#unusable"
+    "did:web:api.example.com#unusable",
+    "did:web:api.example.com#private-key-pem",
+    "did:web:api.example.com#certificate",
+    "did:web:api.example.com#unknown-algorithm",
+    "did:web:api.example.com#unsupported-curve",
+    "did:web:api.example.com#p384",
+    "did:web:api.example.com#pem-leading-spaces"
   ],
   "__payTo__:0x209693bc6afc0c5328ba36faf03c514ef312287c|https://api.example.com/v1/complete": [
     "did:web:api.example.com#payto"
+  ],
+  "__service__:https://api.example.com/v1/complete?anchor=string": "did:web:api.example.com#ed25519",
+  "__service__:https://api.example.com/v1/complete?anchor=object": {
+    "did:web:api.example.com#ed25519": true
+  },
+  "__service__:https://api.example.com/v1/complete?anchor=mixed": [
+    "did:web:api.example.com#ed25519",
+    5
+  ],
+  "__service__:https://api.example.com/v1/complete?anchor=number": 5,
+  "__unavailable__:https://api.example.com/v1/complete?source=unavailable": true,
+  "__unavailable__:https://api.example.com/v1/complete?source=unavailable-listed": true,
+  "__service__:https://api.example.com/v1/complete?source=unavailable-listed": [
+    "did:web:api.example.com#ed25519"
+  ],
+  "__unavailable__:https://api.example.com/v1/complete?source=unavailable-string": "true",
+  "__service__:https://api.example.com/v1/complete?source=unavailable-string": [
+    "did:web:api.example.com#ed25519"
   ]
 }
