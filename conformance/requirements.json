@@ -1723,12 +1723,13 @@
       "role": "issuer",
       "section": "4.3",
       "level": "MUST",
-      "text": "Scheme names are compared exactly: `Exact` and `batch-Settlement` have no row.",
+      "text": "Scheme names are compared exactly: `Exact`, `batch-Settlement` and `upto ` have no row.",
       "anchor": "Scheme names are compared exactly.",
       "tested_by": "exchange",
       "exchanges": [
         "issue_charged_amount_scheme_case_exact.json",
-        "issue_charged_amount_scheme_case_batch.json"
+        "issue_charged_amount_scheme_case_batch.json",
+        "issue_charged_amount_scheme_whitespace.json"
       ]
     },
     {

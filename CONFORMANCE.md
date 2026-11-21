@@ -38,7 +38,7 @@ completeness. They are not testable through this suite.
   - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
 - 298 vectors, each named by at least one requirement.
-- 214 exchanges, each named by at least one requirement.
+- 215 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -266,7 +266,7 @@ every case; `suite` = a structural check of the suite itself.
 | I-CHG-5 | §4.3 | MUST | Under `exact` and `upto` the charged amount is `SettlementResponse.amount`; `extra.chargedAmount` is not read. | `issue_basic`, `issue_charged_amount_from_response_amount`, `issue_charged_amount_upto_reads_amount`, `issue_charged_amount_exact_extra_ignored`, `issue_charged_amount_exact_extra_out_of_grammar_ignored`, `issue_charged_amount_empty_no_amount`, `refuse_charged_amount_upto_out_of_grammar` |
 | I-CHG-6 | §4.3 | MUST | Under `batch-settlement` the charged amount is `SettlementResponse.extra.chargedAmount` and never the top-level `amount` (a deposit, a refund or a payout at close): with no `extra.chargedAmount` it is `""`. | `issue_batch_evm_refund_response`, `issue_batch_evm_deposit_response`, `issue_batch_svm_cooperative_refund_response`, `issue_batch_svm_seal_response`, `issue_charged_amount_batch_amount_only`, `issue_charged_amount_batch_amount_out_of_grammar_ignored`, `issue_charged_amount_extra_overrides_amount_solana_batch`, `issue_charged_amount_extra_overrides_amount_cloudflare_batch`, `issue_charged_amount_batch_extra_empty_no_fallback`, `issue_charged_amount_batch_extra_zero` |
 | I-CHG-7 | §4.3 | MUST | A scheme with no row, `auth-capture` among them, has no charged amount: `chargedAmount` is `""` whatever the response carries, and its `amount` is not judged. | `issue_charged_amount_auth_capture_none`, `issue_charged_amount_auth_capture_amount_out_of_grammar_ignored`, `issue_charged_amount_unknown_scheme_none`, `issue_charged_amount_scheme_not_string` |
-| I-CHG-8 | §4.3 | MUST | Scheme names are compared exactly: `Exact` and `batch-Settlement` have no row. | `issue_charged_amount_scheme_case_exact`, `issue_charged_amount_scheme_case_batch` |
+| I-CHG-8 | §4.3 | MUST | Scheme names are compared exactly: `Exact`, `batch-Settlement` and `upto ` have no row. | `issue_charged_amount_scheme_case_exact`, `issue_charged_amount_scheme_case_batch`, `issue_charged_amount_scheme_whitespace` |
 | I-CHG-9 | §4.3 | MUST | The `SettlementResponse` read is the one the server returns to the client with the receipt, not a different result its facilitator gave it (a self-managed batch deposit result reports the deposit). | not tested (`issuer-behaviour`) |
 | I-PAY-2 | §4.3 | MUST | Without a response payer, the payer is `authorization.from` when present, on any network, and `""` when neither has one. | `issue_payer_from_authorization`, `issue_payer_from_authorization_non_evm`, `issue_payer_none`, `issue_svm_exact_no_response_payer` |
 | I-SUP-1 | §4.3 | MAY | May issue a later receipt for the same settlement, with `supersedes` set. | `issue_refund`, `issue_reversal_lowercased_evm` |

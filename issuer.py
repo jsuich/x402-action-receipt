@@ -430,6 +430,8 @@ ACC_EXACT_CASE = dict(A.ACCEPTED, scheme="Exact")
 EXACT_CASE_DIGEST = "sha256:7bf207ab3cacb2f222d46467a7313c8d3c5998ea308a717b5bb61ad82816fbf4"
 ACC_BATCH_CASE = dict(A.ACCEPTED, scheme="batch-Settlement")
 BATCH_CASE_DIGEST = "sha256:9d00418eeabec6a25eaf4e95388d889c612cbafc0149cf3e1deb7c7ee6dba5e1"
+ACC_UPTO_SPACE = dict(A.ACCEPTED, scheme="upto ")
+UPTO_SPACE_DIGEST = "sha256:cf95660a71cfce329aa19a39b59a4b438d871d25d085be3ebf69fb33605bf2e7"
 ACC_SCHEME_NUMBER = dict(A.ACCEPTED, scheme=5)
 SCHEME_NUMBER_DIGEST = "sha256:234fe950fee9f3d56dad13403c7821f6ddf6dcc1950f9630014a75f4d45e0f0d"
 
@@ -788,6 +790,8 @@ SUITE = [
       paymentPayload__accepted=ACC_EXACT_CASE),
     E("issue_charged_amount_scheme_case_batch", {"chargedAmount": "", "requirementsDigest": BATCH_CASE_DIGEST},
       paymentPayload__accepted=ACC_BATCH_CASE, settlementResponse__extra={"chargedAmount": "2500"}),
+    E("issue_charged_amount_scheme_whitespace", {"chargedAmount": "", "requirementsDigest": UPTO_SPACE_DIGEST},
+      paymentPayload__accepted=ACC_UPTO_SPACE, settlementResponse__amount="7500"),
     # a scheme that is not a string has no row (and a verifier does not compare)
     E("issue_charged_amount_scheme_not_string", {"chargedAmount": "", "requirementsDigest": SCHEME_NUMBER_DIGEST},
       paymentPayload__accepted=ACC_SCHEME_NUMBER),
