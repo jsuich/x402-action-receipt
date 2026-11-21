@@ -414,11 +414,20 @@ function verifyInner(receipt, ctx, cfg, resolver) {
   const srRef = own(sr, 'settlementRef');
   const srPayer = own(sr, 'payer');
   const srNet = own(sr, 'network');
-  // the charged amount (spec 4.3): extra.chargedAmount when present, else amount
-  // when present, else none; whatever the scheme
-  const srExtraCharged = own(own(sr, 'extra'), 'chargedAmount');
-  const srAmount = own(sr, 'amount');
-  const srCharged = present(srExtraCharged) ? srExtraCharged : (present(srAmount) ? srAmount : '');
+  // the charged amount (spec 4.3, 5.8): only a verifier holding `accepted` as an
+  // in-domain object with a string `scheme` can tell where it is (else null:
+  // not compared). exact, upto: amount; batch-settlement: extra.chargedAmount,
+  // never amount; any other scheme: none. Schemes compared exactly.
+  let srCharged = null;
+  {
+    const acc = own(sr, 'accepted');
+    if (isObj(acc) && inDomain(acc) && isStr(own(acc, 'scheme'))) {
+      let v;
+      if (acc.scheme === 'exact' || acc.scheme === 'upto') v = own(sr, 'amount');
+      else if (acc.scheme === 'batch-settlement') v = own(own(sr, 'extra'), 'chargedAmount');
+      srCharged = present(v) ? v : '';
+    }
+  }
   const hasTx = present(srTx);
   const hasRef = present(srRef);
   if (own(sr, 'success') !== true || !(hasTx || hasRef)) return reject('invalid_transaction_state');
@@ -437,7 +446,13 @@ function verifyInner(receipt, ctx, cfg, resolver) {
       checks.network = 'not_compared';
     }
     // compared both ways, like the identifiers; nothing is normalized
-    const chargedOk = srCharged !== '' ? p.chargedAmount === srCharged : p.chargedAmount === '';
+    let chargedOk = true;
+    if (srCharged === null) {
+      checks.chargedAmount = 'not_compared';
+    } else {
+      checks.chargedAmount = 'compared';
+      chargedOk = srCharged !== '' ? p.chargedAmount === srCharged : p.chargedAmount === '';
+    }
     let payerOk = true;
     if (present(srPayer)) {
       checks.payer = 'compared';
@@ -505,6 +520,7 @@ function verifyInner(receipt, ctx, cfg, resolver) {
         payer: checks.payer,
         requirements: checks.requirements,
         payTo: checks.payTo,
+        chargedAmount: checks.chargedAmount,
         advertisement,
         freshness: checks.freshness,
       },
@@ -653,6 +669,14 @@ function runExample() {
   const res = verify({ format: 'jws', signature: compact }, ctx, resolver);
   say('full section-5 verification of the example (section-8 SettlementResponse, checksum-case payer)',
     res.verdict === 'PASS' && res.report.receiptRef === receiptRef, JSON.stringify(res));
+  // the report printed in section 5.12 is the one this verification produces
+  const s512 = spec.slice(spec.indexOf('### 5.12'), spec.indexOf('### 5.13'));
+  const printed = (s512.match(/```json\n([\s\S]*?)\n```/) || [])[1];
+  let printedReport = null;
+  try { printedReport = printed ? JSON.parse(printed) : null; } catch { printedReport = null; }
+  say('section 5.12 report example is the report of that verification',
+    printedReport !== null && res.verdict === 'PASS' && isDeepStrictEqual(res.report, printedReport),
+    JSON.stringify(res.report));
   return fail === 0 ? 0 : 1;
 }
 

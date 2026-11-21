@@ -308,7 +308,8 @@ class Context:
 
     success / transaction / settlement_ref / network / payer / amount / extra :
         from the SettlementResponse (core §5.3); `amount` and `extra` are the
-        response's members of those names, read for the charged amount (§4.3). UNSIGNED input: checks against it are
+        response's members of those names, read for the charged amount at the
+        location §4.3 names for `accepted.scheme`. UNSIGNED input: checks against it are
         consistency checks, not independent corroboration. Any value is legal
         here; a malformed one is absent or rejected, never an ERROR.
     accepted : the PaymentRequirements object the client accepted
@@ -409,15 +410,28 @@ def settlement_reference_of(accepted, settlement_response) -> str:
     return value if _has(value) else ""
 
 
-def charged_amount_of(amount, extra) -> str:
-    """The charged amount of a SettlementResponse (spec §4.3), from its `amount`
-    and `extra` members: `extra.chargedAmount` when present (§4.6), failing that
-    `amount` when present, failing that `""`. The lookup does not depend on the
-    scheme, and nothing is normalized."""
-    charged = extra.get("chargedAmount") if isinstance(extra, dict) else None
-    if _has(charged):
-        return charged
-    return amount if _has(amount) else ""
+# Where the charged amount is, by `accepted.scheme` compared exactly (spec §4.3):
+# "amount" is SettlementResponse.amount, "extra" is SettlementResponse.extra.chargedAmount
+# (never the top-level amount). Any other scheme has no row: no charged amount.
+CHARGED_AMOUNT_ROWS = {"exact": "amount", "upto": "amount", "batch-settlement": "extra"}
+
+
+def charged_amount_of(accepted, amount, extra):
+    """The charged amount of an exchange (spec §4.3, §5.8), from `accepted` and the
+    response's `amount` and `extra` members. Returns None when the verifier cannot
+    tell where it is: `accepted` is not a JSON object in the value domain whose
+    `scheme` is a string (`chargedAmount: not_compared`). Otherwise the value at
+    the scheme's location when present (§4.6), else `""`. Nothing is normalized."""
+    if not (isinstance(accepted, dict) and in_domain(accepted) and isinstance(accepted.get("scheme"), str)):
+        return None
+    row = CHARGED_AMOUNT_ROWS.get(accepted["scheme"])
+    if row == "amount":
+        value = amount
+    elif row == "extra":
+        value = extra.get("chargedAmount") if isinstance(extra, dict) else None
+    else:
+        value = None
+    return value if _has(value) else ""
 
 
 def _is_evm(network: str) -> bool:
@@ -669,13 +683,19 @@ def _verify(receipt, ctx, cfg, key_registry):
         checks["network"] = "compared"
     else:
         checks["network"] = "not_compared"
-    # the charged amount, both ways like the identifiers; nothing is normalized
-    charged = charged_amount_of(ctx.amount, ctx.extra)
-    if charged:
-        if payload["chargedAmount"] != charged:
+    # the charged amount, found by the scheme of the accepted requirements and
+    # compared both ways like the identifiers; without such an `accepted` it is
+    # not compared at all. Nothing is normalized.
+    charged = charged_amount_of(ctx.accepted, ctx.amount, ctx.extra)
+    if charged is None:
+        checks["chargedAmount"] = "not_compared"
+    else:
+        if charged:
+            if payload["chargedAmount"] != charged:
+                return REJECT, R_SETTLEMENT, {}
+        elif payload["chargedAmount"]:
             return REJECT, R_SETTLEMENT, {}
-    elif payload["chargedAmount"]:
-        return REJECT, R_SETTLEMENT, {}
+        checks["chargedAmount"] = "compared"
     if _has(ctx.payer):
         if payload["payer"] != _norm_unsigned(network, ctx.payer):
             return REJECT, R_SETTLEMENT, {}
@@ -740,7 +760,7 @@ def _verify(receipt, ctx, cfg, key_registry):
 
 
 REPORT_CHECKS = ("resourceUrl", "network", "payer", "requirements", "payTo",
-                 "advertisement", "freshness")
+                 "chargedAmount", "advertisement", "freshness")
 
 _PEM_RE = re.compile(r"-----BEGIN PUBLIC KEY-----\n((?:[A-Za-z0-9+/=]+\n)+)-----END PUBLIC KEY-----\n?")
 
@@ -1162,24 +1182,45 @@ C_AMOUNT_NON_DIGIT = "response_amount_non_digit"
 C_AMOUNT_NEGATIVE = "response_amount_negative"
 C_AMOUNT_NOT_STRING = "response_amount_not_a_string"
 C_CHARGED_EXTRA = "batch_charged_amount_in_extra"
-C_CHARGED_EXTRA_EMPTY = "extra_charged_amount_empty"
-C_CHARGED_EXTRA_NUMBER = "extra_charged_amount_not_a_string"
-C_EXTRA_NOT_OBJECT = "extra_not_an_object"
+C_CHARGED_EXTRA_EMPTY = "batch_extra_charged_amount_empty"
+C_CHARGED_EXTRA_NUMBER = "batch_extra_charged_amount_not_a_string"
+C_EXTRA_NOT_OBJECT = "batch_extra_not_an_object"
 AMOUNT_78 = "9" * 78
 AMOUNT_79 = "1" + "0" * 78
 BATCH_CHARGED = "2500"       # the charge for this request; the top-level amount is the deposit
-C_CHARGED_EXTRA_EXACT = "extra_charged_amount_any_scheme"
+C_CHARGED_EXTRA_EXACT = "exact_extra_charged_amount_not_read"
 C_CHARGED_EXTRA_CF = "cloudflare_charged_amount_in_extra"
-C_CHARGED_EXTRA_ZERO = "extra_charged_amount_zero"
+C_CHARGED_EXTRA_ZERO = "batch_extra_charged_amount_zero"
 C_AMOUNT_LEADING_ZERO_CF = "cloudflare_amount_leading_zero"
+# the per-scheme location of the charged amount (spec §4.3 table, §5.8): the
+# canonical EVM requirements under other schemes, and scheme names off by case
+ACCEPTED_EVM_BATCH = dict(ACCEPTED, scheme="batch-settlement")
+ACCEPTED_UPTO = dict(ACCEPTED, scheme="upto")
+ACCEPTED_AUTH_CAPTURE = dict(ACCEPTED, scheme="auth-capture")
+ACCEPTED_UNKNOWN_SCHEME = dict(ACCEPTED, scheme="streaming")
+ACCEPTED_EXACT_CASE = dict(ACCEPTED, scheme="Exact")
+ACCEPTED_BATCH_CASE = dict(ACCEPTED, scheme="batch-Settlement")
+ACCEPTED_SCHEME_NUMBER = dict(ACCEPTED, scheme=5)
+ACCEPTED_CF_BATCH = dict(ACCEPTED_CF, scheme="batch-settlement")
+UPTO_CHARGED = "7500"        # at most the accepted 10000
+C_BATCH_NO_EXTRA = "batch_amount_without_extra_charged_amount"
+C_UPTO = "upto_amount_beside_extra_charged_amount"
+C_AUTH_CAPTURE = "auth_capture_amount_and_extra_charged_amount"
+C_UNKNOWN_SCHEME = "unknown_scheme_amount"
+C_EXACT_CASE = "scheme_exact_in_other_case"
+C_BATCH_CASE = "scheme_batch_settlement_in_other_case"
+C_SCHEME_NUMBER = "requirements_scheme_not_a_string"
+C_BATCH_EXTRA_SURROGATE = "batch_extra_charged_amount_surrogate"
+C_AMOUNT_SURROGATE = "response_amount_surrogate"
 
 CONTEXTS = {
     C_OK: _ctx(),
     C_FAILED: _ctx(success=False, transaction=""),
+    # batch-settlement reports the charge in extra.chargedAmount (spec §4.3)
     C_BATCH: _ctx(transaction="", settlementRef=COMMITMENT_ID, network=SOL_NET, payer=None,
-                  accepted=ACCEPTED_SOL),
+                  accepted=ACCEPTED_SOL, amount=_DROP, extra={"chargedAmount": CHARGED}),
     C_BOTH: _ctx(transaction=SOL_TX, settlementRef=COMMITMENT_ID, network=SOL_NET, payer=None,
-                 accepted=ACCEPTED_SOL),
+                 accepted=ACCEPTED_SOL, amount=_DROP, extra={"chargedAmount": CHARGED}),
     # the verifier does not hold the accepted PaymentRequirements
     C_NOREQ: _ctx(accepted=None),
     # the facilitator returned a checksummed payer and upper-case transaction hex
@@ -1221,12 +1262,13 @@ CONTEXTS = {
     C_EVM_REF_UPPER: _ctx(settlementRef=BATCH_REF.upper()),
     C_EVM_REF_MIXED: _ctx(settlementRef="Batch:Voucher:9F3C1D0A-Root-01"),
     C_BATCH_ONLY_TX: _ctx(transaction=SOL_TX, settlementRef="", network=SOL_NET, payer=None,
-                          accepted=ACCEPTED_SOL),
+                          accepted=ACCEPTED_SOL, amount=_DROP, extra={"chargedAmount": CHARGED}),
     C_REQ_UTF16: _ctx(accepted=ACCEPTED_UTF16),
     # a transaction of the wrong type, a payer with an unpaired surrogate and a
     # null network are all absent (spec §4.6 "Present and absent")
     C_ABSENT_FORMS: _ctx(transaction=123, settlementRef=COMMITMENT_ID, network=None,
-                         payer="\ud800", accepted=ACCEPTED_SOL),
+                         payer="\ud800", accepted=ACCEPTED_SOL, amount=_DROP,
+                         extra={"chargedAmount": CHARGED}),
     # x402 objects of the wrong type never make the verifier fail (spec §5)
     C_JUNK: _ctx(payer={"a": 1}, network=5, accepted="x", advertisedInfo=[ADVERTISED_INFO]),
     C_NO_ID: _ctx(transaction="", settlementRef=""),
@@ -1263,17 +1305,33 @@ CONTEXTS = {
     C_CHARGED_EXTRA: _ctx(transaction="", settlementRef=COMMITMENT_ID, network=SOL_NET, payer=None,
                           accepted=ACCEPTED_SOL, amount=CHARGED,
                           extra={"commitmentId": COMMITMENT_ID, "chargedAmount": BATCH_CHARGED}),
-    # extra.chargedAmount absent in the sense of §4.6: the lookup falls back to `amount`
-    C_CHARGED_EXTRA_EMPTY: _ctx(extra={"chargedAmount": ""}),
-    C_CHARGED_EXTRA_NUMBER: _ctx(extra={"chargedAmount": 2500}),
-    C_EXTRA_NOT_OBJECT: _ctx(extra=BATCH_CHARGED),
-    # the lookup does not depend on the scheme or network (mutants M01, M03, M07 of cycle 11)
+    # batch-settlement: extra.chargedAmount absent in the sense of §4.6, so the
+    # exchange has none; the top-level amount is never read in its place
+    C_CHARGED_EXTRA_EMPTY: _ctx(accepted=ACCEPTED_EVM_BATCH, extra={"chargedAmount": ""}),
+    C_CHARGED_EXTRA_NUMBER: _ctx(accepted=ACCEPTED_EVM_BATCH, extra={"chargedAmount": 2500}),
+    C_EXTRA_NOT_OBJECT: _ctx(accepted=ACCEPTED_EVM_BATCH, extra=BATCH_CHARGED),
+    C_BATCH_NO_EXTRA: _ctx(accepted=ACCEPTED_EVM_BATCH),
+    # exact reads `amount`; a value in extra.chargedAmount is not a charged amount
     C_CHARGED_EXTRA_EXACT: _ctx(extra={"chargedAmount": BATCH_CHARGED}),
-    C_CHARGED_EXTRA_CF: _ctx(transaction=CF_TX, network=CF_NET, payer=None, accepted=ACCEPTED_CF,
+    C_CHARGED_EXTRA_CF: _ctx(transaction=CF_TX, network=CF_NET, payer=None, accepted=ACCEPTED_CF_BATCH,
                              amount="50000", extra={"chargedAmount": BATCH_CHARGED}),
-    C_CHARGED_EXTRA_ZERO: _ctx(extra={"chargedAmount": "0"}),
+    C_CHARGED_EXTRA_ZERO: _ctx(accepted=ACCEPTED_EVM_BATCH, extra={"chargedAmount": "0"}),
     C_AMOUNT_LEADING_ZERO_CF: _ctx(transaction=CF_TX, network=CF_NET, payer=None, accepted=ACCEPTED_CF,
                                    amount="010"),
+    # upto reads `amount`, and only it
+    C_UPTO: _ctx(accepted=ACCEPTED_UPTO, amount=UPTO_CHARGED, extra={"chargedAmount": BATCH_CHARGED}),
+    # schemes with no row: neither location is a charged amount
+    C_AUTH_CAPTURE: _ctx(accepted=ACCEPTED_AUTH_CAPTURE, extra={"chargedAmount": CHARGED}),
+    C_UNKNOWN_SCHEME: _ctx(accepted=ACCEPTED_UNKNOWN_SCHEME),
+    # scheme names are compared exactly
+    C_EXACT_CASE: _ctx(accepted=ACCEPTED_EXACT_CASE),
+    C_BATCH_CASE: _ctx(accepted=ACCEPTED_BATCH_CASE, extra={"chargedAmount": BATCH_CHARGED}),
+    # accepted held and in the domain, but its scheme is not a string: not compared
+    C_SCHEME_NUMBER: _ctx(accepted=ACCEPTED_SCHEME_NUMBER),
+    # a lone surrogate is absent (§4.6), at either location
+    C_BATCH_EXTRA_SURROGATE: _ctx(accepted=ACCEPTED_EVM_BATCH, amount=_DROP,
+                                  extra={"chargedAmount": BATCH_CHARGED + "\ud800"}),
+    C_AMOUNT_SURROGATE: _ctx(amount="1\ud800"),
     **{"config_" + k: v for k, v in C_ERR.items()},
 }
 
@@ -1376,13 +1434,25 @@ SUITE = [
     ("pos_charged_amount_zero.json", PASS, None, C_AMOUNT_ZERO),
     ("pos_charged_amount_78_digits.json", PASS, None, C_AMOUNT_78),
     ("pos_charged_amount_from_extra.json", PASS, None, C_CHARGED_EXTRA),
-    ("pos_charged_amount_extra_empty_falls_back.json", PASS, None, C_CHARGED_EXTRA_EMPTY),
-    ("pos_charged_amount_extra_not_string_falls_back.json", PASS, None, C_CHARGED_EXTRA_NUMBER),
-    ("pos_charged_amount_extra_not_object_falls_back.json", PASS, None, C_EXTRA_NOT_OBJECT),
+    ("pos_charged_amount_batch_extra_empty_not_read.json", PASS, None, C_CHARGED_EXTRA_EMPTY),
+    ("pos_charged_amount_batch_extra_not_string_not_read.json", PASS, None, C_CHARGED_EXTRA_NUMBER),
+    ("pos_charged_amount_batch_extra_not_object_not_read.json", PASS, None, C_EXTRA_NOT_OBJECT),
+    ("pos_charged_amount_batch_no_extra.json", PASS, None, C_BATCH_NO_EXTRA),
     ("pos_charged_amount_response_amount_not_string.json", PASS, None, C_AMOUNT_NOT_STRING),
-    ("pos_charged_amount_from_extra_any_scheme.json", PASS, None, C_CHARGED_EXTRA_EXACT),
+    ("pos_charged_amount_exact_extra_ignored.json", PASS, None, C_CHARGED_EXTRA_EXACT),
     ("pos_charged_amount_from_extra_cloudflare.json", PASS, None, C_CHARGED_EXTRA_CF),
     ("pos_charged_amount_extra_zero.json", PASS, None, C_CHARGED_EXTRA_ZERO),
+    ("pos_charged_amount_upto_reads_amount.json", PASS, None, C_UPTO),
+    ("pos_charged_amount_auth_capture_none.json", PASS, None, C_AUTH_CAPTURE),
+    ("pos_charged_amount_unknown_scheme_none.json", PASS, None, C_UNKNOWN_SCHEME),
+    ("pos_charged_amount_scheme_case_exact.json", PASS, None, C_EXACT_CASE),
+    ("pos_charged_amount_scheme_case_batch.json", PASS, None, C_BATCH_CASE),
+    ("pos_charged_amount_not_compared_without_accepted.json", PASS, None, C_NOREQ),
+    ("pos_charged_amount_not_compared_accepted_not_object.json", PASS, None, C_REQ_NONOBJ),
+    ("pos_charged_amount_not_compared_accepted_out_of_domain.json", PASS, None, C_REQ_UNSAFE_INT),
+    ("pos_charged_amount_not_compared_scheme_not_string.json", PASS, None, C_SCHEME_NUMBER),
+    ("pos_charged_amount_batch_extra_surrogate_absent.json", PASS, None, C_BATCH_EXTRA_SURROGATE),
+    ("pos_charged_amount_amount_surrogate_absent.json", PASS, None, C_AMOUNT_SURROGATE),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
@@ -1545,6 +1615,13 @@ SUITE = [
     ("neg_settlement_charged_amount_response_out_of_grammar.json", REJECT, R_SETTLEMENT,
      C_AMOUNT_LEADING_ZERO),
     ("neg_settlement_charged_amount_not_normalized.json", REJECT, R_SETTLEMENT, C_AMOUNT_LEADING_ZERO),
+    ("neg_settlement_charged_amount_batch_top_level_amount.json", REJECT, R_SETTLEMENT, C_BATCH_NO_EXTRA),
+    ("neg_settlement_charged_amount_batch_extra_empty_falls_back.json", REJECT, R_SETTLEMENT,
+     C_CHARGED_EXTRA_EMPTY),
+    ("neg_settlement_charged_amount_exact_extra_not_read.json", REJECT, R_SETTLEMENT, C_CHARGED_EXTRA_EXACT),
+    ("neg_settlement_charged_amount_upto_extra_not_read.json", REJECT, R_SETTLEMENT, C_UPTO),
+    ("neg_settlement_charged_amount_auth_capture_amount.json", REJECT, R_SETTLEMENT, C_AUTH_CAPTURE),
+    ("neg_settlement_charged_amount_scheme_case_exact.json", REJECT, R_SETTLEMENT, C_EXACT_CASE),
     # §5.9 payment requirements
     ("neg_requirements_amount_changed.json", REJECT, R_REQUIREMENTS, C_OK),
     ("neg_requirements_payto_mismatch.json", REJECT, R_REQUIREMENTS, C_OK),
@@ -1609,9 +1686,9 @@ SAME = [
 # MANIFEST.json then publishes the report the verifier produced; the suite
 # requires the two to agree, so no published report is only self-written.
 _DEFAULT_CHECKS = {"resourceUrl": "not_compared", "network": "compared", "payer": "compared",
-                   "requirements": "matched", "payTo": "compared",
+                   "requirements": "matched", "payTo": "compared", "chargedAmount": "compared",
                    "advertisement": "not_evaluated", "freshness": "enforced"}
-_DEFAULT_REPORT = {"outcome": "delivered", "settlementStatus": "settled",
+_DEFAULT_REPORT ={"outcome": "delivered", "settlementStatus": "settled",
                    "ageSeconds": VERIFIER_NOW - ISSUED_AT, "checks": _DEFAULT_CHECKS,
                    "supersedes": "", "bindings": []}
 _NE = "not_evaluated"
@@ -1652,17 +1729,17 @@ EXPECT_REPORT = {
         "bindings": [{"type": BT_ADVERTISED, "status": "mismatched"}]},
     "pos_advertised_info_outside_domain.json": {
         "bindings": [{"type": BT_ADVERTISED, "status": _NE}]},
-    "pos_requirements_not_held.json": {"checks": {"requirements": _NE, "payTo": "not_compared"}},
+    "pos_requirements_not_held.json": {"checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_payer_absent.json": {"checks": {"payer": "not_compared"}},
     "pos_payer_empty_string.json": {"checks": {"payer": "not_compared"}},
     "pos_archival_180d.json": {"checks": {"freshness": "reported"}, "ageSeconds": 180 * 86400},
-    "pos_requirements_not_object.json": {"checks": {"requirements": _NE, "payTo": "not_compared"}},
+    "pos_requirements_not_object.json": {"checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_network_namespace_3.json": {"checks": {"network": "not_compared", "payer": "not_compared",
-                                                "requirements": _NE, "payTo": "not_compared"}},
+                                                "requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_network_namespace_32.json": {"checks": {"network": "not_compared", "payer": "not_compared",
-                                                 "requirements": _NE, "payTo": "not_compared"}},
+                                                 "requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_network_reference_32.json": {"checks": {"network": "not_compared", "payer": "not_compared",
-                                                 "requirements": _NE, "payTo": "not_compared"}},
+                                                 "requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_network_cloudflare_empty_payer.json": {"checks": {"payer": "not_compared"}},
     "pos_bindings_16.json": {"bindings": [{"type": b["type"], "status": _NE} for b in SIXTEEN_BINDINGS]},
     "pos_binding_prefix_64.json": {"bindings": [{"type": "a" * 64 + ":b", "status": _NE}]},
@@ -1682,7 +1759,7 @@ EXPECT_REPORT = {
     "pos_response_absent_forms.json": {"settlementStatus": "capturePending",
                                        "checks": {"network": "not_compared", "payer": "not_compared"}},
     "pos_response_junk_types.json": {"checks": {"network": "not_compared", "payer": "not_compared",
-                                                "requirements": _NE, "payTo": "not_compared"}},
+                                                "requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_response_network_not_identifier.json": {"checks": {"network": "not_compared"}},
     "pos_payer_empty_evm.json": {"checks": {"payer": "not_compared"}},
     "pos_settlement_ref_with_transaction.json": {"settlementStatus": "capturePending",
@@ -1696,9 +1773,9 @@ EXPECT_REPORT = {
     "pos_freshness_max_age_0.json": {"ageSeconds": 0},
     "pos_freshness_max_age_max.json": {"ageSeconds": SAFE_INT_MAX},
     "pos_requirements_unsafe_integer_not_evaluated.json": {
-        "checks": {"requirements": _NE, "payTo": "not_compared"}},
+        "checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_requirements_depth_9_not_evaluated.json": {
-        "checks": {"requirements": _NE, "payTo": "not_compared"}},
+        "checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
     "pos_advertised_info_depth_8.json": {
         "checks": {"advertisement": "matched"},
         "bindings": [{"type": BT_ADVERTISED, "status": "matched"}]},
@@ -1707,6 +1784,15 @@ EXPECT_REPORT = {
     "pos_binding_printable_edges.json": {"bindings": [{"type": "a:!~", "status": _NE}]},
     "pos_charged_amount_from_extra.json": {"settlementStatus": "capturePending", "checks": _BATCH_CHECKS},
     "pos_charged_amount_from_extra_cloudflare.json": {"checks": {"payer": "not_compared"}},
+    # without an in-domain `accepted` whose scheme is a string, the charged amount
+    # is not compared, and a receipt value the response contradicts still passes
+    "pos_charged_amount_not_compared_without_accepted.json": {
+        "checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
+    "pos_charged_amount_not_compared_accepted_not_object.json": {
+        "checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
+    "pos_charged_amount_not_compared_accepted_out_of_domain.json": {
+        "checks": {"requirements": _NE, "payTo": "not_compared", "chargedAmount": "not_compared"}},
+    "pos_charged_amount_not_compared_scheme_not_string.json": {"checks": {"chargedAmount": "not_compared"}},
 }
 
 
@@ -1990,10 +2076,20 @@ def regenerate_vectors() -> None:
     w("pos_charged_amount_zero.json", signed(base(chargedAmount="0")))
     w("pos_charged_amount_78_digits.json", signed(base(chargedAmount=AMOUNT_78)))
     w("pos_charged_amount_from_extra.json", signed(_sol_payload(chargedAmount=BATCH_CHARGED)))
-    w("pos_charged_amount_extra_empty_falls_back.json", signed(base(), "EdDSA", KID_ED))
-    w("pos_charged_amount_extra_not_string_falls_back.json", signed(base(), "ES256K", KID_ES256K))
-    w("pos_charged_amount_extra_not_object_falls_back.json",
-      signed(base(), "ES256", KID_PAYTO, keys["PAYTO"]))
+    # batch-settlement on eip155: only extra.chargedAmount is read (spec §4.3 table)
+    d_batch = requirements_digest(ACCEPTED_EVM_BATCH)
+    w("pos_charged_amount_batch_extra_empty_not_read.json",
+      signed(base(chargedAmount="", requirementsDigest=d_batch), "EdDSA", KID_ED))
+    w("pos_charged_amount_batch_extra_not_string_not_read.json",
+      signed(base(chargedAmount="", requirementsDigest=d_batch), "ES256K", KID_ES256K))
+    w("pos_charged_amount_batch_extra_not_object_not_read.json",
+      signed(base(chargedAmount="", requirementsDigest=d_batch), "ES256", KID_PAYTO, keys["PAYTO"]))
+    w("pos_charged_amount_batch_no_extra.json", signed(base(chargedAmount="", requirementsDigest=d_batch)))
+    w("pos_charged_amount_batch_extra_surrogate_absent.json",
+      signed(base(chargedAmount="", requirementsDigest=d_batch), "EdDSA", KID_ED))
+    w("neg_settlement_charged_amount_batch_top_level_amount.json", signed(base(requirementsDigest=d_batch)))
+    w("neg_settlement_charged_amount_batch_extra_empty_falls_back.json",
+      signed(base(requirementsDigest=d_batch), "EdDSA", KID_ED))
     w("pos_charged_amount_response_amount_not_string.json", signed(base(chargedAmount="")))
     w("neg_schema_charged_amount_79_digits.json", signed(base(chargedAmount=AMOUNT_79)))
     w("neg_schema_charged_amount_leading_zero.json", signed(base(chargedAmount="010")))
@@ -2005,15 +2101,46 @@ def regenerate_vectors() -> None:
     w("neg_settlement_charged_amount_uncorroborated.json", signed(base()))
     w("neg_settlement_charged_amount_top_level_when_extra.json", signed(_sol_payload()))
     w("neg_settlement_charged_amount_extra_number_not_read.json",
-      signed(base(chargedAmount=BATCH_CHARGED)))
+      signed(base(chargedAmount=BATCH_CHARGED, requirementsDigest=d_batch)))
     w("neg_settlement_charged_amount_response_out_of_grammar.json", signed(base(chargedAmount="")))
     w("neg_settlement_charged_amount_not_normalized.json", signed(base(chargedAmount="10")))
     cf = dict(network=CF_NET, payer="", payTo=CF_PAY_TO, transaction=CF_TX,
               requirementsDigest=requirements_digest(ACCEPTED_CF))
-    w("pos_charged_amount_from_extra_any_scheme.json", signed(base(chargedAmount=BATCH_CHARGED), "EdDSA", KID_ED))
-    w("pos_charged_amount_from_extra_cloudflare.json", signed(base(chargedAmount=BATCH_CHARGED, **cf)))
-    w("pos_charged_amount_extra_zero.json", signed(base(chargedAmount="0"), "ES256K", KID_ES256K))
+    # exact reads `amount`: extra.chargedAmount beside it is ignored
+    w("pos_charged_amount_exact_extra_ignored.json", signed(base(), "ES256K", KID_ES256K))
+    w("neg_settlement_charged_amount_exact_extra_not_read.json",
+      signed(base(chargedAmount=BATCH_CHARGED), "EdDSA", KID_ED))
+    w("pos_charged_amount_from_extra_cloudflare.json",
+      signed(base(chargedAmount=BATCH_CHARGED,
+                  **dict(cf, requirementsDigest=requirements_digest(ACCEPTED_CF_BATCH)))))
+    w("pos_charged_amount_extra_zero.json",
+      signed(base(chargedAmount="0", requirementsDigest=d_batch), "ES256K", KID_ES256K))
     w("neg_schema_charged_amount_leading_zero_non_evm.json", signed(base(chargedAmount="010", **cf)))
+    # upto reads `amount`; schemes with no row (auth-capture, any other) have none;
+    # scheme names are compared exactly
+    d_upto = requirements_digest(ACCEPTED_UPTO)
+    w("pos_charged_amount_upto_reads_amount.json", signed(base(chargedAmount=UPTO_CHARGED, requirementsDigest=d_upto)))
+    w("neg_settlement_charged_amount_upto_extra_not_read.json",
+      signed(base(chargedAmount=BATCH_CHARGED, requirementsDigest=d_upto)))
+    d_auth = requirements_digest(ACCEPTED_AUTH_CAPTURE)
+    w("pos_charged_amount_auth_capture_none.json", signed(base(chargedAmount="", requirementsDigest=d_auth)))
+    w("neg_settlement_charged_amount_auth_capture_amount.json", signed(base(requirementsDigest=d_auth)))
+    w("pos_charged_amount_unknown_scheme_none.json",
+      signed(base(chargedAmount="", requirementsDigest=requirements_digest(ACCEPTED_UNKNOWN_SCHEME))))
+    d_exact_case = requirements_digest(ACCEPTED_EXACT_CASE)
+    w("pos_charged_amount_scheme_case_exact.json", signed(base(chargedAmount="", requirementsDigest=d_exact_case)))
+    w("neg_settlement_charged_amount_scheme_case_exact.json", signed(base(requirementsDigest=d_exact_case)))
+    w("pos_charged_amount_scheme_case_batch.json",
+      signed(base(chargedAmount="", requirementsDigest=requirements_digest(ACCEPTED_BATCH_CASE))))
+    # not compared: the receipt's value contradicts the response, and still passes
+    w("pos_charged_amount_not_compared_without_accepted.json", signed(base(chargedAmount="9999")))
+    w("pos_charged_amount_not_compared_accepted_not_object.json",
+      signed(base(chargedAmount=""), "EdDSA", KID_ED))
+    w("pos_charged_amount_not_compared_accepted_out_of_domain.json",
+      signed(base(chargedAmount="9999"), "ES256K", KID_ES256K))
+    w("pos_charged_amount_not_compared_scheme_not_string.json",
+      signed(base(chargedAmount="9999", requirementsDigest=requirements_digest(ACCEPTED_SCHEME_NUMBER))))
+    w("pos_charged_amount_amount_surrogate_absent.json", signed(base(chargedAmount=""), "ES256K", KID_ES256K))
 
     # ---- §5.1 envelope and header ----
     good = _sign_jws("ES256", KID_ES256, es, base_text.encode())
@@ -2333,9 +2460,10 @@ def write_vectors_md(manifest) -> None:
     notes = {
         C_OK: "successful settlement with a transaction; accepted requirements held",
         C_FAILED: "`success: false`",
-        C_BATCH: "Solana batch-settlement commitment: settlement reference only, no payer",
-        C_BOTH: "Solana settlement carrying both a transaction and a settlement reference",
-        C_NOREQ: "accepted requirements NOT held",
+        C_BATCH: ("Solana batch-settlement commitment: settlement reference only, no payer; "
+                  "`extra.chargedAmount` 10000"),
+        C_BOTH: "Solana settlement carrying both a transaction and a settlement reference; `extra.chargedAmount` 10000",
+        C_NOREQ: "accepted requirements NOT held (so the charged amount is not compared)",
         C_CASE: "response `payer` in checksum case, `transaction` in upper-case hex",
         C_CASE_PREFIX: "response `transaction` and `payer` with an upper-case `0X` prefix",
         C_NOPAYER: "response carries no `payer`",
@@ -2356,7 +2484,7 @@ def write_vectors_md(manifest) -> None:
         C_CF: "network `cloudflare:402`, no payer",
         C_EVM_REF_UPPER: "eip155 settlement with a transaction; the response's settlement reference in upper case",
         C_EVM_REF_MIXED: "eip155 settlement with a transaction and a mixed-case settlement reference",
-        C_BATCH_ONLY_TX: "Solana settlement with a transaction and no settlement reference",
+        C_BATCH_ONLY_TX: "Solana batch settlement with a transaction and no settlement reference; `extra.chargedAmount` 10000",
         C_REQ_UTF16: "accepted requirements whose member names sort differently by UTF-16 and by code point",
         C_ABSENT_FORMS: "response `transaction` is a number, `payer` has an unpaired surrogate, `network` null",
         C_JUNK: "response `payer` an object, `network` a number, requirements a string, advertised info an array",
@@ -2391,13 +2519,23 @@ def write_vectors_md(manifest) -> None:
         C_AMOUNT_NOT_STRING: "response `amount` is the number 10000, not a string: no charged amount",
         C_CHARGED_EXTRA: ("Solana batch commitment; `extra.chargedAmount` 2500 beside a different "
                           "top-level `amount`"),
-        C_CHARGED_EXTRA_EMPTY: "response `extra.chargedAmount` is the empty string; `amount` 10000",
-        C_CHARGED_EXTRA_NUMBER: "response `extra.chargedAmount` is the number 2500; `amount` 10000",
-        C_EXTRA_NOT_OBJECT: "response `extra` is a string, not an object; `amount` 10000",
+        C_CHARGED_EXTRA_EMPTY: "EVM `batch-settlement`; `extra.chargedAmount` is the empty string; `amount` 10000",
+        C_CHARGED_EXTRA_NUMBER: "EVM `batch-settlement`; `extra.chargedAmount` is the number 2500; `amount` 10000",
+        C_EXTRA_NOT_OBJECT: "EVM `batch-settlement`; `extra` is a string, not an object; `amount` 10000",
+        C_BATCH_NO_EXTRA: "EVM `batch-settlement`; no `extra`; `amount` 10000 (a deposit, refund or payout)",
         C_CHARGED_EXTRA_EXACT: "EVM `exact` response with `extra.chargedAmount` 2500 beside `amount` 10000",
-        C_CHARGED_EXTRA_CF: "network `cloudflare:402`, no payer; `extra.chargedAmount` 2500 beside `amount` 50000",
-        C_CHARGED_EXTRA_ZERO: "response `extra.chargedAmount` is `0`; `amount` 10000",
+        C_CHARGED_EXTRA_CF: ("`batch-settlement` on `cloudflare:402`, no payer; `extra.chargedAmount` 2500 "
+                             "beside `amount` 50000"),
+        C_CHARGED_EXTRA_ZERO: "EVM `batch-settlement`; `extra.chargedAmount` is `0`; `amount` 10000",
         C_AMOUNT_LEADING_ZERO_CF: "network `cloudflare:402`, no payer; response `amount` is `010`",
+        C_UPTO: "EVM `upto`; `amount` 7500 beside `extra.chargedAmount` 2500",
+        C_AUTH_CAPTURE: "EVM `auth-capture` (no row in §4.3); `amount` and `extra.chargedAmount` both 10000",
+        C_UNKNOWN_SCHEME: "a scheme `streaming` with no row in §4.3; `amount` 10000",
+        C_EXACT_CASE: "accepted `scheme` is `Exact`, not `exact`; `amount` 10000",
+        C_BATCH_CASE: "accepted `scheme` is `batch-Settlement`; `extra.chargedAmount` 2500",
+        C_SCHEME_NUMBER: "accepted requirements held and in the domain, with `scheme` the number 5",
+        C_BATCH_EXTRA_SURROGATE: "EVM `batch-settlement`; `extra.chargedAmount` has an unpaired surrogate; no `amount`",
+        C_AMOUNT_SURROGATE: "EVM `exact`; response `amount` has an unpaired surrogate",
     }
     for k in C_ERR:
         notes["config_" + k] = f"configuration outside the contract: {k.replace('_', ' ')}"
@@ -2570,11 +2708,15 @@ _DEFAULT_REPORT_OK = {
     "pos_authorization_marker_not_true.json", "pos_config_clock_integer_float.json",
     "pos_requirements_max_safe_integer.json", "pos_requirements_depth_8.json",
     "pos_charged_amount_empty_no_amount.json", "pos_charged_amount_zero.json",
-    "pos_charged_amount_78_digits.json", "pos_charged_amount_extra_empty_falls_back.json",
-    "pos_charged_amount_extra_not_string_falls_back.json",
-    "pos_charged_amount_extra_not_object_falls_back.json",
+    "pos_charged_amount_78_digits.json", "pos_charged_amount_batch_extra_empty_not_read.json",
+    "pos_charged_amount_batch_extra_not_string_not_read.json",
+    "pos_charged_amount_batch_extra_not_object_not_read.json", "pos_charged_amount_batch_no_extra.json",
     "pos_charged_amount_response_amount_not_string.json",
-    "pos_charged_amount_from_extra_any_scheme.json", "pos_charged_amount_extra_zero.json",
+    "pos_charged_amount_exact_extra_ignored.json", "pos_charged_amount_extra_zero.json",
+    "pos_charged_amount_upto_reads_amount.json", "pos_charged_amount_auth_capture_none.json",
+    "pos_charged_amount_unknown_scheme_none.json", "pos_charged_amount_scheme_case_exact.json",
+    "pos_charged_amount_scheme_case_batch.json", "pos_charged_amount_batch_extra_surrogate_absent.json",
+    "pos_charged_amount_amount_surrogate_absent.json",
 }
 
 
