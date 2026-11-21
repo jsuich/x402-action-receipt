@@ -890,6 +890,7 @@ KID_UNKNOWN_ALG = "did:web:api.example.com#unknown-algorithm"
 KID_UNKNOWN_CURVE = "did:web:api.example.com#unsupported-curve"
 KID_P384 = "did:web:api.example.com#p384"
 KID_PEM_SPACES = "did:web:api.example.com#pem-leading-spaces"
+KID_PEM_NONCANONICAL = "did:web:api.example.com#pem-noncanonical-base64"
 
 # resources whose authorization-source entries exercise spec §5.4 / §7
 RES_ANCHOR_STRING = RESOURCE + "?anchor=string"      # list given as a bare string
@@ -944,6 +945,20 @@ def _certificate_pem(sk) -> str:
     return cert.public_bytes(Encoding.PEM).decode()
 
 
+def _pem_noncanonical(sk) -> str:
+    """The Ed25519 SPKI PEM with a padding bit set in the last base64 character:
+    a lenient decoder returns the same DER, so only the one-spelling rule of the
+    key parser rejects it (spec §7: a SubjectPublicKeyInfo PEM)."""
+    pem = _pem(sk)
+    body = pem.splitlines()[1]
+    assert body.endswith("=") and not body.endswith("==")
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    last = body[-2]
+    respelled = body[:-2] + alphabet[alphabet.index(last) | 1] + "="
+    assert respelled != body and base64.b64decode(respelled) == base64.b64decode(body)
+    return pem.replace(body, respelled)
+
+
 def _registry():
     from cryptography.hazmat.primitives.serialization import PrivateFormat, NoEncryption
     es, esk, ed = _es_key("ES256"), _es_key("ES256K"), _ed_key()
@@ -951,7 +966,8 @@ def _registry():
     evil = ec.derive_private_key(0x4444, ec.SECP256R1())
     p384 = ec.derive_private_key(0x6666, ec.SECP384R1())
     service = [KID_ES256, KID_ES256K, KID_ED, KID_ABSENT, KID_UNUSABLE, KID_PRIVATE_PEM,
-               KID_CERTIFICATE, KID_UNKNOWN_ALG, KID_UNKNOWN_CURVE, KID_P384, KID_PEM_SPACES]
+               KID_CERTIFICATE, KID_UNKNOWN_ALG, KID_UNKNOWN_CURVE, KID_P384, KID_PEM_SPACES,
+               KID_PEM_NONCANONICAL]
     return {
         KID_ES256: _pem(es), KID_ES256K: _pem(esk), KID_ED: _pem(ed),
         KID_PAYTO: _pem(payto), KID_EVIL: _pem(evil), KID_UNUSABLE: "not a public key",
@@ -961,6 +977,7 @@ def _registry():
         KID_UNKNOWN_CURVE: _pem_of_der(_SPKI_UNKNOWN_CURVE),
         KID_P384: _pem(p384),
         KID_PEM_SPACES: "   " + _pem(ed),
+        KID_PEM_NONCANONICAL: _pem_noncanonical(ed),
         "__service__:" + RESOURCE: service,
         "__payTo__:" + PAY_TO + "|" + RESOURCE: [KID_PAYTO],
         "__service__:" + RES_ANCHOR_STRING: KID_ED,
@@ -1006,6 +1023,7 @@ def context_from_json(c):
 
 
 C_OK, C_FAILED, C_BATCH, C_BOTH = "ok", "failed", "batch", "both"
+C_CASE_PREFIX = "response_transaction_upper_case_prefix"
 C_NOREQ, C_CASE, C_NOPAYER, C_ARCHIVAL, C_ADVERT = (
     "no_requirements", "response_casing", "no_payer", "archival", "advertised")
 C_REQ_FLOAT, C_REQ_NONOBJ, C_PAYER_EMPTY = (
@@ -1075,6 +1093,8 @@ CONTEXTS = {
     C_NOREQ: _ctx(accepted=None),
     # the facilitator returned a checksummed payer and upper-case transaction hex
     C_CASE: _ctx(transaction="0x" + "AB" * 32, payer=PAYER_CHECKSUM),
+    # "0X" is ASCII upper case too: lowercasing is A-Z, not only the hex letters
+    C_CASE_PREFIX: _ctx(transaction="0X" + "AB" * 32, payer="0X" + PAYER_CHECKSUM[2:]),
     # core §5.3 makes `payer` optional
     C_NOPAYER: _ctx(payer=None),
     # an auditor, 180 days later
@@ -1178,6 +1198,7 @@ SUITE = [
     ("pos_advertised_info_outside_domain.json", PASS, None, C_ADVERT_FLOAT),
     ("pos_requirements_not_held.json", PASS, None, C_NOREQ),
     ("pos_response_casing.json", PASS, None, C_CASE),
+    ("pos_response_transaction_upper_prefix.json", PASS, None, C_CASE_PREFIX),
     ("pos_payer_absent.json", PASS, None, C_NOPAYER),
     ("pos_archival_180d.json", PASS, None, C_ARCHIVAL),
     ("pos_non_ascii_nfc.json", PASS, None, C_OK),
@@ -1324,6 +1345,7 @@ SUITE = [
     ("neg_key_unsupported_curve.json", REJECT, R_KEY_UNRESOLVED, C_OK),
     ("neg_key_unusable_curve_p384.json", REJECT, R_KEY_UNRESOLVED, C_OK),
     ("neg_key_pem_leading_spaces.json", REJECT, R_KEY_UNRESOLVED, C_OK),
+    ("neg_key_pem_noncanonical_base64.json", REJECT, R_KEY_UNRESOLVED, C_OK),
     # §5.6 signature
     ("neg_sig_tampered_payload.json", REJECT, R_SIG_INVALID, C_OK),
     ("neg_sig_high_s.json", REJECT, R_SIG_INVALID, C_OK),
@@ -1640,7 +1662,8 @@ def regenerate_vectors() -> None:
                  "neg_resource_paid_empty_string.json", "neg_settlement_failed.json",
                  "neg_settlement_success_without_identifier.json",
                  "neg_settlement_success_false_with_transaction.json",
-                 "neg_settlement_success_string_true.json"):
+                 "neg_settlement_success_string_true.json",
+                 "pos_response_transaction_upper_prefix.json"):
         w(name, signed(base()))
     # §3: other members of the receipt object are ignored and not signed
     w("pos_envelope_extra_member.json",
@@ -1905,6 +1928,7 @@ def regenerate_vectors() -> None:
     w("neg_key_unsupported_curve.json", signed(base(), "ES256", KID_UNKNOWN_CURVE, es))
     w("neg_key_unusable_curve_p384.json", signed(base(), "ES256", KID_P384, es))
     w("neg_key_pem_leading_spaces.json", signed(base(), "EdDSA", KID_PEM_SPACES, ed))
+    w("neg_key_pem_noncanonical_base64.json", signed(base(), "EdDSA", KID_PEM_NONCANONICAL, ed))
     w("neg_order_resource_before_signer.json", signed(base(), "ES256", KID_EVIL, keys["EVIL"]))
 
     # ---- §5.6 signature ----
@@ -2045,6 +2069,7 @@ def write_vectors_md(manifest) -> None:
         C_BOTH: "Solana settlement carrying both a transaction and a settlement reference",
         C_NOREQ: "accepted requirements NOT held",
         C_CASE: "response `payer` in checksum case, `transaction` in upper-case hex",
+        C_CASE_PREFIX: "response `transaction` and `payer` with an upper-case `0X` prefix",
         C_NOPAYER: "response carries no `payer`",
         C_ARCHIVAL: "archival mode, 180 days after issue",
         C_ADVERT: "the echoed extension `info` is also held",
@@ -2239,6 +2264,7 @@ _DEFAULT_REPORT_OK = {
     "pos_es256_valid.json", "pos_es256k_valid.json", "pos_eddsa_valid.json",
     "pos_payto_signer.json", "pos_non_ascii_nfc.json", "pos_non_ascii_nfd.json",
     "pos_response_casing.json", "pos_requirements_float_spelling.json",
+    "pos_response_transaction_upper_prefix.json",
     "pos_envelope_extra_member.json", "pos_compact_at_size_limit.json",
     "pos_network_lookalike_not_evm.json", "pos_receiptid_22.json", "pos_receiptid_64.json",
     "pos_settlement_ref_evm_exact_case.json", "pos_requirements_utf16_order.json",

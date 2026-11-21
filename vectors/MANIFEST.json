@@ -3,7 +3,7 @@
   "version": 1,
   "specDraft": "0.4",
   "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT (and on ERROR), and the report on PASS. keys.json is a test fixture standing in for authorization and key resolution. vectorsDigest is the sha256 over the JCS form of {file name: sha256 hex of the file} for every vector file and keys.json.",
-  "vectorsDigest": "sha256:58961a608e206146050fa71bd09f34ba3190ddbbf2fa1b36859452a9a65d867d",
+  "vectorsDigest": "sha256:490dd60d235ce881c23f158fb4648d21d91af8b61a3d90b5c758712a399fe133",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -118,6 +118,30 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_transaction_upper_case_prefix": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0XABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0X857b06519E91e3A54538791bDbb0E22373e36b66",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -1843,6 +1867,29 @@
       }
     },
     {
+      "file": "pos_response_transaction_upper_prefix.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_transaction_upper_case_prefix",
+      "report": {
+        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
       "file": "pos_payer_absent.json",
       "expect": "PASS",
       "reason": null,
@@ -3403,6 +3450,12 @@
     },
     {
       "file": "neg_key_pem_leading_spaces.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_pem_noncanonical_base64.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_key_unresolved",
       "context": "ok"

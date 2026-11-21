@@ -12,7 +12,7 @@ requirements the suite tests, and which it does not.
 adapter protocol of section 3, it reproduces every entry of
 `vectors/MANIFEST.json`: the verdict, the reason code on `REJECT`, the report
 on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
-`vectorsDigest` (currently `sha256:58961a608e206146050fa71bd09f34ba3190ddbbf2fa1b36859452a9a65d867d`).
+`vectorsDigest` (currently `sha256:490dd60d235ce881c23f158fb4648d21d91af8b61a3d90b5c758712a399fe133`).
 
 **Issuer.** An implementation conforms as an issuer if, driven through the
 issuer adapter protocol of section 3, it handles every exchange in
@@ -35,7 +35,7 @@ completeness. They are not testable through this suite.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
-- 227 vectors, each named by at least one requirement.
+- 229 vectors, each named by at least one requirement.
 - 47 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
@@ -178,7 +178,7 @@ every case; `suite` = a structural check of the suite itself.
 | V-AUT-3 | §5.4 | MUST NOT | Never take the location of authorization data from `kid`; a `did:web` kid on another host is not authorized under (a). | not tested (`needs-network`) |
 | V-AUT-4 | §5.4 | MUST | In archival mode, judge authorization as of `issuedAt`. | not tested (`needs-network`) |
 | V-KEY-1 | §5.5 | MUST | Report an authorized key that cannot be obtained, or is not a usable public key, as unresolved, not as a bad signature. | `neg_key_unresolved`, `neg_key_unusable`, `neg_key_unknown_algorithm`, `neg_key_unsupported_curve`, `neg_key_unusable_curve_p384` |
-| V-KEY-2 | §5 | MUST | Only a public key is a usable key: a private key, a certificate, or a PEM with anything around it is not. | `neg_key_private_key_pem`, `neg_key_certificate`, `neg_key_pem_leading_spaces` |
+| V-KEY-2 | §5 | MUST | Only a public key is a usable key: a private key, a certificate, or a PEM with anything around it is not. | `neg_key_private_key_pem`, `neg_key_certificate`, `neg_key_pem_leading_spaces`, `neg_key_pem_noncanonical_base64` |
 | V-SIG-1 | §5.6 | MUST | Verify the signature over the first two segments under the resolved key. | `neg_sig_tampered_payload`, `pos_es256_valid`, `pos_es256k_valid`, `pos_eddsa_valid`, `neg_order_signature_before_settlement` |
 | V-SIG-2 | §5.6 | MUST | Require the key's type and curve to match `alg`. | `neg_sig_wrong_curve`, `neg_sig_eddsa_key_for_es256`, `neg_sig_ec_key_for_eddsa` |
 | V-SIG-3 | §3 | MUST | Require 64-byte low-s ECDSA signatures. | `neg_sig_high_s`, `neg_sig_ecdsa_65_bytes`, `neg_sig_ecdsa_der` |
@@ -189,7 +189,7 @@ every case; `suite` = a structural check of the suite itself.
 | V-SET-10 | §5.8 | MUST | The receipt carries no `settlementRef` the response does not have. | `neg_settlement_uncorroborated_ref` |
 | V-SET-5 | §5.8 | MUST | Compare `network` when the response's is a network identifier; otherwise record that it was not compared. | `neg_settlement_network_mismatch`, `pos_response_network_not_identifier`, `pos_response_junk_types` |
 | V-SET-6 | §5.8 | MUST | Compare `payer` when the response has one; otherwise record that it was not compared. | `neg_settlement_payer_mismatch`, `neg_settlement_payer_dropped`, `pos_payer_absent` |
-| V-SET-7 | §5.8 | MUST | Lowercase the response's `transaction` and `payer` on `eip155` networks before comparing. | `pos_response_casing` |
+| V-SET-7 | §5.8 | MUST | Lowercase the response's `transaction` and `payer` on `eip155` networks before comparing. | `pos_response_casing`, `pos_response_transaction_upper_prefix` |
 | V-SET-9 | §5.8 | MUST | Normalize nothing else: a settlement reference and every value off eip155 are compared exactly. | `neg_settlement_ref_case_not_folded`, `pos_settlement_ref_evm_exact_case`, `neg_settlement_non_evm_case_not_folded`, `pos_network_lookalike_not_evm` |
 | V-SET-8 | §4.6 | MUST | A value read from an unsigned object is present only as a non-empty string of well-formed Unicode; anything else is absent. | `pos_payer_empty_string`, `pos_payer_absent`, `pos_response_absent_forms`, `pos_response_junk_types` |
 | V-REQ-1 | §5.9 | MUST | When the accepted requirements are held, `requirementsDigest` must equal their digest. | `neg_requirements_amount_changed`, `neg_order_requirements_before_freshness` |

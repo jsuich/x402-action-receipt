@@ -801,7 +801,8 @@
       "vectors": [
         "neg_key_private_key_pem.json",
         "neg_key_certificate.json",
-        "neg_key_pem_leading_spaces.json"
+        "neg_key_pem_leading_spaces.json",
+        "neg_key_pem_noncanonical_base64.json"
       ]
     },
     {
@@ -954,7 +955,8 @@
       "anchor": "it lowercases the response's `transaction` and `payer`",
       "tested_by": "vector",
       "vectors": [
-        "pos_response_casing.json"
+        "pos_response_casing.json",
+        "pos_response_transaction_upper_prefix.json"
       ]
     },
     {

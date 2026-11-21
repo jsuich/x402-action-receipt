@@ -11,6 +11,7 @@
   "did:web:api.example.com#unsupported-curve": "-----BEGIN PUBLIC KEY-----\nMEIwFAYHKoZIzj0CAQYJKyQDAwIIAQEBAyoABAEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBAQEBAQEBAQEBAQEBAQEBAQE=\n-----END PUBLIC KEY-----\n",
   "did:web:api.example.com#p384": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEdkP13snKWwBTlyqdRjFbbPlMI52OdhVB\ncflu/TuhJ4s4Sa8sD84BZrizqBumHBkRPHPTxBsBtghwWB9HzjGK4iunDg7MYY2U\nrS9568azJA1UEt3RC9QcdEZqo76EK0FG\n-----END PUBLIC KEY-----\n",
   "did:web:api.example.com#pem-leading-spaces": "   -----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9E=\n-----END PUBLIC KEY-----\n",
+  "did:web:api.example.com#pem-noncanonical-base64": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9F=\n-----END PUBLIC KEY-----\n",
   "__service__:https://api.example.com/v1/complete": [
     "did:web:api.example.com#es256",
     "did:web:api.example.com#es256k",
@@ -22,7 +23,8 @@
     "did:web:api.example.com#unknown-algorithm",
     "did:web:api.example.com#unsupported-curve",
     "did:web:api.example.com#p384",
-    "did:web:api.example.com#pem-leading-spaces"
+    "did:web:api.example.com#pem-leading-spaces",
+    "did:web:api.example.com#pem-noncanonical-base64"
   ],
   "__payTo__:0x209693bc6afc0c5328ba36faf03c514ef312287c|https://api.example.com/v1/complete": [
     "did:web:api.example.com#payto"
