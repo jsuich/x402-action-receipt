@@ -10,7 +10,7 @@ Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
 31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73, 81 to 83, 91 and 92, 101 to
 103 (the CI workflow's fixed seeds, run on every push), 111 to 113, 121 to 123,
 131 and 132, 141, 151 to 153, 161 and 162, 171 and 172, 181 to 183, 191 and 192,
-201 to 203, 211 and 212, 9001.
+201 to 203, 211 and 212, 221 to 223, 231 and 232, 241 to 245, 5001, 9001.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
@@ -238,6 +238,68 @@ Seeds 201 to 203, 3,000 each: all twelve stages passed. 280 vectors, 197
 exchanges, 173 verifier flips, 151 issuer flips, 165 requirements (133 tested).
 Seed 9001 ran each fuzzer once while the operators were written.
 
+## Cycle 12 — 2026-11-21 (chargedAmount by scheme)
+
+A review of cycle 11 found the scheme-independent lookup wrong: on batch-settlement
+refund and close responses the top-level `amount` is a refund or a payout, so a
+conformant issuer signed a refund as the charge, and under `auth-capture` it
+recorded the hold. Spec 0.4 now finds the charged amount by `accepted.scheme`:
+`exact` and `upto` read `amount`, `batch-settlement` reads only
+`extra.chargedAmount`, any other scheme has none. A verifier compares only when
+it holds `accepted` as an in-domain object with a string `scheme`, and reports
+`checks.chargedAmount`. All four implementations follow it.
+
+Expectations that the rule made wrong were re-declared, not kept:
+`pos_charged_amount_from_extra_any_scheme` (now a negative, beside
+`pos_charged_amount_exact_extra_ignored`); the three `extra_*_falls_back`
+vectors and exchanges (now batch-settlement cases that do not fall back);
+`issue_charged_amount_extra_zero_overrides_amount` (now `..._batch_extra_zero`);
+`pos_charged_amount_extra_zero` and `pos_charged_amount_from_extra_cloudflare`
+(now batch-settlement requirements); `refuse_charged_amount_extra_out_of_grammar`
+(now batch-settlement; under `exact` extra is ignored). The Solana batch contexts
+carry their charge in `extra.chargedAmount`. Every PASS report gained
+`checks.chargedAmount`. The worked example is unchanged; `verify.mjs --example`
+now also reproduces the §5.12 report example (13 steps).
+
+New harness parts: fourteen flips per verifier and eleven per issuer for the
+table; fuzz operators `ctx_scheme` and `charged_scheme`; fuzz property P8, an
+oracle for the charged amount restated from §4.3; `found_charged_amount` in
+`fuzz_issuer.py` follows the table.
+
+Mutants, each through the full cycle (seeds 244 and 245, 2,000 each): the
+reviewer's eleven, adapted to the new code (m03 is the retired lookup under
+`exact`; m11, now the correct behaviour, is run reversed), and nine of our own.
+
+| # | Mutant | Killed by (fixed stages) |
+|---|---|---|
+| m01 | Python verifier compares one way only | `neg_settlement_charged_amount_uncorroborated`, `..._batch_top_level_amount` |
+| m02 | Node verifier grammar admits leading zeros | `neg_schema_charged_amount_leading_zero` |
+| m03 | Node issuer reads `extra.chargedAmount` first under `exact` | `issue_charged_amount_exact_extra_ignored` |
+| m04 | Python issuer judges the grammar only when the value equals `amount` | `refuse_charged_amount_extra_out_of_grammar` |
+| m05 | Node verifier reads `extra.chargedAmount` without the well-formedness test | `pos_charged_amount_batch_extra_surrogate_absent`, `issue_charged_amount_batch_extra_surrogate` |
+| m06 | Node issuer judges the top-level `amount` the table does not name | `issue_charged_amount_batch_amount_out_of_grammar_ignored` |
+| m07 | Node issuer reads `amount` without the well-formedness test | `issue_charged_amount_amount_surrogate` |
+| m08 | Python verifier bound 79 digits | `neg_schema_charged_amount_79_digits` |
+| m09 | Python verifier reads `extra.chargedAmount` only beside `commitmentId` | `pos_batch_committed`, `issue_batch_evm_deposit_response` |
+| m10 | Python issuer under batch reads `amount` when present | `issue_charged_amount_extra_overrides_amount_solana_batch` |
+| m11r | Python issuer under batch falls back to `amount` | `issue_charged_amount_batch_amount_only`, `..._batch_extra_empty_no_fallback` |
+| m12 | Python verifier gives `auth-capture` a row | `neg_settlement_charged_amount_auth_capture_amount` |
+| m13 | Node issuer case-folds the scheme | `issue_charged_amount_scheme_case_exact` |
+| m14 | Node verifier compares without `accepted` (retired lookup) | `pos_requirements_not_held`, `issue_charged_amount_scheme_not_string` |
+| m15 | Python issuer: `upto` has no row | `issue_charged_amount_upto_reads_amount` |
+| m16 | Node issuer stringifies a numeric `extra.chargedAmount` | `issue_charged_amount_batch_extra_not_string_no_fallback` |
+| m17 | Python issuer strips whitespace from the scheme | the issuer fuzzer only; then `issue_charged_amount_scheme_whitespace` |
+| m18 | Node verifier: `upto` prefers `extra.chargedAmount` | `pos_charged_amount_upto_reads_amount` |
+| m19 | Python verifier: `0` is no charged amount | `pos_charged_amount_zero`, `pos_charged_amount_extra_zero` |
+| m20 | Python verifier compares with an out-of-domain `accepted` | `pos_charged_amount_not_compared_accepted_out_of_domain` |
+
+None survived. m17 was caught by no named case; the exchange added for it
+kills it in the fixed stages. m16 escaped the issuer fuzzer on these seeds.
+
+Seeds 241 to 243, 3,000 each: all twelve stages passed. 298 vectors, 215
+exchanges, 194 verifier flips, 163 issuer flips, 175 requirements (142 tested). Seed 5001 ran
+each fuzzer once while the operators were written.
+
 ## Known limits of this process
 
 - Both verifiers were written in one working session, one of them from the spec
@@ -247,8 +309,8 @@ Seed 9001 ran each fuzzer once while the operators were written.
   both share and that is wrong is invisible to it; only the properties (P1 to P6)
   and the hand-declared vector expectations stand against that.
 - The properties are few and all concern a passing receipt.
-- 32 of 156 requirements are not tested, 8 of them verifier requirements (draft
-  0.4, cycle 10). They are listed with reasons in `CONFORMANCE.md`.
+- 33 of 175 requirements are not tested, 8 of them verifier requirements (draft
+  0.4, cycle 12). They are listed with reasons in `CONFORMANCE.md`.
 - Issuer conformance covers the payload an issuer builds and its refusals. It
   does not cover signing, the randomness of `receiptId`, or key retention.
 - The scheme-payload payer is defined for one field,
