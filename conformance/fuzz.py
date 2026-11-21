@@ -160,6 +160,7 @@ class Case:
             "transaction": "" if batch else A.SETTLEMENT_TX,
             "settlementRef": (A.COMMITMENT_ID if sol else A.BATCH_REF) if batch else "",
             "network": A.SOL_NET if sol else A.NETWORK, "payer": None if sol else A.PAYER,
+            "amount": A.CHARGED,
             "accepted": copy.deepcopy(A.ACCEPTED_SOL if sol else A.ACCEPTED), "advertisedInfo": None,
             "now": A.VERIFIER_NOW, "maxAgeSeconds": 3600, "mode": "session",
         }
@@ -285,6 +286,42 @@ def op_transaction(c): c.payload["transaction"] = c.rng.choice(TXS + ["x"])
 def op_settlement_ref(c):
     c.payload["settlementRef"] = c.rng.choice([A.BATCH_REF, "", "batch:other", A.BATCH_REF.upper(), " ",
                                                A.COMMITMENT_ID, A.COMMITMENT_ID.lower()])
+
+
+# charged amounts on both sides of every rule of spec §4.6 and §5.8
+AMOUNTS = ["", "0", "00", "010", "1", A.CHARGED, "9999", "2500", "1e4", "-1", "+1", " 10000", "10000 ",
+           "10000.0", "9" * 78, "1" + "0" * 78, "1" + "0" * 77, "\uff11", "0x10", "1_000"]
+
+
+def op_charged_amount(c):
+    """The signed `chargedAmount`: in and out of the grammar of spec §4.6."""
+    c.payload["chargedAmount"] = c.rng.choice(AMOUNTS + [10000, None, 0])
+
+
+def op_ctx_charged(c):
+    """The response's `amount` and `extra.chargedAmount` (spec §4.3, §5.8): the
+    precedence, the present/absent reading and no normalization decide."""
+    x = c.context
+    r = c.rng.randrange(6)
+    if r == 0:
+        x["amount"] = c.rng.choice(AMOUNTS + [None, 10000, "\ud800"])
+    elif r == 1:
+        x.pop("amount", None)
+    elif r == 2:
+        x["extra"] = {"chargedAmount": c.rng.choice(AMOUNTS + [None, 2500, "\ud800"])}
+    elif r == 3:
+        x["extra"] = c.rng.choice([None, [], "2500", 1, {}, {"chargedamount": "2500"}, [{"chargedAmount": "2500"}]])
+    elif r == 4:
+        # the receipt carries what extra reports, the top-level amount says otherwise
+        v = c.rng.choice(AMOUNTS)
+        x["extra"] = {"chargedAmount": v, "commitmentId": A.COMMITMENT_ID}
+        c.payload["chargedAmount"] = v if c.rng.random() < 0.8 else x.get("amount", "")
+    else:
+        # the receipt and the response agree on a value, which may be out of grammar
+        v = c.rng.choice(AMOUNTS)
+        x["amount"] = v
+        x.pop("extra", None)
+        c.payload["chargedAmount"] = v
 
 
 def op_digest(c):
@@ -772,7 +809,7 @@ OPERATORS = [
     (op_bindings_wellformed, 3), (op_ctx_number_spelling, 2),
     (op_ctx_requirements_network, 2), (op_ctx_paid_resource, 3),
     (op_header_value, 4), (op_header_text, 5), (op_ctx_config, 5), (op_payer_free, 2),
-    (op_network_non_evm, 4),
+    (op_network_non_evm, 4), (op_charged_amount, 3), (op_ctx_charged, 4),
 ]
 RAW_OPS = {op_raw_whitespace, op_raw_number, op_raw_escape, op_raw_structure, op_raw_bytes,
            op_payload_scalar}

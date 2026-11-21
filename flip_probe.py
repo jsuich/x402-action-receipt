@@ -199,6 +199,26 @@ PY_FLIPS = [
     ("payer not_compared label", 'checks["payer"] = "not_compared"', 'checks["payer"] = "compared"'),
     ("requirements not_evaluated label", 'checks["requirements"] = "not_evaluated"', 'checks["requirements"] = "matched"'),
     ("receiptRef = payload hash", '"receiptRef": sha256_tag(payload_bytes),', '"receiptRef": sha256_tag(b"x"),'),
+    # chargedAmount (spec §4.3, §4.6, §5.8)
+    ("chargedAmount grammar",
+     'if payload["chargedAmount"] and not RE_CHARGED_AMOUNT.fullmatch(payload["chargedAmount"]):', 'if False:'),
+    ("chargedAmount at most 78 digits", 'RE_CHARGED_AMOUNT = re.compile(r"0|[1-9][0-9]{0,77}")',
+     'RE_CHARGED_AMOUNT = re.compile(r"0|[1-9][0-9]{0,78}")'),
+    ("chargedAmount no leading zero", 'RE_CHARGED_AMOUNT = re.compile(r"0|[1-9][0-9]{0,77}")',
+     'RE_CHARGED_AMOUNT = re.compile(r"[0-9]{1,78}")'),
+    ("chargedAmount is a string",
+     '                     "settlementRef", "chargedAmount", "settlementStatus", "requirementsDigest",\n',
+     '                     "settlementRef", "settlementStatus", "requirementsDigest",\n'),
+    ("charged amount binding", '        if payload["chargedAmount"] != charged:', '        if False:'),
+    ("uncorroborated charged amount", '    elif payload["chargedAmount"]:', '    elif False:'),
+    ("charged amount not normalized", '        if payload["chargedAmount"] != charged:',
+     '        if payload["chargedAmount"].lstrip("0") != charged.lstrip("0"):'),
+    ("extra.chargedAmount before amount",
+     '    if _has(charged):\n        return charged\n    return amount if _has(amount) else ""',
+     '    if _has(amount):\n        return amount\n    return charged if _has(charged) else ""'),
+    ("extra.chargedAmount is read", '    if _has(charged):\n        return charged\n', ''),
+    ("extra.chargedAmount present (4.6)", '    if _has(charged):\n', '    if charged is not None:\n'),
+    ("amount present (4.6)", 'return amount if _has(amount) else ""', 'return amount if amount is not None else ""'),
 ]
 
 JS_FLIPS = [
@@ -278,6 +298,23 @@ JS_FLIPS = [
      '    if (!Number.isSafeInteger(m) || m <= 0) return null;\n'),
     ("js binding value lower bound 1", r'bindingValue: /^[\x21-\x7e]{1,1024}$/', r'bindingValue: /^[\x21-\x7e]{0,1024}$/'),
     ("js receiptRef = payload hash", "receiptRef: 'sha256:' + sha256hex(B),", "receiptRef: 'sha256:' + sha256hex(dec[0]),"),
+    # chargedAmount (spec 4.3, 4.6, 5.8)
+    ("js chargedAmount grammar", "      (p.chargedAmount === '' || RE.chargedAmount.test(p.chargedAmount)) &&\n", ''),
+    ("js chargedAmount at most 78 digits", 'chargedAmount: /^(?:0|[1-9][0-9]{0,77})$/',
+     'chargedAmount: /^(?:0|[1-9][0-9]{0,78})$/'),
+    ("js chargedAmount no leading zero", 'chargedAmount: /^(?:0|[1-9][0-9]{0,77})$/', 'chargedAmount: /^[0-9]{1,78}$/'),
+    ("js chargedAmount is a string", 'p.settlementRef, p.chargedAmount, p.settlementStatus',
+     'p.settlementRef, p.settlementStatus'),
+    ("js charged amount binding", "? p.chargedAmount === srCharged : p.chargedAmount === '';",
+     "? true : p.chargedAmount === '';"),
+    ("js uncorroborated charged amount", "? p.chargedAmount === srCharged : p.chargedAmount === '';",
+     "? p.chargedAmount === srCharged : true;"),
+    ("js extra.chargedAmount before amount",
+     "const srCharged = present(srExtraCharged) ? srExtraCharged : (present(srAmount) ? srAmount : '');",
+     "const srCharged = present(srAmount) ? srAmount : (present(srExtraCharged) ? srExtraCharged : '');"),
+    ("js extra.chargedAmount present (4.6)", "present(srExtraCharged) ? srExtraCharged",
+     "srExtraCharged !== undefined ? srExtraCharged"),
+    ("js amount present (4.6)", "(present(srAmount) ? srAmount : '')", "(srAmount !== undefined ? srAmount : '')"),
 ]
 
 

@@ -22,7 +22,9 @@ issuer adapter (ISSUER ADAPTER PROTOCOL in CONFORMANCE.md), and reports:
             is true; accepted is byte-equal to an entry of accepts; network,
             resourceUrl, the action and the status are copied; settlementRef
             is the reference §4.3's table names for accepted.scheme and
-            accepted.network, or ""; requirementsDigest is the digest of accepted
+            accepted.network, or ""; chargedAmount is extra.chargedAmount, else
+            amount, each when present, or ""; requirementsDigest is the digest
+            of accepted
 
     python3 conformance/fuzz_issuer.py --seed 1 --n 2000
     python3 conformance/fuzz_issuer.py --issuer mine="java -jar my-issuer.jar"
@@ -130,6 +132,31 @@ def x_reference(r, x):
     else:
         # a reference handed in outside the x402 objects is never one (§4.3)
         x["settlementReference"] = r.choice([A.BATCH_REF, A.COMMITMENT_ID])
+
+
+CHARGED_VALUES = ["", "0", "00", "010", "10000", "2500", "1e4", "-1", " 1", "10000.0", "9" * 78,
+                  "1" + "0" * 78, "\uff11", "\ud800", None, 10000, 2500, [], {}]
+
+
+def x_charged_amount(r, x):
+    """The response's `amount` and `extra.chargedAmount` (spec §4.3): which one is
+    found, whether it is present (§4.6), and whether it is in grammar (step 7)."""
+    resp = x["settlementResponse"]
+    c = r.randrange(5)
+    if c == 0:
+        resp["amount"] = r.choice(CHARGED_VALUES)
+    elif c == 1:
+        resp.pop("amount", None)
+    elif c == 2:
+        _extra(x)["chargedAmount"] = r.choice(CHARGED_VALUES)
+    elif c == 3:
+        _extra(x).pop("chargedAmount", None)
+        if r.random() < 0.5:
+            resp["amount"] = r.choice(CHARGED_VALUES)
+    else:
+        # the batch shape: both, differing
+        resp["amount"] = r.choice(["50000", "", "010", "10000"])
+        _extra(x)["chargedAmount"] = r.choice(["2500", "0", "", "007", 2500])
 
 
 def x_no_tx_with_ref(r, x):
@@ -422,7 +449,7 @@ OPERATORS = [
     (x_auth_from, 3), (x_accepted_shape, 1), (x_accepted_network, 3), (x_accepted_payto, 3),
     (x_accepted_member, 4), (x_accepts, 5), (x_non_evm, 2), (x_resource, 3), (x_statement_ids, 6),
     (x_statement_types, 4), (x_statement_action, 6), (x_statement_shape, 2), (x_bindings, 6),
-    (x_advertise, 6), (x_top, 1), (x_statement_unicode, 3),
+    (x_advertise, 6), (x_top, 1), (x_statement_unicode, 3), (x_charged_amount, 5),
 ]
 
 
@@ -519,6 +546,18 @@ def table_reference(accepted, resp) -> str:
     return v if isinstance(v, str) and v and A.in_domain(v) else ""
 
 
+def found_charged_amount(resp) -> str:
+    """§4.3, written here a third time: extra.chargedAmount when present (§4.6),
+    else amount when present, else ""; whatever the scheme."""
+    if not isinstance(resp, dict):
+        return ""
+    extra = resp.get("extra")
+    for v in ((extra.get("chargedAmount") if isinstance(extra, dict) else None), resp.get("amount")):
+        if isinstance(v, str) and v and A.in_domain(v):
+            return v
+    return ""
+
+
 def copies_sources(exchange, payload) -> list[str]:
     """Q5: what §4.1/§6.3 say an issued payload must copy, from the exchange."""
     x = I._obj(exchange)
@@ -543,6 +582,8 @@ def copies_sources(exchange, payload) -> list[str]:
         out.append("resourceUrl not copied verbatim")
     if payload.get("settlementRef") != table_reference(acc, resp):
         out.append("settlementRef is not the reference §4.3's table names, copied verbatim")
+    if payload.get("chargedAmount") != found_charged_amount(resp):
+        out.append("chargedAmount is not the value §4.3 finds in the response, copied verbatim")
     if payload.get("settlementStatus") != st.get("settlementStatus") or payload.get("receiptId") != st.get("receiptId"):
         out.append("status or receiptId not copied")
     if ({k: I._obj(payload.get("action")).get(k) for k in A.ACTION_KEYS}
