@@ -601,6 +601,25 @@
       ]
     },
     {
+      "id": "V-SCH-12",
+      "role": "verifier",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "`chargedAmount` is `\"\"`, `0` or a decimal integer of at most 78 digits with no leading zero; any other value, or one that is not a string, is rejected.",
+      "anchor": "a decimal integer of at most 78 digits, no leading zero",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_empty_no_amount.json",
+        "pos_charged_amount_zero.json",
+        "pos_charged_amount_78_digits.json",
+        "neg_schema_charged_amount_79_digits.json",
+        "neg_schema_charged_amount_leading_zero.json",
+        "neg_schema_charged_amount_non_digit.json",
+        "neg_schema_charged_amount_negative.json",
+        "neg_schema_charged_amount_not_string.json"
+      ]
+    },
+    {
       "id": "V-BND-1",
       "role": "verifier",
       "section": "5.3",
@@ -945,6 +964,66 @@
       "tested_by": "vector",
       "vectors": [
         "neg_settlement_uncorroborated_ref.json"
+      ]
+    },
+    {
+      "id": "V-SET-11",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "The receipt's `chargedAmount` equals the response's charged amount when it has one.",
+      "anchor": "the receipt's `chargedAmount` equals it.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_charged_amount_mismatch.json",
+        "neg_settlement_charged_amount_dropped.json",
+        "pos_es256_valid.json",
+        "pos_charged_amount_zero.json",
+        "pos_charged_amount_78_digits.json"
+      ]
+    },
+    {
+      "id": "V-SET-12",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "The receipt carries no `chargedAmount` the response does not have.",
+      "anchor": "If it has none, the receipt's `chargedAmount` is `\"\"`.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_charged_amount_uncorroborated.json",
+        "pos_charged_amount_empty_no_amount.json",
+        "pos_charged_amount_response_amount_not_string.json"
+      ]
+    },
+    {
+      "id": "V-SET-13",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "The response's charged amount is `extra.chargedAmount` when present, else `amount` when present (\u00a74.6), whatever the scheme.",
+      "anchor": "`extra.chargedAmount`, else `amount`, each when present",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_from_extra.json",
+        "neg_settlement_charged_amount_top_level_when_extra.json",
+        "pos_charged_amount_extra_empty_falls_back.json",
+        "pos_charged_amount_extra_not_string_falls_back.json",
+        "pos_charged_amount_extra_not_object_falls_back.json",
+        "neg_settlement_charged_amount_extra_number_not_read.json"
+      ]
+    },
+    {
+      "id": "V-SET-14",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "The charged amount is not normalized: a response amount that is out of grammar equals no receipt's.",
+      "anchor": "Nothing is normalized: an amount spelled `010` in the response is not `10`",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_charged_amount_not_normalized.json",
+        "neg_settlement_charged_amount_response_out_of_grammar.json"
       ]
     },
     {
@@ -1456,6 +1535,42 @@
       ]
     },
     {
+      "id": "I-CHG-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "`chargedAmount` is `extra.chargedAmount` when present, failing that `amount` when present, failing that `\"\"`; the lookup does not depend on the scheme.",
+      "anchor": "It is `SettlementResponse.extra.chargedAmount` when present (\u00a74.6); failing that `SettlementResponse.amount` when present; failing that `\"\"`.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_charged_amount_from_response_amount.json",
+        "issue_charged_amount_extra_overrides_amount_solana_batch.json",
+        "issue_charged_amount_extra_overrides_amount_cloudflare_batch.json",
+        "issue_solana_batch_settlement.json",
+        "issue_settlement_ref_upper_case_verbatim.json",
+        "issue_charged_amount_extra_empty_falls_back.json",
+        "issue_charged_amount_extra_not_string_falls_back.json",
+        "issue_charged_amount_extra_not_object_falls_back.json",
+        "issue_charged_amount_amount_surrogate.json"
+      ]
+    },
+    {
+      "id": "I-CHG-2",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST NOT",
+      "text": "Never compute `chargedAmount`, for example from `accepted.amount`: with no charged amount in the response it is `\"\"`.",
+      "anchor": "The issuer MUST NOT compute `chargedAmount`, for example from `accepted.amount`.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_empty_no_amount.json",
+        "issue_charged_amount_amount_not_string.json",
+        "issue_svm_exact.json",
+        "issue_network_cloudflare.json"
+      ]
+    },
+    {
       "id": "I-PAY-2",
       "role": "issuer",
       "section": "4.3",
@@ -1682,7 +1797,8 @@
         "refuse_order_7_before_8.json",
         "refuse_order_8_before_9.json",
         "refuse_order_9_before_10.json",
-        "refuse_order_settlement_before_statement.json"
+        "refuse_order_settlement_before_statement.json",
+        "refuse_order_charged_amount_before_statement.json"
       ]
     },
     {
@@ -1848,6 +1964,39 @@
         "refuse_transaction_not_hex.json",
         "refuse_payer_out_of_grammar_evm.json",
         "refuse_payer_from_authorization_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-CHG-3",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 7: refuse when the charged amount found (\u00a74.3) is outside the grammar of \u00a74.6; never repair it.",
+      "anchor": "and `chargedAmount` (\u00a74.3) satisfies \u00a74.6",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_charged_amount_79_digits.json",
+        "refuse_charged_amount_leading_zero.json",
+        "refuse_charged_amount_non_digit.json",
+        "refuse_charged_amount_negative.json",
+        "refuse_charged_amount_extra_out_of_grammar.json",
+        "refuse_order_charged_amount_before_statement.json",
+        "issue_charged_amount_78_digits.json",
+        "issue_charged_amount_zero.json"
+      ]
+    },
+    {
+      "id": "I-CHG-4",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "The payload's `chargedAmount` is the value of \u00a74.3, verbatim, or `\"\"`.",
+      "anchor": "`chargedAmount` is the value of \u00a74.3, verbatim, or `\"\"`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_from_response_amount.json",
+        "issue_charged_amount_78_digits.json",
+        "issue_charged_amount_zero.json"
       ]
     },
     {

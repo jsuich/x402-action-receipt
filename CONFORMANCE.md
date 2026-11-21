@@ -12,7 +12,7 @@ requirements the suite tests, and which it does not.
 adapter protocol of section 3, it reproduces every entry of
 `vectors/MANIFEST.json`: the verdict, the reason code on `REJECT`, the report
 on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
-`vectorsDigest` (currently `sha256:c9df09a25e63d93e7720cc456110360b052907cbca22746b1ed1b77ef2bf05fb`).
+`vectorsDigest` (currently `sha256:35a4cca39e729f40437c3d74a9350c516d8187fa54b4675f67a3ae56ff1d8cd9`).
 
 **Issuer.** An implementation conforms as an issuer if, driven through the
 issuer adapter protocol of section 3, it handles every exchange in
@@ -30,15 +30,15 @@ completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 156 requirements: 124 tested, 32 not tested.
+- 165 requirements: 133 tested, 32 not tested.
   - 8 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
   - 14 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
-- 256 vectors, each named by at least one requirement.
-- 178 exchanges, each named by at least one requirement.
+- 276 vectors, each named by at least one requirement.
+- 195 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -52,7 +52,8 @@ Input line:
 {"id": "any string", "receipt": <any JSON value>, "context": {
    "paidResourceUrl": "https://..." or null,
    "success": true, "transaction": "0x...", "settlementRef": "",
-   "network": "eip155:8453", "payer": "0x...", "accepted": {...} or null,
+   "network": "eip155:8453", "payer": "0x...", "amount": "10000", "extra": {...},
+   "accepted": {...} or null,
    "advertisedInfo": {...} or null, "now": 1703123500,
    "maxAgeSeconds": 3600, "mode": "session"}}
 ```
@@ -65,10 +66,11 @@ Output line:
 {"id": "same string", "verdict": "ERROR", "reason": "invalid_configuration", "report": null}
 ```
 
-- `context` is the verifier input of spec §5. Five of its members are x402
+- `context` is the verifier input of spec §5. Seven of its members are x402
   values from the `SettlementResponse` (`success`, `transaction`,
-  `settlementRef`, `network`, `payer`) and two are optional objects
-  (`accepted`, `advertisedInfo`); all are unsigned. Any of them may be absent,
+  `settlementRef`, `network`, `payer`, and `amount` and `extra`, from which
+  the verifier finds the charged amount of spec §4.3) and two are optional
+  objects (`accepted`, `advertisedInfo`); all are unsigned. Any of them may be absent,
   `null` or of the wrong type, and nothing in them may make the verifier
   return `ERROR` (spec §5).
 - The rest is the verifier's own configuration and has the contract of spec §5:
@@ -186,6 +188,7 @@ every case; `suite` = a structural check of the suite itself.
 | V-SCH-6 | §5.3 | MUST | Accept each listed `outcome` and reject any other. | `neg_invalid_outcome`, `neg_outcome_retired_refused`, `neg_outcome_retired_disputed`, `pos_outcome_failed`, `pos_outcome_partial` |
 | V-SCH-7 | §5.3 | MUST | Accept each listed `settlementStatus` and reject any other. | `neg_invalid_status`, `pos_capture_pending`, `pos_reversed`, `pos_refunded_supersedes`, `pos_batch_committed` |
 | V-SCH-11 | §5.3 | MUST | Reject with `invalid_payload` when `bindings` is not an array. | `neg_schema_bindings_not_array`, `neg_order_status_before_bindings_type` |
+| V-SCH-12 | §4.6 | MUST | `chargedAmount` is `""`, `0` or a decimal integer of at most 78 digits with no leading zero; any other value, or one that is not a string, is rejected. | `pos_charged_amount_empty_no_amount`, `pos_charged_amount_zero`, `pos_charged_amount_78_digits`, `neg_schema_charged_amount_79_digits`, `neg_schema_charged_amount_leading_zero`, `neg_schema_charged_amount_non_digit`, `neg_schema_charged_amount_negative`, `neg_schema_charged_amount_not_string` |
 | V-BND-1 | §5.3 | MUST | Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count; accept one at every bound. | `neg_binding_unsorted`, `neg_binding_duplicate_type`, `neg_binding_extra_member`, `neg_binding_type_grammar`, `neg_binding_value_non_ascii`, `neg_binding_too_many`, `neg_binding_prefix_65`, `neg_binding_name_192`, `neg_binding_value_1025`, `pos_bindings_16`, `pos_binding_prefix_64`, `pos_binding_name_191`, `pos_binding_value_1024`, `neg_order_binding_before_resource`, `neg_binding_prefix_empty`, `neg_binding_name_empty`, `neg_binding_value_empty`, `neg_binding_value_space`, `neg_binding_value_del`, `neg_binding_name_del`, `pos_binding_printable_edges` |
 | V-BND-5 | §5.3 | MUST | The `action-receipt:` namespace is closed: only the two types of §4.5.2, each with its value form. | `neg_binding_reserved_unknown_type`, `neg_binding_advertised_value_form`, `neg_binding_reversal_value_form_evm`, `pos_binding_reversal_non_evm_value`, `pos_binding_namespace_lookalike` |
 | V-BND-2 | §4.5.1 | MUST NOT | Do not reject a receipt for an unrecognized binding type; report it as not evaluated. | `pos_bindings_unheld`, `pos_bindings_composed`, `pos_binding_namespace_lookalike` |
@@ -209,6 +212,10 @@ every case; `suite` = a structural check of the suite itself.
 | V-SET-3 | §5.8 | MUST | The receipt carries no `transaction` the response does not have. | `neg_settlement_uncorroborated_transaction` |
 | V-SET-4 | §5.8 | MUST | The receipt's `settlementRef` equals the response's settlement reference when it has one. | `neg_settlement_ref_mismatch`, `neg_settlement_dropped_ref`, `pos_batch_committed`, `pos_settlement_ref_with_transaction` |
 | V-SET-10 | §5.8 | MUST | The receipt carries no `settlementRef` the response does not have. | `neg_settlement_uncorroborated_ref` |
+| V-SET-11 | §5.8 | MUST | The receipt's `chargedAmount` equals the response's charged amount when it has one. | `neg_settlement_charged_amount_mismatch`, `neg_settlement_charged_amount_dropped`, `pos_es256_valid`, `pos_charged_amount_zero`, `pos_charged_amount_78_digits` |
+| V-SET-12 | §5.8 | MUST | The receipt carries no `chargedAmount` the response does not have. | `neg_settlement_charged_amount_uncorroborated`, `pos_charged_amount_empty_no_amount`, `pos_charged_amount_response_amount_not_string` |
+| V-SET-13 | §5.8 | MUST | The response's charged amount is `extra.chargedAmount` when present, else `amount` when present (§4.6), whatever the scheme. | `pos_charged_amount_from_extra`, `neg_settlement_charged_amount_top_level_when_extra`, `pos_charged_amount_extra_empty_falls_back`, `pos_charged_amount_extra_not_string_falls_back`, `pos_charged_amount_extra_not_object_falls_back`, `neg_settlement_charged_amount_extra_number_not_read` |
+| V-SET-14 | §5.8 | MUST | The charged amount is not normalized: a response amount that is out of grammar equals no receipt's. | `neg_settlement_charged_amount_not_normalized`, `neg_settlement_charged_amount_response_out_of_grammar` |
 | V-SET-5 | §5.8 | MUST | Compare `network` when the response's is a network identifier; otherwise record that it was not compared. | `neg_settlement_network_mismatch`, `pos_response_network_not_identifier`, `pos_response_junk_types` |
 | V-SET-6 | §5.8 | MUST | Compare `payer` when the response has one; otherwise record that it was not compared. | `neg_settlement_payer_mismatch`, `neg_settlement_payer_dropped`, `pos_payer_absent` |
 | V-SET-7 | §5.8 | MUST | Lowercase the response's `transaction` and `payer` on `eip155` networks before comparing. | `pos_response_casing`, `pos_response_transaction_upper_prefix` |
@@ -249,6 +256,8 @@ every case; `suite` = a structural check of the suite itself.
 | I-SET-1 | §4.3 | MUST NOT | Use as `settlementRef` only a value the settlement result carried at the location §4.3 names; never compute one, and never take one from anywhere else. | `refuse_no_identifier`, `refuse_cloudflare_no_identifier`, `issue_commitment_id_ignored_off_solana`, `issue_commitment_id_ignored_exact_solana`, `issue_commitment_id_ignored_batch_off_solana`, `refuse_commitment_only_exact`, `refuse_commitment_only_batch_off_solana`, `refuse_solana_batch_commitment_empty`, `refuse_solana_batch_commitment_not_string`, `refuse_solana_batch_commitment_missing`, `refuse_solana_batch_extra_not_object`, `refuse_out_of_band_reference_ignored`, `issue_surrogate_settlement_reference` |
 | I-SET-2 | §4.3 | MUST | The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; the receipt carries it beside the response's transaction, or with an empty one. | `issue_solana_batch_settlement`, `issue_batch`, `issue_both_identifiers`, `issue_transaction_wrong_type_with_reference`, `issue_surrogate_response_transaction`, `issue_settlement_ref_upper_case_verbatim`, `refuse_batch_network_out_of_grammar` |
 | I-SET-3 | §4.3 | MUST | Find the settlement reference by the table alone, from `accepted.scheme` and `accepted.network`: the scheme exactly, the namespace exactly; no row, no reference. | `refuse_solana_batch_scheme_case`, `refuse_solana_batch_namespace_prefix`, `refuse_out_of_band_reference_ignored`, `issue_commitment_id_ignored_exact_solana`, `issue_commitment_id_ignored_batch_off_solana`, `refuse_commitment_only_batch_off_solana`, `refuse_commitment_only_exact`, `refuse_batch_network_out_of_grammar` |
+| I-CHG-1 | §4.3 | MUST | `chargedAmount` is `extra.chargedAmount` when present, failing that `amount` when present, failing that `""`; the lookup does not depend on the scheme. | `issue_basic`, `issue_charged_amount_from_response_amount`, `issue_charged_amount_extra_overrides_amount_solana_batch`, `issue_charged_amount_extra_overrides_amount_cloudflare_batch`, `issue_solana_batch_settlement`, `issue_settlement_ref_upper_case_verbatim`, `issue_charged_amount_extra_empty_falls_back`, `issue_charged_amount_extra_not_string_falls_back`, `issue_charged_amount_extra_not_object_falls_back`, `issue_charged_amount_amount_surrogate` |
+| I-CHG-2 | §4.3 | MUST NOT | Never compute `chargedAmount`, for example from `accepted.amount`: with no charged amount in the response it is `""`. | `issue_charged_amount_empty_no_amount`, `issue_charged_amount_amount_not_string`, `issue_svm_exact`, `issue_network_cloudflare` |
 | I-PAY-2 | §4.3 | MUST | Without a response payer, the payer is `authorization.from` when present, on any network, and `""` when neither has one. | `issue_payer_from_authorization`, `issue_payer_from_authorization_non_evm`, `issue_payer_none`, `issue_svm_exact_no_response_payer` |
 | I-SUP-1 | §4.3 | MAY | May issue a later receipt for the same settlement, with `supersedes` set. | `issue_refund`, `issue_reversal_lowercased_evm` |
 | I-REV-1 | §4.3 | SHOULD | Carry a reversal or refund transaction in the reversal binding. | `issue_refund`, `issue_reversal_non_evm_verbatim` |
@@ -264,7 +273,7 @@ every case; `suite` = a structural check of the suite itself.
 | I-CNV-6 | §6.1 | MUST | A binding entry has exactly two members; one with another member is refused. | `refuse_binding_extra_member`, `refuse_binding_not_object` |
 | I-CNV-2 | §6.1 | MUST | Treat the extension as advertised only when the entry is an object whose `info` is a JSON object. | `issue_advertisement_info_not_object`, `issue_advertisement_entry_not_object`, `issue_advertised` |
 | I-CNV-7 | §6.1 | MUST | The advertised `info` is read strictly: a member whose value is `null` is a member. | `refuse_advertised_scope_null`, `refuse_advertised_actiontype_null` |
-| I-ORD-1 | §6.2 | MUST | Perform the ten steps in order. | `refuse_order_1_before_2`, `refuse_order_2_before_3`, `refuse_order_3_before_4`, `refuse_order_4_before_5`, `refuse_order_5_before_6`, `refuse_order_6_before_7`, `refuse_order_7_before_8`, `refuse_order_8_before_9`, `refuse_order_9_before_10`, `refuse_order_settlement_before_statement` |
+| I-ORD-1 | §6.2 | MUST | Perform the ten steps in order. | `refuse_order_1_before_2`, `refuse_order_2_before_3`, `refuse_order_3_before_4`, `refuse_order_4_before_5`, `refuse_order_5_before_6`, `refuse_order_6_before_7`, `refuse_order_7_before_8`, `refuse_order_8_before_9`, `refuse_order_9_before_10`, `refuse_order_settlement_before_statement`, `refuse_order_charged_amount_before_statement` |
 | I-ORD-2 | §6.2 | MUST NOT | Issue nothing once a step fails. | `refuse_settlement_failed`, `refuse_no_identifier` |
 | I-STP-1 | §6.2 | MUST | Step 1: refuse unless settlement succeeded (strictly `true`). | `refuse_settlement_failed`, `refuse_settlement_pending`, `refuse_settlement_truthy_string`, `refuse_settlement_success_one` |
 | I-STP-2 | §6.2 | MUST | Step 2: refuse without a transaction or a settlement reference. | `refuse_no_identifier`, `refuse_no_identifier_wrong_type`, `refuse_no_identifier_surrogate`, `refuse_cloudflare_no_identifier`, `issue_batch`, `issue_both_identifiers`, `refuse_commitment_only_exact`, `refuse_solana_batch_commitment_empty` |
@@ -274,6 +283,8 @@ every case; `suite` = a structural check of the suite itself.
 | I-STP-5 | §6.2 | MUST | Step 5: refuse unless the accepted network is a network identifier and does not conflict with a response network that is one. | `refuse_network_not_identifier`, `refuse_network_namespace_33`, `refuse_network_namespace_2`, `refuse_network_reference_33`, `refuse_network_not_identifier_either_side`, `refuse_network_conflict`, `issue_network_namespace_32`, `issue_network_cloudflare`, `issue_response_network_not_identifier`, `refuse_network_conflict_reference_case`, `issue_network_reference_underscore`, `refuse_network_reference_dot`, `refuse_network_namespace_dot`, `refuse_batch_network_out_of_grammar` |
 | I-STP-6 | §6.2 | MUST | Step 6: refuse unless the resource URL is present; copy it verbatim. | `refuse_no_resource`, `refuse_resource_url_empty`, `refuse_resource_url_not_string`, `refuse_resource_url_surrogate`, `issue_resource_url_whitespace_verbatim` |
 | I-STP-7 | §6.2 | MUST | Step 7: refuse unless `payTo` is present and the identifiers satisfy the grammar after lowercasing. | `refuse_payto_role_constant`, `refuse_payto_missing`, `refuse_payto_empty_non_evm`, `refuse_transaction_not_hex`, `refuse_payer_out_of_grammar_evm`, `refuse_payer_from_authorization_out_of_grammar` |
+| I-CHG-3 | §6.2 | MUST | Step 7: refuse when the charged amount found (§4.3) is outside the grammar of §4.6; never repair it. | `refuse_charged_amount_79_digits`, `refuse_charged_amount_leading_zero`, `refuse_charged_amount_non_digit`, `refuse_charged_amount_negative`, `refuse_charged_amount_extra_out_of_grammar`, `refuse_order_charged_amount_before_statement`, `issue_charged_amount_78_digits`, `issue_charged_amount_zero` |
+| I-CHG-4 | §6.3 | MUST | The payload's `chargedAmount` is the value of §4.3, verbatim, or `""`. | `issue_charged_amount_from_response_amount`, `issue_charged_amount_78_digits`, `issue_charged_amount_zero` |
 | I-PAY-1 | §6.2 | MUST | The payer is the response's when present, else `authorization.from` when present (on any network), else `""`. | `issue_basic`, `issue_payer_from_authorization`, `issue_payer_response_wins_over_authorization`, `issue_payer_none`, `issue_payer_permit2_from_response`, `issue_payer_permit2_no_response_payer`, `issue_svm_exact`, `issue_svm_exact_no_response_payer`, `issue_payer_from_authorization_non_evm` |
 | I-STP-7L | §6.2 | MUST | Lowercase `payer`, `payTo` and `transaction` on eip155 (ASCII only); copy them verbatim elsewhere. | `issue_basic`, `issue_response_uppercase_hex`, `issue_payer_from_authorization_lowercased`, `issue_network_namespace_32`, `issue_svm_exact` |
 | I-REF-1 | §6.2 | MUST | Never change the settlement reference, on any network. | `issue_settlement_ref_upper_case_verbatim`, `issue_solana_batch_settlement` |
