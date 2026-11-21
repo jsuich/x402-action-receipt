@@ -73,11 +73,12 @@ learns only that the origin the receipt names signed it.
   did not make the payment cannot tell from the receipt. Such a verifier
   establishes the link another way: from the `PaymentRequired` the payer kept,
   from anchor (b), or from its own knowledge of who operates the resource.
-- **It does not state the amount charged.** `requirementsDigest` commits the
-  accepted requirements. Under `exact` that is the amount paid. Under `upto`, a
-  batch scheme, or any settlement with fees or splits, it is a ceiling or a
-  term, and the amount that moved is in the scheme's settlement result, which
-  this receipt does not carry (§12).
+- **It states the amount charged only when the settlement result does.**
+  `requirementsDigest` commits the accepted requirements: under `exact` that is
+  the amount paid, under `upto` and the batch schemes a ceiling. `chargedAmount`
+  carries the amount the settlement result reports (§4.3), and is `""` when the
+  result reports none. Either way the receipt does not prove that amount moved
+  (§5.14), and it says nothing about fees or splits the rail applied.
 - **It does not identify a payment.** It carries the settlement's identifiers.
   Where one settlement identifier covers several payments, the receipt
   distinguishes the statements (`receiptId`) and not the payments (§4.7).
@@ -225,6 +226,7 @@ from, so that two implementations build the same payload from the same exchange.
 | `payTo` | string | `PaymentPayload.accepted.payTo` | The recipient the accepted requirements name |
 | `transaction` | string | `SettlementResponse.transaction` | Settlement transaction, or `""` |
 | `settlementRef` | string | the scheme's settlement reference (§4.3) | Or `""` |
+| `chargedAmount` | string | the settlement result's charged amount (§4.3) | Atomic units, or `""` |
 | `settlementStatus` | string | issuer | Payment lifecycle (§4.3) |
 | `requirementsDigest` | string | computed (§4.4) | Digest of the accepted payment requirements |
 | `supersedes` | string | `receiptRef` of an earlier receipt | Or `""` (§4.3) |
@@ -312,6 +314,22 @@ with the row's namespace followed by `:` (`solana:*` matches `solana:` followed
 by anything, whether or not it is a valid network identifier: step 5 of §6.2
 judges that, not this lookup). No case folding is applied. The issuer and a
 verifier that holds `accepted` find the same one.
+
+**`chargedAmount`** is the amount the settlement result says was charged for
+this payment, in the asset's atomic units, copied as a decimal string. It is
+`SettlementResponse.extra.chargedAmount` when present (§4.6); failing that
+`SettlementResponse.amount` when present; failing that `""`. The batch schemes
+report the charge for a request in `extra.chargedAmount` and use the top-level
+`amount` for something else (a deposit, a refund), which is why `extra` comes
+first. The lookup does not depend on the scheme, so a verifier that holds only
+the `SettlementResponse` finds the same value as the issuer.
+
+The issuer MUST NOT compute `chargedAmount`, for example from
+`accepted.amount`. Under `exact` the accepted amount is the amount paid, and a
+consumer can read it from the requirements it holds; the receipt records only
+what the settlement result reported. How `chargedAmount` relates to
+`accepted.amount` (equal, at most, or otherwise) is for the scheme to define,
+and this extension does not check it.
 
 **`payer`.** The payer is `SettlementResponse.payer`. When the response has
 none, it is `PaymentPayload.payload.authorization.from`, on any network, when
@@ -506,6 +524,7 @@ it is never repaired.
 | `payer` when `network` begins `eip155:` and it is non-empty | `0x[0-9a-f]{40}` |
 | `transaction` | any string; when `network` begins `eip155:` and it is non-empty, `0x[0-9a-f]{64}` |
 | `settlementRef` | any string |
+| `chargedAmount` | `""`, or `0`, or `[1-9][0-9]{0,77}` (a decimal integer of at most 78 digits, no leading zero) |
 | `transaction`, `settlementRef` | not both empty |
 | `requirementsDigest` | `sha256:[0-9a-f]{64}` |
 | `supersedes` | `""` or `sha256:[0-9a-f]{64}` |
@@ -822,6 +841,11 @@ Reject with `invalid_actionreceipt_settlement_mismatch` if any of these fails:
   equals it. If it has none, the receipt's `settlementRef` is `""`.
 - If the response's `network` is a network identifier (§4.6), the receipt's
   `network` equals it. Otherwise the report records `network: not_compared`.
+- If the response has a charged amount (§4.3: `extra.chargedAmount`, else
+  `amount`, each when present), the receipt's `chargedAmount` equals it. If it
+  has none, the receipt's `chargedAmount` is `""`. Nothing is normalized: an
+  amount spelled `010` in the response is not `10`, and a receipt cannot carry
+  it (§4.6), so the issuer refuses such an exchange.
 - If the response has a `payer`, the receipt's `payer` equals it. Otherwise the
   report records `payer: not_compared`, and the receipt's `payer` (which may be
   `""`, or may come from the scheme payload) is not constrained here.
@@ -982,9 +1006,12 @@ presented. Whether that origin was the party paid is a separate question
 Either can go further by resolving the settlement identifier on the payment rail.
 A verifier that does so SHOULD confirm that the node serves the chain named by
 `network`, that the transaction succeeded, and that it transferred the accepted
-asset from `payer` to `payTo` in an amount the scheme allows for the accepted
-requirements: equal under `exact`; at most the accepted amount under `upto`;
-whatever the scheme defines otherwise. It SHOULD NOT assume the transaction's
+asset from `payer` to `payTo`: `chargedAmount` of it when that is non-empty,
+otherwise an amount the scheme allows for the accepted requirements (equal
+under `exact`; at most the accepted amount under `upto`; whatever the scheme
+defines otherwise). Under a batch scheme one transaction may settle many
+charges, so the transfer is compared with the scheme's records, not with one
+receipt. It SHOULD NOT assume the transaction's
 submitter is the payee: under x402 the facilitator usually submits. This
 extension does not specify rail resolution further.
 
@@ -1047,7 +1074,7 @@ in conformance testing; they never appear on the wire.
 | 4 | `requirements_not_offered` | `PaymentRequired.accepts` is an array, and `accepted` equals one of its entries (below) |
 | 5 | `network_unusable` | `accepted.network` is a network identifier (§4.6); and, when `SettlementResponse.network` is also one, the two are equal |
 | 6 | `resource_unavailable` | `PaymentRequired.resource.url` is present |
-| 7 | `identifier_out_of_grammar` | `accepted.payTo` is present, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6 |
+| 7 | `identifier_out_of_grammar` | `accepted.payTo` is present, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6, and `chargedAmount` (§4.3) satisfies §4.6 |
 | 8 | `invalid_statement` | the statement is well formed (below) |
 | 9 | `advertisement_conflict` | for each of `actionType` and `scope` that is a member of the advertised `info`, its value is a string equal to the statement's `action` member |
 | 10 | `invalid_bindings` | the assembled `bindings` satisfy §4.5 |
@@ -1098,7 +1125,8 @@ When no step refused, the payload is built from the sources of §4.1: `version`
 is `1`; `network` is `accepted.network`; `resourceUrl` is
 `PaymentRequired.resource.url`; `payer`, `payTo` and `transaction` are the values
 of step 7 (`transaction` is `""` when the response has none);
-`settlementRef` is the settlement reference or `""`; `requirementsDigest` is
+`settlementRef` is the settlement reference or `""`; `chargedAmount` is the
+value of §4.3, verbatim, or `""`; `requirementsDigest` is
 computed per §4.4; `supersedes` is the statement's or `""`; `bindings` is the
 array of step 10.
 
@@ -1262,6 +1290,7 @@ one):
   "transaction": "0xabababababababababababababababababababababababababababababababab",
   "network": "eip155:8453",
   "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+  "amount": "10000",
   "extensions": {
     "action-receipt": {
       "info": { "receipt": { "format": "jws", "signature": "eyJ...header.eyJ...payload.sig" } },
@@ -1417,14 +1446,14 @@ a salted commitment and keep the salt with the receipt.
    it cannot be confused with the base receipt's typed data.
 4. Whether this belongs under `specs/extensions/` as its own extension or as an
    optional profile of the base extension.
-5. Should the payload carry the amount the settlement charged
-   (`SettlementResponse.amount`, or a scheme's `extra.chargedAmount`)? Without
-   it the receipt commits only the accepted terms, which under `upto` and the
-   batch schemes are a ceiling (§1.3). It would be a new member.
-6. Should the lifecycle stay? `reversed`, `refunded` and `supersedes` describe
-   events for which this draft has no delivery channel (§4.3). The alternative
-   is a receipt that states only what was true when the response was sent, and
-   leaves later events to the rail.
+5. (Resolved in 0.4: the receipt carries `chargedAmount` from the settlement
+   result, §4.3.) Should this extension also check `chargedAmount` against
+   `accepted.amount` per scheme (equal under `exact`, at most under `upto`)?
+   This draft leaves that to the schemes.
+6. (Decided for 0.4: the lifecycle stays.) `reversed`, `refunded` and
+   `supersedes` describe events for which this draft has no delivery channel
+   (§4.3). Open: what channel a later receipt should travel by, if any, or
+   whether that belongs to another extension.
 7. A settlement reference for the deferred schemes that return neither a
    transaction nor an identifier (§1.3). That is for those schemes to define.
 8. A payment identifier. Core PR #3776 concerns one; if it lands, a receipt
@@ -1436,7 +1465,7 @@ a salted commitment and keep the salt with the receipt.
 |---|---|---|---|
 | 0.1 – 0.2.1 | 2026-07-19 | Initial drafts: JWS profile, settlement binding by transaction or settlement reference, payment lifecycle, reason codes, `actionRef` over a 13-field tuple. | Josh Suich |
 | 0.3 | 2026-11-19 | Breaking. `actionRef` removed from the payload; `receiptRef` is the hash of the signed payload bytes, in `sha256:` hex form. Added `receiptId`, `requirementsDigest`, `supersedes`, `bindings`. Required `typ` header and a closed header. Canonical-bytes check moved ahead of schema typing. EVM identifiers lowercase; comparison semantics stated. Authorization before key resolution; unresolved keys reported separately. Session and archival freshness. Verification report. Non-goals stated. Circularity code removed (covered by the closed schema). `outcome` is `delivered`, `partial` or `failed`; `refused` and `disputed` are retired. §6 is a ten-step issuing procedure with refusal reasons. A verifier that paid checks the URL it paid for. | Josh Suich |
-| 0.4 | 2026-11-20 | Breaking, after an independent review of 0.3 (six reviewers; `conformance/REVIEW-0.4.md`). The header has one spelling (JCS). `payer` may be `""`; the network grammar admits x402's non-CAIP-2 identifiers; `settlementRef` has a named source per scheme. The issuer refuses requirements it did not offer (`requirements_not_offered`); `payer_unavailable` is retired. One definition of a present value for issuer and verifier. `version` is checked before the member set. The `action-receipt:` binding namespace is closed and its values have a form. An authorization source that gives no answer is `key_unresolved`, not `signer`. The verifier's own inputs have a contract; outside it the result is `ERROR`. `checks.advertisement` added to the report. Supersession has consumer rules and no promised delivery. Signing requirements moved into §6.3. A 65536-character bound. Claims narrowed: what a non-requesting verifier learns, the signer is not shown to be the payee, the amount charged is not stated, a payment is not identified, schemes without an identifier are not covered. | Josh Suich |
+| 0.4 | 2026-11-20 | Breaking, after an independent review of 0.3 (six reviewers; `conformance/REVIEW-0.4.md`). The header has one spelling (JCS). `payer` may be `""`; the network grammar admits x402's non-CAIP-2 identifiers; `settlementRef` has a named source per scheme. The issuer refuses requirements it did not offer (`requirements_not_offered`); `payer_unavailable` is retired. One definition of a present value for issuer and verifier. `version` is checked before the member set. The `action-receipt:` binding namespace is closed and its values have a form. An authorization source that gives no answer is `key_unresolved`, not `signer`. The verifier's own inputs have a contract; outside it the result is `ERROR`. `checks.advertisement` added to the report. Supersession has consumer rules and no promised delivery. Signing requirements moved into §6.3. A 65536-character bound. New member `chargedAmount`: the amount the settlement result reports, compared with the response like the settlement identifiers. Claims narrowed: what a non-requesting verifier learns, the signer is not shown to be the payee, a payment is not identified, schemes without an identifier are not covered. | Josh Suich |
 
 Payload `version` remains `1`: no earlier draft was adopted, and a 0.2.x receipt
 fails §5.1 (no `typ`) under this text, so the two cannot be confused. A 0.3
