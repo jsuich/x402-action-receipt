@@ -1360,7 +1360,8 @@
         "issue_transaction_wrong_type_with_reference.json",
         "issue_surrogate_settlement_reference.json",
         "refuse_no_identifier.json",
-        "refuse_cloudflare_no_identifier.json"
+        "refuse_cloudflare_no_identifier.json",
+        "issue_commitment_id_ignored_off_solana.json"
       ]
     },
     {
@@ -1682,7 +1683,9 @@
         "issue_offer_member_order_differs.json",
         "issue_offer_entry_out_of_domain_skipped.json",
         "refuse_offered_only_out_of_domain.json",
-        "refuse_offered_payto_case_differs.json"
+        "refuse_offered_payto_case_differs.json",
+        "refuse_offered_true_is_not_one.json",
+        "issue_requirements_member_order_utf16.json"
       ]
     },
     {
@@ -1702,7 +1705,9 @@
         "refuse_network_conflict.json",
         "issue_network_namespace_32.json",
         "issue_network_cloudflare.json",
-        "issue_response_network_not_identifier.json"
+        "issue_response_network_not_identifier.json",
+        "refuse_network_conflict_reference_case.json",
+        "issue_network_reference_underscore.json"
       ]
     },
     {
@@ -1830,7 +1835,8 @@
         "issue_outcome_partial.json",
         "issue_status_capture_pending.json",
         "issue_status_reversed.json",
-        "issue_supersedes_empty_string.json"
+        "issue_supersedes_empty_string.json",
+        "refuse_receiptid_trailing_newline.json"
       ]
     },
     {

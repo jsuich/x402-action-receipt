@@ -358,6 +358,11 @@ NS32_DIGEST = "sha256:5a8bc57d62652789ccdff8517e1c2a27b478bf989bb5073a4c4ffaec00
 ACC_DEPTH8 = dict(A.ACCEPTED, extra={"d": [[[[[["x"]]]]]]})        # level 8 counting accepted
 DEPTH8_DIGEST = "sha256:27905833e432a5548f511e46c000f19898a319c1d3d8b7396be49fd3fe886bbf"
 ACC_DEPTH9 = dict(A.ACCEPTED, extra={"d": [[[[[[["x"]]]]]]]})
+ACC_UNDERSCORE = dict(A.ACCEPTED, network="hedera:main_net", payTo="0.0.12345")
+UNDERSCORE_DIGEST = "sha256:c6ab353dc1935d60d887b2a2689b5df0b930d13b9f1a4782c225e803a63e936f"
+# member names whose UTF-16 order ("B" < "a") is not the order of a locale collation
+ACC_CASE_ORDER = dict(A.ACCEPTED, extra={"B": "1", "a": "2", "name": "USD Coin", "version": "2"})
+CASE_ORDER_DIGEST = "sha256:8f2e32697a6cab1955177391ab83e5fcbe68f46fabbc55a4547a0b0223324af9"
 
 PAYER_OTHER = "0x" + "22" * 20
 PAYER_MIXED = "0xAbCdEf0123456789aBcDeF0123456789AbCdEf01"
@@ -502,6 +507,14 @@ SUITE = [
       paymentRequired__accepts=[dict(A.ACCEPTED, amount=1.5), "junk", A.ACCEPTED]),
     E("issue_requirements_depth_8", {"requirementsDigest": DEPTH8_DIGEST},
       paymentPayload__accepted=ACC_DEPTH8),
+    E("issue_requirements_member_order_utf16", {"requirementsDigest": CASE_ORDER_DIGEST},
+      paymentPayload__accepted=ACC_CASE_ORDER),
+    E("issue_commitment_id_ignored_off_solana", {},
+      settlementResponse__extra={"commitmentId": A.COMMITMENT_ID}),
+    E("issue_network_reference_underscore",
+      {"network": "hedera:main_net", "payer": A.PAYER_CHECKSUM, "payTo": "0.0.12345",
+       "requirementsDigest": UNDERSCORE_DIGEST},
+      paymentPayload__accepted=ACC_UNDERSCORE, settlementResponse__network="hedera:main_net"),
     E("issue_batch", {"transaction": "", "settlementRef": A.BATCH_REF},
       settlementResponse__transaction="", settlementReference=A.BATCH_REF),
     E("issue_both_identifiers", {"settlementRef": A.BATCH_REF}, settlementReference=A.BATCH_REF),
@@ -618,6 +631,9 @@ SUITE = [
     E("refuse_offered_accepts_empty", X_OFFERED, paymentRequired__accepts=[]),
     E("refuse_offered_only_out_of_domain", X_OFFERED,
       paymentRequired__accepts=[dict(A.ACCEPTED, amount=1.5)]),
+    E("refuse_offered_true_is_not_one", X_OFFERED,
+      paymentPayload__accepted__extra={"name": "USD Coin", "version": "2", "permit": True},
+      paymentRequired__accepts=[dict(A.ACCEPTED, extra={"name": "USD Coin", "version": "2", "permit": 1})]),
     # ---- step 5 ------------------------------------------------------------
     # the response's network is absent or not an identifier, so only the grammar of
     # accepted.network can refuse (the conflict rule needs both to be identifiers)
@@ -632,6 +648,8 @@ SUITE = [
     E("refuse_network_not_identifier_either_side", X_NETWORK,
       paymentPayload__accepted__network="base", settlementResponse__network="base"),
     E("refuse_network_conflict", X_NETWORK, settlementResponse__network="eip155:1"),
+    E("refuse_network_conflict_reference_case", X_NETWORK, **dict(
+        _SVM, settlementResponse=dict(_SOL_RESPONSE, network=SOL_NET.upper().replace("SOLANA:", "solana:")))),
     # ---- step 6 ------------------------------------------------------------
     E("refuse_no_resource", X_RESOURCE, **_NO_RESOURCE),
     E("refuse_resource_url_empty", X_RESOURCE, paymentRequired__resource__url=""),
@@ -661,6 +679,7 @@ SUITE = [
     E("refuse_receiptid_21", X_STATEMENT, statement__receiptId="A" * 21),
     E("refuse_receiptid_65", X_STATEMENT, statement__receiptId="A" * 65),
     E("refuse_receiptid_alphabet", X_STATEMENT, statement__receiptId="A" * 21 + "+"),
+    E("refuse_receiptid_trailing_newline", X_STATEMENT, statement__receiptId="A" * 22 + "\n"),
     E("refuse_issuedat_negative", X_STATEMENT, statement__issuedAt=-1),
     E("refuse_issuedat_2_53", X_STATEMENT, statement__issuedAt=2**53),
     E("refuse_issuedat_fraction", X_STATEMENT, statement__issuedAt=1703123456.5),

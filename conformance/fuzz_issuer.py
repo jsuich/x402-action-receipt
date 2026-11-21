@@ -114,7 +114,12 @@ def x_no_tx_with_ref(r, x):
     x["settlementReference"] = r.choice([A.BATCH_REF, I.UPPER_REF, ""])
 
 
-def x_resp_network(r, x): x["settlementResponse"]["network"] = r.choice(V.NETWORKS + [None, 1, "cloudflare:402"])
+CASE_NET = "solana:5EYKT4USFV8P8NJDTREPY1VZQKQZKVDP"     # SOL_NET with the reference in upper case
+
+
+def x_resp_network(r, x):
+    x["settlementResponse"]["network"] = r.choice(V.NETWORKS + [None, 1, "cloudflare:402", CASE_NET,
+                                                                "hedera:main_net"])
 def x_resp_payer(r, x): x["settlementResponse"]["payer"] = r.choice(V.ADDRS + [None, "", 1, I.SOL_PAYER])
 
 
@@ -165,7 +170,8 @@ def x_accepted_shape(r, x): x["paymentPayload"]["accepted"] = r.choice(JUNK)
 
 
 def x_accepted_network(r, x):
-    x["paymentPayload"]["accepted"]["network"] = r.choice(V.NETWORKS + [None, 1, "a" * 32 + ":x", "a" * 33 + ":x"])
+    x["paymentPayload"]["accepted"]["network"] = r.choice(V.NETWORKS + [None, 1, "a" * 32 + ":x", "a" * 33 + ":x",
+                                                                       "hedera:main_net", I.SOL_NET])
     mirror(r, x)
     if r.random() < 0.5:
         x["settlementResponse"]["network"] = r.choice([x["paymentPayload"]["accepted"]["network"], None])
@@ -209,10 +215,12 @@ def x_accepts(r, x):
         changed = copy.deepcopy(acc)
         changed[k if k != "added" else "note"] = r.choice(["1", "0x" + "11" * 20, {"v": "3"}, "x"])
         req["accepts"] = [changed]
-    elif c == 4 and isinstance(acc, dict):      # equal by value, spelled differently
+    elif c == 4 and isinstance(acc, dict):      # equal by value, spelled differently; or true vs 1
         spelled = copy.deepcopy(acc)
         if isinstance(spelled.get("maxTimeoutSeconds"), int):
             spelled["maxTimeoutSeconds"] = float(spelled["maxTimeoutSeconds"])
+        if r.random() < 0.4:
+            acc["flag"], spelled["flag"] = r.choice([(True, 1), (False, 0), (1, 1.0)])
         req["accepts"] = [dict(reversed(list(spelled.items())))]
     elif c == 5 and isinstance(acc, dict):      # several offers, accepted among them
         req["accepts"] = r.sample([copy.deepcopy(acc), I.EXTRA_OFFER, copy.deepcopy(A.ACCEPTED_SOL)], 3)
@@ -252,7 +260,7 @@ def x_statement_ids(r, x):
     st = x["statement"]
     c = r.randrange(4)
     if c == 0:
-        st["receiptId"] = r.choice(V.RECEIPT_IDS + [None, 1])
+        st["receiptId"] = r.choice(V.RECEIPT_IDS + [None, 1, "A" * 22 + "\n", "A" * 64 + "\n"])
     elif c == 1:
         st["issuedAt"] = r.choice([0, -1, 2**53 - 1, 2**53, float(A.ISSUED_AT), 1.5, "1", None,
                                    True, A.ISSUED_AT + 7, -0.0])
