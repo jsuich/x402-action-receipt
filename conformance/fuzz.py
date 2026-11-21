@@ -14,10 +14,17 @@ PROTOCOL in CONFORMANCE.md), and reports:
         P3  PASS with requirements held  =>  PASS without them, same receiptRef
         P4  PASS in session mode  =>  PASS in archival mode
         P5  PASS  =>  the same receipt with one payload bit flipped never passes
-        P6  every reason is a declared code, and ERROR never occurs
+        P6  every REJECT reason is a declared code, and ERROR occurs ONLY when
+            the configuration is outside the contract of spec §5
+        P7  configuration outside the contract  =>  ERROR invalid_configuration,
+            whatever the receipt (the contract is re-stated here, independently
+            of both verifiers, in `config_valid`)
+    Every property is evaluated on EVERY implementation's results, not only
+    the first adapter's.
 
     python3 conformance/fuzz.py --seed 1 --n 2000
     python3 conformance/fuzz.py --seed 1 --n 2000 --save out/   # write disagreeing cases
+    python3 conformance/fuzz.py --adapter mine="python3 my_adapter.py"   # a third-party verifier
 
 Exit 0 iff there are no disagreements and no property violations.
 Deterministic for a given (seed, n): ECDSA signatures are derandomized here.
@@ -31,6 +38,7 @@ import hashlib
 import json
 import pathlib
 import random
+import shlex
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -52,6 +60,33 @@ ADAPTERS = {
     "python": [sys.executable, "-B", str(ROOT / "conformance/adapters/python_adapter.py")],
     "node": ["node", str(ROOT / "conformance/adapters/node_adapter.mjs")],
 }
+CONFIG_ERROR = "invalid_configuration"
+
+
+def config_valid(ctx) -> bool:
+    """The configuration contract of spec §5, restated from the spec text for
+    this harness (not imported from either verifier): mode exactly `session` or
+    `archival`; `now` an integer; `maxAgeSeconds` absent or an integer >= 0;
+    `paidResourceUrl` absent, null or a string. Integers are judged by value in
+    the I-JSON safe range, as JSON numbers reach both verifiers."""
+    if not isinstance(ctx, dict):
+        return False
+
+    def integer(v):
+        if isinstance(v, bool):
+            return False
+        if isinstance(v, int):
+            return abs(v) <= 2**53 - 1
+        return isinstance(v, float) and v == v and v not in (float("inf"), float("-inf")) \
+            and v.is_integer() and abs(v) <= 2**53 - 1
+    if ctx.get("mode") not in ("session", "archival") or not isinstance(ctx.get("mode"), str):
+        return False
+    if "now" not in ctx or not integer(ctx["now"]):
+        return False
+    if "maxAgeSeconds" in ctx and not (integer(ctx["maxAgeSeconds"]) and ctx["maxAgeSeconds"] >= 0):
+        return False
+    paid = ctx.get("paidResourceUrl")
+    return paid is None or isinstance(paid, str)
 KEYS_FILE = ROOT / "vectors" / "keys.json"
 B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
@@ -85,11 +120,8 @@ def to_bytes(text: str) -> bytes:
 
 def sign(alg_of_key: str, key, signing_input: bytes, *, high_s=False) -> bytes:
     if alg_of_key in ("ES256", "ES256K"):
-        try:
-            algo = ec.ECDSA(hashes.SHA256(), deterministic_signing=True)
-            der = key.sign(signing_input, algo)
-        except Exception:  # noqa: BLE001 — backend without RFC 6979 support
-            der = key.sign(signing_input, ec.ECDSA(hashes.SHA256()))
+        # RFC 6979; no fallback to random k, so a run is reproducible from (seed, n)
+        der = key.sign(signing_input, ec.ECDSA(hashes.SHA256(), deterministic_signing=True))
         r, s = asym_utils.decode_dss_signature(der)
         n = A.CURVE_ORDER[A.ALG_CURVE[alg_of_key]]
         s = max(s, n - s) if high_s else min(s, n - s)
@@ -108,9 +140,14 @@ class Case:
         self.alg, self.kid, key_name = signer
         self.key_alg, self.key = self.alg, keys[key_name]
         self.all_keys = keys
-        batch = rng.random() < 0.3
-        self.payload = A._base_payload(
-            **({"transaction": "", "settlementRef": A.BATCH_REF} if batch else {}))
+        shape = rng.random()
+        batch = shape < 0.3
+        sol = shape < 0.15          # half the batch cases are the 0.4 Solana commitment
+        if sol:
+            self.payload = A._sol_payload()
+        else:
+            self.payload = A._base_payload(
+                **({"transaction": "", "settlementRef": A.BATCH_REF} if batch else {}))
         self.header = {"alg": self.alg, "kid": self.kid, "typ": A.TYP}
         self.header_raw = None        # bytes override
         self.payload_raw = None       # bytes override
@@ -121,11 +158,13 @@ class Case:
         self.context = {
             "success": True,
             "transaction": "" if batch else A.SETTLEMENT_TX,
-            "settlementRef": A.BATCH_REF if batch else "",
-            "network": A.NETWORK, "payer": A.PAYER,
-            "accepted": copy.deepcopy(A.ACCEPTED), "advertisedInfo": None,
+            "settlementRef": (A.COMMITMENT_ID if sol else A.BATCH_REF) if batch else "",
+            "network": A.SOL_NET if sol else A.NETWORK, "payer": None if sol else A.PAYER,
+            "accepted": copy.deepcopy(A.ACCEPTED_SOL if sol else A.ACCEPTED), "advertisedInfo": None,
             "now": A.VERIFIER_NOW, "maxAgeSeconds": 3600, "mode": "session",
         }
+        if rng.random() < 0.2:
+            del self.context["maxAgeSeconds"]      # the default applies
         self.ops = []
 
     def payload_bytes(self) -> bytes:
@@ -159,17 +198,21 @@ TXS = [A.SETTLEMENT_TX, "0x" + "AB" * 32, "0X" + "ab" * 32, "0x" + "ab" * 31, "0
        "0x" + "cd" * 32, "", "ab" * 32]
 NETWORKS = [A.NETWORK, "eip155:1", "EIP155:8453", "eip155:", ":8453", "eip155", "base",
             "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "a:b", "abc:" + "x" * 32, "abc:" + "x" * 33,
-            "abcdefgh:1", "abcdefghi:1", "ab:1", "eip155:84 53", "cosmos:cosmoshub-4"]
+            "abcdefgh:1", "abcdefghi:1", "ab:1", "abc:1", "eip155:84 53", "cosmos:cosmoshub-4",
+            "a" * 32 + ":1", "a" * 33 + ":1", "cloudflare:402", "eip1559:1", "eip155x:1",
+            "eip155:8453\n"]
 DIGESTS = [A.requirements_digest(A.ACCEPTED), "sha256:" + "00" * 32, "sha256:" + "AB" * 32,
            "sha256:" + "0" * 63, "sha256:" + "0" * 65, "SHA256:" + "0" * 64, "sha512:" + "0" * 64,
            "0" * 64, ""]
 RECEIPT_IDS = ["a" * 21, "a" * 22, "a" * 64, "a" * 65, "a" * 21 + "=", "a" * 21 + "+",
                "a" * 21 + "/", "a" * 21 + " ", "a" * 21 + "é", A.RECEIPT_ID_2]
-BTYPES = ["a:b", "action-receipt:advertised-info", "response-provenance:responseHash",
+BTYPES = ["a:b", "action-receipt:advertised-info", "action-receipt:reversal-transaction",
+          "action-receipt:x", "action-receipt.v2:x", "response-provenance:responseHash",
           "https://example.org/x#y", "a" * 64 + ":b", "a" * 65 + ":b", "a:" + "b" * 191,
           "a:" + "b" * 192, "A:b", "1a:b", "a:", ":b", "ab", "a:b c", "a:bé", "a+b.c-d:e",
           "a::b", "z:z", "b:a"]
-BVALUES = ["1", "x" * 1024, "x" * 1025, "", "a b", "café", "sha256:" + "0" * 64, "~", "\u007f"]
+BVALUES = ["1", "x" * 1024, "x" * 1025, "", "a b", "café", "sha256:" + "0" * 64, "~", "\u007f",
+           "sha256:" + "AB" * 32, "0x" + "ef" * 32, "0x" + "EF" * 32]
 
 
 def pick_binding(rng):
@@ -240,7 +283,8 @@ def op_network(c): c.payload["network"] = c.rng.choice(NETWORKS)
 def op_address(c): c.payload[c.rng.choice(["payer", "payTo"])] = c.rng.choice(ADDRS + ["", "x"])
 def op_transaction(c): c.payload["transaction"] = c.rng.choice(TXS + ["x"])
 def op_settlement_ref(c):
-    c.payload["settlementRef"] = c.rng.choice([A.BATCH_REF, "", "batch:other", A.BATCH_REF.upper(), " "])
+    c.payload["settlementRef"] = c.rng.choice([A.BATCH_REF, "", "batch:other", A.BATCH_REF.upper(), " ",
+                                               A.COMMITMENT_ID, A.COMMITMENT_ID.lower()])
 
 
 def op_digest(c):
@@ -397,11 +441,11 @@ def op_header(c):
                                  A.KID_UNUSABLE, A.KID_EVIL, "did:web:nobody.example#x", "",
                                  "__service__:" + A.RESOURCE, 1, None, ["x"]])
     elif r == 5:
-        c.header_raw = json.dumps(h, indent=1).encode()                    # non-canonical: allowed
+        c.header_raw = json.dumps(h, indent=1).encode()                    # non-canonical: rejected (0.4)
     elif r == 6:
-        c.header_raw = json.dumps(dict(reversed(list(h.items())))).encode()  # other order: allowed
+        c.header_raw = json.dumps(dict(reversed(list(h.items())))).encode()  # other order: rejected (0.4)
     elif r == 7:
-        c.header_raw = to_bytes('{"alg":"none",' + loose(h)[1:])              # duplicate alg, last wins
+        c.header_raw = to_bytes('{"alg":"none",' + loose(h)[1:])              # duplicate alg
     elif r == 8:
         c.header_raw = c.rng.choice([b"[]", b"null", b'"x"', b"1", b"", b"{", b"\xff", b"{}",
                                      b"\xef\xbb\xbf" + to_bytes(loose(h))])
@@ -412,6 +456,81 @@ def op_header(c):
     else:
         c.header_raw = to_bytes(loose(h).replace('"ES256"', '"ES\\u003256"')) if h["alg"] == "ES256" \
             else to_bytes(loose(h))
+
+
+def op_header_value(c):
+    """A header member of a type the spec does not allow, in otherwise canonical
+    bytes: `alg` must be rejected at step 3 (never an ERROR), `typ` at step 2,
+    `kid` at step 4 (reviewer B-2)."""
+    member = c.rng.choice(["alg", "alg", "typ", "kid"])
+    c.header[member] = c.rng.choice([
+        [c.header.get(member, "ES256")], {"a": 1}, {}, [], 5, 0, -1, 2**53 - 1, True, False, None,
+        [[["ES256"]]], {"alg": "ES256"}, ["ES256", "EdDSA"], "", "\ud800"])
+
+
+def op_header_text(c):
+    """Header bytes a lenient JSON parser accepts and the canonical-bytes test of
+    §5.1 step 1 refuses: non-JSON tokens, duplicates, reordering, huge integers,
+    deep nesting, a BOM (reviewers B-1, M-1, D-01, D-08)."""
+    h = dict(c.header)
+    text = loose(h)
+    r = c.rng.randrange(14)
+    if r == 0:
+        t = text.replace('{"alg":', '{"alg":NaN,"alg":', 1)
+    elif r == 1:
+        t = text.replace('"kid":', '"kid":Infinity,"kid":', 1)
+    elif r == 2:
+        t = text.replace('"typ":', '"typ":-Infinity,"typ":', 1)
+    elif r == 3:
+        t = text.replace('{"alg":', '{"alg":"none","alg":', 1)
+    elif r == 4:
+        t = text.replace('"typ":', '"typ":"JWT","typ":', 1)
+    elif r == 5:
+        t = text[:-1] + ',"x":' + "9" * c.rng.choice([17, 400, 5000]) + "}"
+    elif r == 6:
+        d = c.rng.choice([8, 9, 50, 5000])
+        t = text[:-1] + ',"x":' + "[" * d + "]" * d + "}"
+    elif r == 7:
+        t = "\ufeff" + text
+    elif r == 8:
+        t = json.dumps(dict(sorted(h.items(), reverse=True)), separators=(",", ":"))
+    elif r == 9:
+        t = text.replace(",", ", ")
+    elif r == 10:
+        t = text[:-1] + ',"x":1.5}'
+    elif r == 11:
+        t = text[:-1] + ',"x":"\\ud800"}'
+    elif r == 12:
+        h["typ"] = "JWT"
+        t = loose(h)[:-1] + ',"x":9007199254740993}'
+    else:
+        t = text.replace('"x402-action-receipt+jws"', '"x402-action-receipt\\u002bjws"')
+    c.header_raw = to_bytes(t)
+
+
+def op_ctx_config(c):
+    """The verifier's own configuration outside (and at the edges of) the
+    contract of spec §5. P7 requires ERROR invalid_configuration exactly when
+    `config_valid` says the contract is broken."""
+    x = c.context
+    r = c.rng.randrange(7)
+    if r == 0:
+        x["mode"] = c.rng.choice(["SESSION", "Archival", "", None, 1, True, ["session"], "session ",
+                                  "archival", "session"])
+    elif r == 1:
+        x["now"] = c.rng.choice([True, False, A.VERIFIER_NOW + 0.5, str(A.VERIFIER_NOW), None,
+                                 2**53, -(2**53), float(A.VERIFIER_NOW), 2**53 - 1, [A.VERIFIER_NOW]])
+    elif r == 2:
+        x["maxAgeSeconds"] = c.rng.choice([-1, "10", None, True, 10.5, 3600.0, 2**53, 0, 44, 43,
+                                           2**53 - 1, [3600], {}])
+    elif r == 3:
+        x["paidResourceUrl"] = c.rng.choice([5, [], {}, True, "", A.RESOURCE, None, [A.RESOURCE]])
+    elif r == 4:
+        del x[c.rng.choice(["mode", "now"])]
+    elif r == 5:
+        c.context = c.rng.choice([None, [], "x", 1, True])
+    else:
+        x["mode"], x["now"] = c.rng.choice([("archival", 1.0e9), ("session", A.VERIFIER_NOW * 1.0)])
 
 
 def op_alg_swap(c):
@@ -437,7 +556,7 @@ def op_payload_scalar(c):
 
 
 def op_signature(c):
-    r = c.rng.randrange(8)
+    r = c.rng.randrange(10)
     if r == 0:
         c.high_s = True
     elif r == 1:
@@ -451,6 +570,10 @@ def op_signature(c):
         c.sig_edit = lambda s: b"\x00" * len(s)
     elif r == 5:
         c.sig_edit = lambda s: b""
+    elif r == 8:   # a byte inserted at the r/s boundary: 65 bytes (reviewer E, V53)
+        c.sig_edit = lambda s: s[:32] + b"\x00" + s[32:]
+    elif r == 9:   # a byte removed at the r/s boundary: 63 bytes
+        c.sig_edit = lambda s: s[:31] + s[32:]
     elif r == 6:   # sign with a different key of the same family
         c.key = c.all_keys[c.rng.choice(["ES256", "ES256K", "EdDSA", "PAYTO", "EVIL"])]
         c.key_alg = {ec.SECP256R1: "ES256", ec.SECP256K1: "ES256K"}.get(
@@ -523,7 +646,9 @@ def op_ctx_settlement(c):
     elif r == 1:
         x["transaction"] = c.rng.choice(TXS + [None])
     elif r == 2:
-        x["settlementRef"] = c.rng.choice([A.BATCH_REF, "", None, "batch:other"])
+        # upper case and lower case references: never normalized (spec §5.8, reviewer E V61b)
+        x["settlementRef"] = c.rng.choice([A.BATCH_REF, "", None, "batch:other", A.BATCH_REF.upper(),
+                                           A.COMMITMENT_ID, A.COMMITMENT_ID.upper(), 7, "\ud800"])
     elif r == 3:
         x["network"] = c.rng.choice(NETWORKS + [None, 1])
     elif r == 4:
@@ -606,7 +731,33 @@ def op_ctx_time(c):
     elif r == 4:
         x["mode"], x["now"] = "archival", c.rng.choice([A.ISSUED_AT - 61, A.ISSUED_AT - 60])
     else:
-        del x["maxAgeSeconds"]
+        # no maximum age: the default 3600 decides, so put the age on both sides of it
+        x.pop("maxAgeSeconds", None)
+        if isinstance(c.payload.get("issuedAt"), int) and not isinstance(c.payload.get("issuedAt"), bool):
+            x["now"] = c.payload["issuedAt"] + c.rng.choice([3599, 3600, 3601, 7200, 36000])
+
+
+def op_payer_free(c):
+    """`payer` may be "" on any network (spec §4.6); off eip155 it is any string."""
+    c.payload["payer"] = c.rng.choice(["", "", "Payer-ABC", A.PAYER.upper()])
+    if c.rng.random() < 0.5:
+        c.context["payer"] = c.rng.choice([None, "", c.payload["payer"], A.PAYER])
+
+
+def op_network_non_evm(c):
+    """Move the case to a non-eip155 network with free-form identifiers, keeping
+    requirements consistent so the §4.6 / §5.8 false branches decide."""
+    net = c.rng.choice([A.LOOKALIKE_NET, A.CF_NET, "abc:1", "a" * 32 + ":" + "R" * 32, A.SOL_NET])
+    pay_to = c.rng.choice(["Merchant-0x209693Bc", A.PAY_TO_CHECKSUM, "acct_1"])
+    tx = c.rng.choice([A.SETTLEMENT_TX.upper(), "cf-tx-1", A.SOL_TX, "0x" + "AB" * 32])
+    held = c.context.get("accepted")
+    acc = dict(held if isinstance(held, dict) else A.ACCEPTED, network=net, payTo=pay_to)
+    payer = c.rng.choice(["", "Payer-ABC", A.PAYER_CHECKSUM])
+    c.payload.update(network=net, payTo=pay_to, transaction=tx, settlementRef="", payer=payer,
+                     requirementsDigest=A.sha256_tag(to_bytes(loose(acc))))
+    c.context.update(network=net, transaction=c.rng.choice([tx, tx, tx.lower(), tx.upper()]),
+                     settlementRef="", accepted=acc,
+                     payer=c.rng.choice([None, payer, payer.lower()]))
 
 
 OPERATORS = [
@@ -620,6 +771,8 @@ OPERATORS = [
     (op_alg_swap, 3), (op_header_encoding, 2), (op_payload_scalar, 2),
     (op_bindings_wellformed, 3), (op_ctx_number_spelling, 2),
     (op_ctx_requirements_network, 2), (op_ctx_paid_resource, 3),
+    (op_header_value, 4), (op_header_text, 5), (op_ctx_config, 5), (op_payer_free, 2),
+    (op_network_non_evm, 4),
 ]
 RAW_OPS = {op_raw_whitespace, op_raw_number, op_raw_escape, op_raw_structure, op_raw_bytes,
            op_payload_scalar}
@@ -673,10 +826,12 @@ def payload_bytes_of(receipt):
         return None
 
 
-def derived_cases(case, result):
+def derived_cases(case):
     """Follow-up cases for the metamorphic properties of a PASSing case."""
     out = []
     ctx = case["context"]
+    if not isinstance(ctx, dict):
+        return out
     if ctx.get("accepted") is not None:
         out.append(("P3", dict(case, id=case["id"] + "#noreq", context=dict(ctx, accepted=None))))
     if ctx.get("mode") == "session":
@@ -693,25 +848,74 @@ def derived_cases(case, result):
     return out
 
 
+def properties(name: str, res: dict, by_id: dict, origin: dict) -> list:
+    """Oracle-free properties P1..P7 on ONE implementation's results."""
+    violations = []
+    for cid, (verdict, reason, report) in res.items():
+        valid = config_valid(by_id[cid]["context"])
+        if not valid and (verdict, reason) != (A.ERROR, CONFIG_ERROR):
+            violations.append(("P7", name, cid, f"configuration outside the contract gave {verdict}/{reason}"))
+        if valid and verdict == A.ERROR:
+            violations.append(("P6", name, cid, f"ERROR on a valid configuration: {reason}"))
+        if verdict == A.REJECT and reason not in A.ALL_REASONS:
+            violations.append(("P6", name, cid, f"undeclared reason {reason}"))
+        if verdict == A.PASS and cid not in origin:
+            raw = payload_bytes_of(by_id[cid]["receipt"])
+            if not isinstance(report, dict) or report.get("receiptRef") != \
+                    "sha256:" + hashlib.sha256(raw or b"").hexdigest():
+                violations.append(("P1", name, cid, "receiptRef is not the hash of the payload bytes"))
+            if _rfc8785 is not None:
+                try:
+                    if _rfc8785.dumps(json.loads(raw)) != raw:
+                        violations.append(("P2", name, cid, "payload bytes are not their own JCS form"))
+                except Exception as e:  # noqa: BLE001
+                    violations.append(("P2", name, cid, f"independent canonicalizer refused: {e}"))
+    for did, (prop, parent) in origin.items():
+        if did not in res or parent not in res:
+            continue
+        verdict, reason, report = res[did]
+        p_verdict, _, p_report = res[parent]
+        if p_verdict != A.PASS:
+            continue                       # the property is about THIS implementation's PASSes
+        if prop in ("P3", "P4") and (verdict != A.PASS or report["receiptRef"] != p_report["receiptRef"]):
+            violations.append((prop, name, did, f"{verdict}/{reason}"))
+        if prop == "P5" and verdict == A.PASS:
+            violations.append((prop, name, did, "a receipt with a flipped payload bit passed"))
+    return violations
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--n", type=int, default=2000)
-    ap.add_argument("--adapters", default="python,node")
+    ap.add_argument("--adapters", default="python,node",
+                    help="comma-separated built-in adapter names (python, node) and names given by --adapter")
+    ap.add_argument("--adapter", action="append", default=[], metavar="NAME=COMMAND",
+                    help="a third-party verifier adapter (CONFORMANCE.md §3); the key fixture path is "
+                         "appended to COMMAND. Repeatable; each NAME is added to --adapters")
     ap.add_argument("--save", metavar="DIR", help="write disagreeing and violating cases here")
     ap.add_argument("--json", action="store_true", help="print the summary as one JSON object")
     a = ap.parse_args(argv)
-    names = a.adapters.split(",")
+    names = [n for n in a.adapters.split(",") if n]
+    for spec in a.adapter:
+        if "=" not in spec:
+            ap.error(f"--adapter needs NAME=COMMAND, got {spec!r}")
+        name, cmd = spec.split("=", 1)
+        ADAPTERS[name] = shlex.split(cmd)
+        if name not in names:
+            names.append(name)
+    unknown = [n for n in names if n not in ADAPTERS]
+    if unknown:
+        ap.error(f"unknown adapter(s) {unknown}; give them with --adapter NAME=COMMAND")
 
     cases = generate(a.seed, a.n)
     by_id = {c["id"]: c for c in cases}
     results = {n: run_adapter(n, cases) for n in names}
-    ref = results[names[0]]
 
     followups, origin = [], {}
     for c in cases:
-        if ref[c["id"]][0] == A.PASS:
-            for prop, d in derived_cases(c, ref[c["id"]]):
+        if any(results[n][c["id"]][0] == A.PASS for n in names):
+            for prop, d in derived_cases(c):
                 followups.append(d)
                 origin[d["id"]] = (prop, c["id"])
     by_id.update({c["id"]: c for c in followups})
@@ -721,37 +925,21 @@ def main(argv=None) -> int:
 
     disagreements = [cid for cid in by_id
                      if len({json.dumps(results[n][cid], sort_keys=True) for n in names}) > 1]
-
     violations = []
-    for cid, (verdict, reason, report) in ref.items():
-        if verdict == A.ERROR or (verdict == A.REJECT and reason not in A.ALL_REASONS):
-            violations.append(("P6", cid, f"{verdict}/{reason}"))
-        if verdict == A.PASS and cid not in origin:
-            raw = payload_bytes_of(by_id[cid]["receipt"])
-            if report["receiptRef"] != "sha256:" + hashlib.sha256(raw).hexdigest():
-                violations.append(("P1", cid, "receiptRef is not the hash of the payload bytes"))
-            if _rfc8785 is not None:
-                try:
-                    if _rfc8785.dumps(json.loads(raw)) != raw:
-                        violations.append(("P2", cid, "payload bytes are not their own JCS form"))
-                except Exception as e:  # noqa: BLE001
-                    violations.append(("P2", cid, f"independent canonicalizer refused: {e}"))
-    for did, (prop, parent) in origin.items():
-        verdict, reason, report = ref[did]
-        if prop in ("P3", "P4") and (verdict != A.PASS
-                                     or report["receiptRef"] != ref[parent][2]["receiptRef"]):
-            violations.append((prop, did, f"{verdict}/{reason}"))
-        if prop == "P5" and verdict == A.PASS:
-            violations.append((prop, did, "a receipt with a flipped payload bit passed"))
+    for n in names:
+        violations += properties(n, results[n], by_id, origin)
 
+    ref = results[names[0]]
     verdicts = Counter(v for v, _, _ in (ref[c["id"]] for c in cases))
     reasons = Counter(r for v, r, _ in (ref[c["id"]] for c in cases) if v == A.REJECT)
+    errors = Counter(r for v, r, _ in (ref[c["id"]] for c in cases) if v == A.ERROR)
     op_seen = Counter(o for c in cases for o in c["id"].split(":", 2)[2].split("+"))
     summary = {
         "seed": a.seed, "requested": a.n, "generated": len(cases), "followups": len(followups),
         "adapters": names, "p2_independent_canonicalizer": _rfc8785 is not None,
         "verdicts": dict(verdicts), "reasons_hit": len(reasons),
         "reasons_never_hit": sorted(A.ALL_REASONS - set(reasons)),
+        "errors_never_hit": sorted({CONFIG_ERROR} - set(errors)),
         "operators_never_applied": sorted(o.__name__[3:] for o, _ in OPERATORS
                                           if op_seen[o.__name__[3:]] == 0),
         "disagreements": len(disagreements), "property_violations": len(violations),
@@ -759,13 +947,14 @@ def main(argv=None) -> int:
     if a.json:
         print(json.dumps(summary))
     else:
-        print(f"seed {a.seed}: {len(cases)} cases + {len(followups)} follow-ups through "
+        print(f"seed {a.seed}: {len(cases)} of {a.n} cases + {len(followups)} follow-ups through "
               f"{', '.join(names)}")
         print(f"  verdicts ({names[0]}): {dict(verdicts)}")
         print(f"  reason codes hit: {len(reasons)} of {len(A.ALL_REASONS)}"
               + (f"; never hit: {summary['reasons_never_hit']}" if summary["reasons_never_hit"] else ""))
         print(f"  P2 independent canonicalizer: {'active' if _rfc8785 else 'NOT ACTIVE (install rfc8785)'}")
-        print(f"  disagreements: {len(disagreements)}   property violations: {len(violations)}")
+        print(f"  disagreements: {len(disagreements)}   property violations: {len(violations)}"
+              f" (properties evaluated on {', '.join(names)})")
 
     if disagreements and not a.json:
         groups = defaultdict(list)
@@ -779,18 +968,18 @@ def main(argv=None) -> int:
             print(f"         operators: {dict(ops.most_common(4))}   e.g. {ids[0]}")
     if violations and not a.json:
         print("\nPROPERTY VIOLATIONS:")
-        for prop, cid, why in violations[:20]:
-            print(f"  {prop}  {cid}  {why}")
+        for prop, name, cid, why in violations[:20]:
+            print(f"  {prop}  {name}  {cid}  {why}")
     if a.save and (disagreements or violations):
         d = pathlib.Path(a.save)
         d.mkdir(parents=True, exist_ok=True)
-        keep = disagreements + [cid for _, cid, _ in violations]
+        keep = disagreements + [cid for _, _, cid, _ in violations]
         with open(d / f"seed{a.seed}.jsonl", "w") as f:
             for cid in dict.fromkeys(keep):
                 f.write(json.dumps({"case": by_id[cid],
                                     "results": {n: results[n][cid] for n in names}}) + "\n")
         print(f"\nsaved {len(set(keep))} cases to {d / f'seed{a.seed}.jsonl'}")
-    return 0 if not disagreements and not violations else 1
+    return 0 if not disagreements and not violations and len(cases) == a.n else 1
 
 
 if __name__ == "__main__":
