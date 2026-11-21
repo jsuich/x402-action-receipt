@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 """
 action_receipt.py — reference verifier + conformance suite for the x402
-`action-receipt` extension (spec: action-receipt.md, draft 0.3).
+`action-receipt` extension (spec: action-receipt.md, draft 0.4).
+
+What changed against draft 0.3 (spec version history; review ledger in
+conformance/REVIEW-0.4.md):
+  * The JWS header must be the JCS form of a value in the value domain (one
+    spelling); `alg` of any non-string type is `invalid_actionreceipt_alg`.
+  * The compact string is at most 65536 characters.
+  * §5.3 checks an integer `version`, then `version == 1`, then the member set.
+  * Network identifiers have a 3..32 namespace; `payer` may be "".
+  * The `action-receipt:` binding namespace is closed and its values have a form.
+  * One definition of "present" (§4.6) for every unsigned value.
+  * §5.4 has three answers; "no answer" is key_unresolved.
+  * Only a SubjectPublicKeyInfo public key of a usable kind resolves a key.
+  * The verifier's own configuration has a contract; outside it: ERROR.
+  * The report carries `checks.advertisement`.
 
 The receipt is a JWS signed by the RESOURCE SERVER after settlement. It states
 what was done, within what scope, with what outcome, and binds that statement to
@@ -36,6 +50,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 import hashlib
 import json
 import re
@@ -51,9 +66,9 @@ try:
     from cryptography.hazmat.primitives.asymmetric import ec, ed25519, utils as asym_utils
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.serialization import (
-        Encoding, PublicFormat, load_pem_public_key,
+        Encoding, PublicFormat, load_der_public_key,
     )
-    from cryptography.exceptions import InvalidSignature
+    from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
     HAVE_CRYPTO = True
 except ImportError:
     HAVE_CRYPTO = False
@@ -204,8 +219,13 @@ OUTCOMES = {"delivered", "partial", "failed"}                                # S
 SETTLEMENT_STATUSES = {"settled", "capturePending", "reversed", "refunded"}  # PAYMENT lifecycle
 MAX_BINDINGS = 16
 
+MAX_COMPACT = 65536          # characters in the compact string (spec §3, §5.1)
+DEFAULT_MAX_AGE = 3600       # seconds, when the configuration gives none (spec §5, §5.10)
+
 RE_RECEIPT_ID = re.compile(r"[A-Za-z0-9_-]{22,64}")
-RE_CAIP2 = re.compile(r"[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}")
+# A "network identifier" (spec §4.6): the CAIP-2 shape with a 3..32 namespace.
+RE_NETWORK = re.compile(r"[-a-z0-9]{3,32}:[-_a-zA-Z0-9]{1,32}")
+RE_CAIP2 = RE_NETWORK        # name kept for issuer.py; the grammar is the 0.4 one
 RE_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 RE_EVM_ADDRESS = re.compile(r"0x[0-9a-f]{40}")
 RE_EVM_TX = re.compile(r"0x[0-9a-f]{64}")
@@ -222,6 +242,7 @@ CURVE_ORDER = {  # math constants (low-s), not chain constants
 # Binding types this specification itself defines (spec §4.5.2).
 BT_ADVERTISED = "action-receipt:advertised-info"
 BT_REVERSAL_TX = "action-receipt:reversal-transaction"
+BT_NAMESPACE = "action-receipt:"     # closed: only the two types above (spec §4.5.1)
 
 
 def _is_int(v) -> bool:
@@ -257,6 +278,25 @@ INDETERMINATE_REASONS = {R_KEY_UNRESOLVED}
 PASS = "PASS"
 REJECT = "REJECT"
 ERROR = "ERROR"          # verifier fault; says nothing about the receipt
+# The two kinds of ERROR (spec §5 "Outcomes"). Neither is a reason code of §5.13.
+E_CONFIG = "invalid_configuration"   # the verifier's own configuration is outside the contract
+E_FAULT = "verifier_fault"           # the verifier faulted internally
+
+
+class _Absent:
+    """Marks a configuration input the caller did not give (distinct from None)."""
+    _inst = None
+
+    def __new__(cls):
+        if cls._inst is None:
+            cls._inst = super().__new__(cls)
+        return cls._inst
+
+    def __repr__(self):
+        return "ABSENT"
+
+
+ABSENT = _Absent()
 
 
 class Context:
@@ -264,16 +304,24 @@ class Context:
 
     success / transaction / settlement_ref / network / payer : from the
         SettlementResponse (core §5.3). UNSIGNED input: checks against it are
-        consistency checks, not independent corroboration.
+        consistency checks, not independent corroboration. Any value is legal
+        here; a malformed one is absent or rejected, never an ERROR.
     accepted : the PaymentRequirements object the client accepted
         (PaymentPayload.accepted), or None when the verifier does not hold it.
     advertised_info : the `action-receipt` extension `info` object as echoed in
         the PaymentPayload, or None.
-    mode : "session" (freshness enforced) or "archival" (age reported).
+
+    The verifier's own CONFIGURATION (spec §5 inputs table). Outside this
+    contract verify_detailed returns ERROR / invalid_configuration:
+    mode : exactly "session" or "archival".
+    now : an integer number of Unix seconds (an integer-valued float, as a JSON
+        parser may produce for `1703123500.0`, is that integer; a bool is not).
+    max_age_s : ABSENT (meaning 3600) or an integer >= 0. None is not absent.
+    paid_resource_url : None/ABSENT (the verifier did not pay), or a string.
     """
     def __init__(self, success: bool, transaction: str = "", settlement_ref: str = "",
                  network=None, payer=None, accepted=None, advertised_info=None,
-                 now: int = 0, max_age_s: int = 3600, mode: str = "session",
+                 now: int = 0, max_age_s=ABSENT, mode: str = "session",
                  paid_resource_url=None):
         self.paid_resource_url = paid_resource_url   # set only by a verifier that paid
         self.success = success
@@ -289,8 +337,49 @@ class Context:
 
 
 def _has(value) -> bool:
-    """An unsigned input "has" a value iff it is a non-empty string (spec §5.8)."""
-    return isinstance(value, str) and value != ""
+    """An unsigned value is PRESENT iff it is a non-empty string of well-formed
+    Unicode (spec §4.6 "Present and absent"); anything else is absent."""
+    return isinstance(value, str) and value != "" and in_domain(value)
+
+
+def _config_int(v):
+    """The integer a configuration number denotes, or None when it is not one.
+    Judged by value like §4.6 (so JSON `3600.0` is 3600), within the I-JSON
+    safe range so that every implementation reads the same number; a bool is
+    not an integer."""
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, int):
+        return v if -SAFE_INT_MAX <= v <= SAFE_INT_MAX else None
+    if isinstance(v, float) and v.is_integer() and -SAFE_INT_MAX <= v <= SAFE_INT_MAX:
+        return int(v)
+    return None
+
+
+def configuration(ctx, key_registry):
+    """Validate the verifier's own configuration against the contract of spec §5.
+    Returns (mode, now, max_age, paid_url) or None when it is outside the
+    contract. paid_url is None when the verifier did not pay."""
+    if not isinstance(ctx, Context) or not isinstance(key_registry, dict):
+        return None
+    mode = ctx.mode
+    if not (isinstance(mode, str) and mode in ("session", "archival")):
+        return None
+    now = _config_int(ctx.now)
+    if now is None:
+        return None
+    if ctx.max_age_s is ABSENT:
+        max_age = DEFAULT_MAX_AGE
+    else:
+        max_age = _config_int(ctx.max_age_s)
+        if max_age is None or max_age < 0:
+            return None
+    paid = ctx.paid_resource_url
+    if paid is ABSENT:
+        paid = None
+    if paid is not None and not isinstance(paid, str):
+        return None
+    return mode, now, max_age, paid
 
 
 def _is_evm(network: str) -> bool:
@@ -317,12 +406,16 @@ def requirements_digest(accepted) -> str | None:
 def validate_payload(payload) -> str | None:
     """Closed-schema and field-grammar validation (spec §5.3). Returns a reason
     code, or None when the payload is well formed."""
-    if not isinstance(payload, dict) or set(payload.keys()) != TOP_KEYS:
+    # 1. an object with an integer `version`
+    if not isinstance(payload, dict) or "version" not in payload or not _is_int(payload["version"]):
         return R_MALFORMED
-    if not _is_int(payload["version"]):
-        return R_MALFORMED
+    # 2. the version this verifier implements, BEFORE the member set: a later
+    #    version may have other members and must not read as malformed
     if payload["version"] != PROFILE_VERSION:
         return R_UNSUPPORTED_VERSION
+    # 3. the closed member set, types and grammar
+    if set(payload.keys()) != TOP_KEYS:
+        return R_MALFORMED
     action = payload["action"]
     if not isinstance(action, dict) or set(action.keys()) != ACTION_KEYS:
         return R_MALFORMED
@@ -335,16 +428,18 @@ def validate_payload(payload) -> str | None:
     if not RE_RECEIPT_ID.fullmatch(payload["receiptId"]):
         return R_MALFORMED
     network = payload["network"]
-    if not RE_CAIP2.fullmatch(network):
+    if not RE_NETWORK.fullmatch(network):
         return R_MALFORMED
-    if not (payload["resourceUrl"] and payload["payer"] and payload["payTo"]
+    # `payer` may be "" on any network (spec §4.3, §4.6)
+    if not (payload["resourceUrl"] and payload["payTo"]
             and action["agent"] and action["actionType"]):
         return R_MALFORMED
     if not (payload["transaction"] or payload["settlementRef"]):
         return R_MALFORMED                       # at least one settlement identifier
     if _is_evm(network):
-        if not (RE_EVM_ADDRESS.fullmatch(payload["payer"])
-                and RE_EVM_ADDRESS.fullmatch(payload["payTo"])):
+        if not RE_EVM_ADDRESS.fullmatch(payload["payTo"]):
+            return R_MALFORMED
+        if payload["payer"] and not RE_EVM_ADDRESS.fullmatch(payload["payer"]):
             return R_MALFORMED
         if payload["transaction"] and not RE_EVM_TX.fullmatch(payload["transaction"]):
             return R_MALFORMED
@@ -370,6 +465,15 @@ def validate_payload(payload) -> str | None:
             return R_BINDING
         if not (RE_BINDING_TYPE.fullmatch(t) and RE_BINDING_VALUE.fullmatch(v)):
             return R_BINDING
+        if t.startswith(BT_NAMESPACE):                     # closed namespace (spec §4.5.1)
+            if t == BT_ADVERTISED:
+                if not RE_DIGEST.fullmatch(v):
+                    return R_BINDING
+            elif t == BT_REVERSAL_TX:
+                if _is_evm(network) and not RE_EVM_TX.fullmatch(v):
+                    return R_BINDING
+            else:
+                return R_BINDING
         if previous is not None and not previous < t:      # strictly ascending => unique
             return R_BINDING
         previous = t
@@ -380,21 +484,32 @@ def verify_detailed(receipt, ctx: Context, key_registry: dict) -> tuple[str, str
     """Verify a receipt. Returns (verdict, reason, report).
 
     verdict  PASS | REJECT | ERROR
-    reason   a §5.13 code on REJECT, "verifier_fault" on ERROR, None on PASS
+    reason   a §5.13 code on REJECT; on ERROR "invalid_configuration" (the
+             configuration is outside the contract of spec §5) or
+             "verifier_fault" (the verifier faulted); None on PASS
     report   what was and was not evaluated (spec §5.12); {} unless PASS
 
-    Never raises on hostile input. A fault in the verifier itself returns ERROR,
-    which says nothing about the receipt.
-    `key_registry` is a TEST FIXTURE standing in for anchor and key resolution
-    (spec §5.4): kid -> PEM, plus "__service__:<resourceUrl>" and
-    "__payTo__:<payTo>|<resourceUrl>" -> list of authorized kids.
+    The configuration is checked FIRST: outside its contract nothing about the
+    receipt is said. Never raises on hostile input. A fault in the verifier
+    itself returns ERROR, which says nothing about the receipt.
+    `key_registry` is a TEST FIXTURE standing in for authorization and key
+    resolution (spec §7): kid -> SubjectPublicKeyInfo PEM;
+    "__service__:<resourceUrl>" and "__payTo__:<payTo>|<resourceUrl>" -> array
+    of authorized kids; "__unavailable__:<resourceUrl>" -> true when the
+    authorization source gives no answer for that resource.
     """
     try:
-        return _verify(receipt, ctx, key_registry)
+        cfg = configuration(ctx, key_registry)
+    except Exception:  # noqa: BLE001
+        return ERROR, E_FAULT, {}
+    if cfg is None:
+        return ERROR, E_CONFIG, {}
+    try:
+        return _verify(receipt, ctx, cfg, key_registry)
     except VerifierFault:
-        return ERROR, "verifier_fault", {}
+        return ERROR, E_FAULT, {}
     except Exception:  # noqa: BLE001 — an unexpected exception is OUR bug, not a bad receipt
-        return ERROR, "verifier_fault", {}
+        return ERROR, E_FAULT, {}
 
 
 def verify_action_receipt(receipt, ctx: Context, key_registry: dict) -> tuple[str, str | None]:
@@ -402,29 +517,58 @@ def verify_action_receipt(receipt, ctx: Context, key_registry: dict) -> tuple[st
     return verdict, reason
 
 
-def _verify(receipt, ctx, key_registry):
+AUTHORIZED, NOT_AUTHORIZED, NO_ANSWER = "authorized", "not_authorized", "no_answer"
+
+
+def _anchor_kids(key_registry: dict, name: str) -> list:
+    """The kids an anchor entry lists. A value that is not an array of strings
+    authorizes nothing (spec §7)."""
+    v = key_registry.get(name)
+    if isinstance(v, list) and all(isinstance(k, str) for k in v):
+        return v
+    return []
+
+
+def authorization(key_registry: dict, kid: str, resource_url: str, pay_to: str) -> str:
+    """The three answers of spec §5.4, from the fixture authorization source."""
+    if key_registry.get("__unavailable__:" + resource_url) is True:
+        return NO_ANSWER
+    if kid in _anchor_kids(key_registry, "__service__:" + resource_url):
+        return AUTHORIZED
+    if kid in _anchor_kids(key_registry, "__payTo__:" + pay_to + "|" + resource_url):
+        return AUTHORIZED
+    return NOT_AUTHORIZED
+
+
+def _verify(receipt, ctx, cfg, key_registry):
+    mode, now, max_age, paid_url = cfg
     # §5.1 envelope and header -------------------------------------------
     if not isinstance(receipt, dict) or receipt.get("format") != "jws":
         return REJECT, R_MALFORMED, {}
     compact = receipt.get("signature")
-    if not isinstance(compact, str) or compact.count(".") != 2:
+    if not isinstance(compact, str) or len(compact) > MAX_COMPACT or compact.count(".") != 2:
         return REJECT, R_MALFORMED, {}
     h_b64, p_b64, s_b64 = compact.split(".")
     try:
-        header = json.loads(b64url_decode(h_b64).decode("utf-8"))   # str: no encoding sniffing
+        header_bytes = b64url_decode(h_b64)
         payload_bytes = b64url_decode(p_b64)
         raw_sig = b64url_decode(s_b64)
-    except (ValueError, RecursionError):
+    except ValueError:
         return REJECT, R_MALFORMED, {}
-    if not isinstance(header, dict):
+    # The header has one spelling: the bytes pass the same canonical-bytes test
+    # as the payload (§5.2) and parse to an object. A BOM, another encoding, a
+    # repeated or reordered member, NaN, whitespace: all fail here.
+    header = parse_canonical(header_bytes)
+    if header is NOT_CANONICAL or not isinstance(header, dict):
         return REJECT, R_MALFORMED, {}
     if header.get("typ") != TYP:
         return REJECT, R_TYP, {}
-    if header.get("alg") not in SUPPORTED_ALGS:
+    alg = header.get("alg")
+    if not isinstance(alg, str) or alg not in SUPPORTED_ALGS:
         return REJECT, R_UNKNOWN_ALG, {}
     if set(header.keys()) != HEADER_KEYS or not isinstance(header.get("kid"), str):
         return REJECT, R_MALFORMED, {}
-    alg, kid = header["alg"], header["kid"]
+    kid = header["kid"]
 
     # §5.2 canonical bytes — before any typing, so every parser-level
     # difference between languages lands on one reason code.
@@ -437,23 +581,22 @@ def _verify(receipt, ctx, key_registry):
     if reason:
         return REJECT, reason, {}
 
-    # §5.4 signer authorization, BEFORE any key material is used. Both anchors
-    # are scoped to the resource. A kid that no anchor authorizes is refused
-    # without dereferencing anything the receipt names.
+    # §5.4 resource, then signer authorization, BEFORE any key material is
+    # used. Both anchors are scoped to the resource.
     checks = {}
-    if _has(ctx.paid_resource_url):
-        if payload["resourceUrl"] != ctx.paid_resource_url:
+    if paid_url is not None:
+        if payload["resourceUrl"] != paid_url:
             return REJECT, R_RESOURCE, {}
         checks["resourceUrl"] = "compared"
     else:
         checks["resourceUrl"] = "not_compared"
-    service_kids = key_registry.get("__service__:" + payload["resourceUrl"]) or []
-    payto_kids = key_registry.get(
-        "__payTo__:" + payload["payTo"] + "|" + payload["resourceUrl"]) or []
-    if kid not in service_kids and kid not in payto_kids:
+    answer = authorization(key_registry, kid, payload["resourceUrl"], payload["payTo"])
+    if answer == NO_ANSWER:
+        return REJECT, R_KEY_UNRESOLVED, {}       # not a finding against the signer
+    if answer != AUTHORIZED:
         return REJECT, R_SIGNER_UNAUTH, {}
 
-    # §5.5 key resolution — authorized, but the key could not be obtained.
+    # §5.5 key resolution — authorized, but no usable key could be obtained.
     pub = _load_key(key_registry.get(kid))
     if pub is None:
         return REJECT, R_KEY_UNRESOLVED, {}
@@ -480,7 +623,7 @@ def _verify(receipt, ctx, key_registry):
             return REJECT, R_SETTLEMENT, {}
     elif payload["settlementRef"]:
         return REJECT, R_SETTLEMENT, {}
-    if isinstance(ctx.network, str) and RE_CAIP2.fullmatch(ctx.network):
+    if isinstance(ctx.network, str) and RE_NETWORK.fullmatch(ctx.network):
         if network != ctx.network:
             return REJECT, R_SETTLEMENT, {}
         checks["network"] = "compared"
@@ -509,50 +652,90 @@ def _verify(receipt, ctx, key_registry):
         checks["payTo"] = "compared"
 
     # §5.10 freshness ------------------------------------------------------
-    age = ctx.now - payload["issuedAt"]
+    age = now - payload["issuedAt"]
     if age < -60:
         return REJECT, R_STALE, {}
-    if ctx.mode == "session":
-        if age > ctx.max_age_s:
+    if mode == "session":
+        if age > max_age:
             return REJECT, R_STALE, {}
-        checks["freshness"] = "enforced"
+        freshness = "enforced"
     else:
-        checks["freshness"] = "reported"
+        freshness = "reported"
 
-    # §5.11 bindings — reported per entry, never folded into the verdict.
+    # §5.11 bindings — reported per entry, never folded into the verdict --
+    info = ctx.advertised_info
+    info_held = isinstance(info, dict) and in_domain(info)
+    advertisement = "absent" if info_held else "not_evaluated"
     binding_report = []
     for b in payload["bindings"]:
         status = "not_evaluated"
-        if b["type"] == BT_ADVERTISED and isinstance(ctx.advertised_info, dict) \
-                and in_domain(ctx.advertised_info):
-            info = ctx.advertised_info
+        if b["type"] == BT_ADVERTISED and info_held:
             ok = b["value"] == sha256_tag(jcs(info))
             for member in ("scope", "actionType"):
                 if member in info and info[member] != payload["action"][member]:
                     ok = False
             status = "matched" if ok else "mismatched"
+            advertisement = status
         binding_report.append({"type": b["type"], "status": status})
+    checks["advertisement"] = advertisement
+    checks["freshness"] = freshness
 
     report = {
         "receiptRef": sha256_tag(payload_bytes),
         "outcome": payload["action"]["outcome"],
         "settlementStatus": payload["settlementStatus"],
         "ageSeconds": age,
-        "checks": checks,
+        "checks": {k: checks[k] for k in REPORT_CHECKS},
         "supersedes": payload["supersedes"],
         "bindings": binding_report,
     }
     return PASS, None, report
 
 
+REPORT_CHECKS = ("resourceUrl", "network", "payer", "requirements", "payTo",
+                 "advertisement", "freshness")
+
+_PEM_RE = re.compile(r"-----BEGIN PUBLIC KEY-----\n((?:[A-Za-z0-9+/=]+\n)+)-----END PUBLIC KEY-----\n?")
+
+
+def _usable_kind(pub) -> bool:
+    """The kinds of public key this verifier can use at all (spec §5.5): the
+    keys of the three algorithms of §3. Whether the kind matches `alg` is §5.6."""
+    if isinstance(pub, ed25519.Ed25519PublicKey):
+        return True
+    return isinstance(pub, ec.EllipticCurvePublicKey) and pub.curve.name in ALG_CURVE.values()
+
+
 def _load_key(pem):
-    """The public key for a PEM string, or None when there is no usable key."""
-    if not isinstance(pem, str) or not pem:
+    """The public key for a fixture entry, or None when there is no usable key.
+
+    Usable means (spec §5 inputs, §5.5, §7): one PEM block armoured
+    `PUBLIC KEY` holding a DER SubjectPublicKeyInfo, with nothing around it, in
+    canonical base64 and canonical DER (it re-encodes to the same bytes), of a
+    kind this verifier can use. A private key, a certificate, a key of an
+    unknown algorithm or curve, or anything else: None. The same rule is in
+    verify.mjs, so the two cannot disagree through their libraries' leniency."""
+    if not isinstance(pem, str):
+        return None
+    m = _PEM_RE.fullmatch(pem)
+    if not m:
+        return None
+    body = m.group(1).replace("\n", "")
+    try:
+        der = base64.b64decode(body, validate=True)
+    except (ValueError, binascii.Error):
+        return None
+    if base64.b64encode(der).decode() != body:
         return None
     try:
-        return load_pem_public_key(pem.encode())
-    except (ValueError, TypeError):
+        pub = load_der_public_key(der)
+    except (ValueError, TypeError, UnsupportedAlgorithm):
         return None
+    if not _usable_kind(pub):
+        return None
+    if pub.public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo) != der:
+        return None
+    return pub
 
 
 def _verify_jws_sig(alg, pub, signing_input: bytes, raw_sig: bytes) -> bool:
@@ -610,7 +793,9 @@ def _sign_jws(alg, kid, sk, payload_bytes: bytes, *, force_high_s=False, header=
     p_b64 = b64url(payload_bytes)
     signing_input = f"{h_b64}.{p_b64}".encode()
     if alg in ("ES256", "ES256K"):
-        der = sk.sign(signing_input, ec.ECDSA(hashes.SHA256()))
+        # RFC 6979 deterministic ECDSA, so that --regenerate reproduces every
+        # committed vector byte for byte (no silent fallback to random k).
+        der = sk.sign(signing_input, ec.ECDSA(hashes.SHA256(), deterministic_signing=True))
         r, s = asym_utils.decode_dss_signature(der)
         n = CURVE_ORDER[ALG_CURVE[alg]]
         s = max(s, n - s) if force_high_s else min(s, n - s)
