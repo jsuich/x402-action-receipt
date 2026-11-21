@@ -124,17 +124,26 @@ def settlement_reference(accepted, resp) -> str:
 RE_CHARGED_AMOUNT = re.compile(r"0|[1-9][0-9]{0,77}")
 
 
-def charged_amount(resp) -> str:
-    """The charged amount of the exchange (spec §4.3): the response's
-    `extra.chargedAmount` when present (§4.6), failing that its `amount` when
-    present, failing that `""`. Copied, never computed, and found the same way
-    under every scheme."""
-    extra = _obj(resp).get("extra")
-    value = extra.get("chargedAmount") if isinstance(extra, dict) else None
-    if _present(value):
-        return value
-    amount = _obj(resp).get("amount")
-    return amount if _present(amount) else ""
+# The charged-amount table of spec §4.3: accepted.scheme (compared exactly) ->
+# where in the SettlementResponse the charged amount is. A scheme with no row
+# (auth-capture among them) has none.
+CHARGED_AMOUNT_LOCATIONS = {"exact": ("amount",), "upto": ("amount",),
+                            "batch-settlement": ("extra", "chargedAmount")}
+
+
+def charged_amount(accepted, resp) -> str:
+    """The charged amount of the exchange (spec §4.3): the value at the location
+    the table names for `accepted.scheme` when present (§4.6), else `""`.
+    Under batch-settlement that is `extra.chargedAmount` only, never the
+    top-level `amount`. Copied, never computed."""
+    scheme = _obj(accepted).get("scheme")
+    path = CHARGED_AMOUNT_LOCATIONS.get(scheme) if isinstance(scheme, str) else None
+    if path is None:
+        return ""
+    value = resp
+    for member in path:
+        value = value.get(member) if isinstance(value, dict) else None
+    return value if _present(value) else ""
 
 
 def issue(exchange) -> tuple[dict | None, str | None]:
@@ -201,8 +210,9 @@ def _issue(exchange):
             return None, X_GRAMMAR
         if transaction and not A.RE_EVM_TX.fullmatch(transaction):
             return None, X_GRAMMAR
-    # 7 the charged amount, as found (§4.3); out of grammar it is refused, never repaired
-    charged = charged_amount(resp)
+    # 7 the charged amount, as found by the scheme (§4.3); out of grammar it is
+    # refused, never repaired
+    charged = charged_amount(accepted, resp)
     if charged and not RE_CHARGED_AMOUNT.fullmatch(charged):
         return None, X_GRAMMAR
     # 8 the statement is well formed
@@ -406,6 +416,22 @@ UNDERSCORE_DIGEST = "sha256:c6ab353dc1935d60d887b2a2689b5df0b930d13b9f1a4782c225
 # member names whose UTF-16 order ("B" < "a") is not the order of a locale collation
 ACC_CASE_ORDER = dict(A.ACCEPTED, extra={"B": "1", "a": "2", "name": "USD Coin", "version": "2"})
 CASE_ORDER_DIGEST = "sha256:8f2e32697a6cab1955177391ab83e5fcbe68f46fabbc55a4547a0b0223324af9"
+# the canonical EVM requirements under other schemes: where the charged amount
+# is depends on accepted.scheme, compared exactly (spec §4.3 table)
+ACC_EVM_BATCH = dict(A.ACCEPTED, scheme="batch-settlement")
+EVM_BATCH_DIGEST = "sha256:30f8c8da107a0f998a154561818936a9fdd22aabf52753995a58b9204d1e5ac0"
+ACC_UPTO = dict(A.ACCEPTED, scheme="upto")
+UPTO_DIGEST = "sha256:9f94f8fafeaa3c674a17673b34f3ce9db68d08b9f119f3c6ad5e4c12bff4cc53"
+ACC_AUTH_CAPTURE = dict(A.ACCEPTED, scheme="auth-capture")
+AUTH_CAPTURE_DIGEST = "sha256:43390f535b99dda04eec760572178c4c283a66fa8c51ad681cc73a257639769e"
+ACC_UNKNOWN_SCHEME = dict(A.ACCEPTED, scheme="streaming")
+UNKNOWN_SCHEME_DIGEST = "sha256:2d9cffdaabe175304b17708bdeb1c3a693308f5b7070d4f14f0999cbe3fc5743"
+ACC_EXACT_CASE = dict(A.ACCEPTED, scheme="Exact")
+EXACT_CASE_DIGEST = "sha256:7bf207ab3cacb2f222d46467a7313c8d3c5998ea308a717b5bb61ad82816fbf4"
+ACC_BATCH_CASE = dict(A.ACCEPTED, scheme="batch-Settlement")
+BATCH_CASE_DIGEST = "sha256:9d00418eeabec6a25eaf4e95388d889c612cbafc0149cf3e1deb7c7ee6dba5e1"
+ACC_SCHEME_NUMBER = dict(A.ACCEPTED, scheme=5)
+SCHEME_NUMBER_DIGEST = "sha256:234fe950fee9f3d56dad13403c7821f6ddf6dcc1950f9630014a75f4d45e0f0d"
 
 PAYER_OTHER = "0x" + "22" * 20
 PAYER_MIXED = "0xAbCdEf0123456789aBcDeF0123456789AbCdEf01"
@@ -542,6 +568,42 @@ _CF = dict(paymentPayload__accepted=ACC_CF, paymentPayload__payload={"amount": "
 _CF_EXPECT = {"network": "cloudflare:402", "payer": "", "payTo": "merchant", "transaction": A.CF_TX,
               "chargedAmount": "", "requirementsDigest": CF_DIGEST}
 _NO_RESOURCE = {"paymentRequired__resource": {"description": "Text completion"}}
+
+
+def evm_batch(**response):
+    """The canonical exchange under `batch-settlement` on eip155 (a transaction,
+    no settlement reference), with SettlementResponse members set from
+    `response`."""
+    edit = {"paymentPayload__accepted": ACC_EVM_BATCH}
+    edit.update({f"settlementResponse__{k}": v for k, v in response.items()})
+    return edit
+
+
+_EVM_BATCH_EXPECT = {"requirementsDigest": EVM_BATCH_DIGEST}
+# upstream batch-settlement EVM responses (scheme_batch_settlement_evm.md,
+# "Payment Response Contract"): a refund's top-level amount is the amount
+# returned to the payer and it has no extra.chargedAmount; a deposit's is the
+# amount deposited, beside the request's charge in extra.chargedAmount
+_EVM_CHANNEL = {"channelId": "0x" + "c1" * 32, "balance": "98500", "totalClaimed": "3200",
+                "withdrawRequestedAt": 0, "refundNonce": "2"}
+_EVM_BATCH_REFUND = {"success": True, "transaction": A.SETTLEMENT_TX, "network": A.NETWORK,
+                     "payer": A.PAYER_CHECKSUM, "amount": "1500", "extra": {"channelState": _EVM_CHANNEL}}
+_EVM_BATCH_DEPOSIT = {"success": True, "transaction": A.SETTLEMENT_TX, "network": A.NETWORK,
+                      "payer": A.PAYER_CHECKSUM, "amount": "100000",
+                      "extra": {"chargedAmount": "700",
+                                "channelState": dict(_EVM_CHANNEL, balance="100000", refundNonce="0")}}
+# upstream batch-settlement SVM close responses (scheme_batch_settlement_svm.md):
+# a cooperative refund returns the close signature and amount = deposit - settled;
+# a seal's amount is the delta paid to the receiver. Neither has a commitmentId
+# or a chargedAmount.
+_SOL_CHANNEL = {"channelId": "Chan1PdaXk2Q9mTzL4cY7bHf3PwA6sDj1GeU5oNiQt", "balance": "100000",
+                "totalClaimed": "5000", "withdrawRequestedAt": 0}
+_SOL_COOPERATIVE_REFUND = {"transaction": SOL_TX, "payer": SOL_PAYER, "amount": "95000",
+                           "extra": {"channelState": _SOL_CHANNEL}}
+_SOL_SEAL = {"transaction": SOL_TX, "payer": SOL_PAYER, "amount": "2000",
+             "extra": {"channelState": _SOL_CHANNEL}}
+_SOL_CLOSE_EXPECT = {"network": SOL_NET, "payer": SOL_PAYER, "payTo": A.SOL_PAY_TO, "transaction": SOL_TX,
+                     "settlementRef": "", "chargedAmount": "", "requirementsDigest": SOL_BATCH_DIGEST}
 
 SUITE = [
     # ---- issued -------------------------------------------------------------
@@ -681,22 +743,62 @@ SUITE = [
     E("issue_charged_amount_extra_overrides_amount_cloudflare_batch", dict(_CF_EXPECT, chargedAmount="2500"),
       **dict(_CF, settlementResponse={"success": True, "transaction": A.CF_TX, "network": "cloudflare:402",
                                       "amount": "50000", "extra": {"chargedAmount": "2500"}})),
-    # neither is present: "", and not accepted.amount (10000)
+    # exact with no amount: "", and not accepted.amount (10000)
     E("issue_charged_amount_empty_no_amount", {"chargedAmount": ""}, settlementResponse__amount=DELETE),
     E("issue_charged_amount_zero", {"chargedAmount": "0"}, settlementResponse__amount="0"),
     E("issue_charged_amount_78_digits", {"chargedAmount": "9" * 78}, settlementResponse__amount="9" * 78),
-    # extra.chargedAmount absent in the sense of §4.6: the lookup falls back to amount
-    E("issue_charged_amount_extra_empty_falls_back", {"chargedAmount": "4200"},
-      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": ""}),
-    E("issue_charged_amount_extra_not_string_falls_back", {"chargedAmount": "4200"},
-      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": 2500}),
-    E("issue_charged_amount_extra_not_object_falls_back", {"chargedAmount": "4200"},
-      settlementResponse__amount="4200", settlementResponse__extra="2500"),
+    # batch-settlement reads extra.chargedAmount only: absent in the sense of §4.6,
+    # there is no charged amount, and the top-level amount is not read instead
+    E("issue_charged_amount_batch_extra_empty_no_fallback", {"chargedAmount": "", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount="4200", extra={"chargedAmount": ""})),
+    E("issue_charged_amount_batch_extra_not_string_no_fallback", {"chargedAmount": "", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount="4200", extra={"chargedAmount": 2500})),
+    E("issue_charged_amount_batch_extra_not_object_no_fallback", {"chargedAmount": "", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount="4200", extra="2500")),
+    E("issue_charged_amount_batch_amount_only", {"chargedAmount": "", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount="10000")),
     E("issue_charged_amount_amount_not_string", {"chargedAmount": ""}, settlementResponse__amount=10000),
-    # "0" is a present value: extra's 0 wins over amount
-    E("issue_charged_amount_extra_zero_overrides_amount", {"chargedAmount": "0"},
-      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": "0"}),
+    # "0" is a present value
+    E("issue_charged_amount_batch_extra_zero", {"chargedAmount": "0", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount="4200", extra={"chargedAmount": "0"})),
     E("issue_charged_amount_amount_surrogate", {"chargedAmount": ""}, settlementResponse__amount="1\ud800"),
+    # under batch-settlement the top-level amount is never read, so its grammar is not judged
+    E("issue_charged_amount_batch_amount_out_of_grammar_ignored", {"chargedAmount": "2500", **_EVM_BATCH_EXPECT},
+      **evm_batch(amount="010", extra={"chargedAmount": "2500"})),
+    # exact and upto read amount; extra.chargedAmount beside it is not a charged amount
+    E("issue_charged_amount_exact_extra_ignored", {"chargedAmount": "4200"},
+      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": "2500"}),
+    E("issue_charged_amount_exact_extra_out_of_grammar_ignored", {},
+      settlementResponse__extra={"chargedAmount": "007"}),
+    E("issue_charged_amount_upto_reads_amount", {"chargedAmount": "7500", "requirementsDigest": UPTO_DIGEST},
+      paymentPayload__accepted=ACC_UPTO, settlementResponse__amount="7500",
+      settlementResponse__extra={"chargedAmount": "2500"}),
+    # a scheme with no row records none, whatever the response carries
+    E("issue_charged_amount_auth_capture_none", {"chargedAmount": "", "requirementsDigest": AUTH_CAPTURE_DIGEST},
+      paymentPayload__accepted=ACC_AUTH_CAPTURE),
+    E("issue_charged_amount_auth_capture_amount_out_of_grammar_ignored",
+      {"chargedAmount": "", "requirementsDigest": AUTH_CAPTURE_DIGEST},
+      paymentPayload__accepted=ACC_AUTH_CAPTURE, settlementResponse__amount="010"),
+    E("issue_charged_amount_unknown_scheme_none", {"chargedAmount": "", "requirementsDigest": UNKNOWN_SCHEME_DIGEST},
+      paymentPayload__accepted=ACC_UNKNOWN_SCHEME, settlementResponse__extra={"chargedAmount": "10000"}),
+    # scheme names are compared exactly
+    E("issue_charged_amount_scheme_case_exact", {"chargedAmount": "", "requirementsDigest": EXACT_CASE_DIGEST},
+      paymentPayload__accepted=ACC_EXACT_CASE),
+    E("issue_charged_amount_scheme_case_batch", {"chargedAmount": "", "requirementsDigest": BATCH_CASE_DIGEST},
+      paymentPayload__accepted=ACC_BATCH_CASE, settlementResponse__extra={"chargedAmount": "2500"}),
+    # a scheme that is not a string has no row (and a verifier does not compare)
+    E("issue_charged_amount_scheme_not_string", {"chargedAmount": "", "requirementsDigest": SCHEME_NUMBER_DIGEST},
+      paymentPayload__accepted=ACC_SCHEME_NUMBER),
+    # upstream batch-settlement response shapes: the top-level amount is a refund,
+    # a payout at close or a deposit, never the charge
+    E("issue_batch_evm_refund_response", {"chargedAmount": "", **_EVM_BATCH_EXPECT},
+      paymentPayload__accepted=ACC_EVM_BATCH, settlementResponse=_EVM_BATCH_REFUND),
+    E("issue_batch_evm_deposit_response", {"chargedAmount": "700", **_EVM_BATCH_EXPECT},
+      paymentPayload__accepted=ACC_EVM_BATCH, settlementResponse=_EVM_BATCH_DEPOSIT),
+    E("issue_batch_svm_cooperative_refund_response", _SOL_CLOSE_EXPECT,
+      **sol_batch(_SOL_COOPERATIVE_REFUND, statement__settlementStatus="settled")),
+    E("issue_batch_svm_seal_response", _SOL_CLOSE_EXPECT,
+      **sol_batch(_SOL_SEAL, statement__settlementStatus="settled")),
     # ---- refused, step 1 ---------------------------------------------------
     E("refuse_settlement_failed", X_SETTLEMENT,
       settlementResponse={"success": False, "errorReason": "insufficient_funds", "transaction": "",
@@ -807,9 +909,12 @@ SUITE = [
     E("refuse_charged_amount_leading_zero", X_GRAMMAR, settlementResponse__amount="010"),
     E("refuse_charged_amount_non_digit", X_GRAMMAR, settlementResponse__amount="1e4"),
     E("refuse_charged_amount_negative", X_GRAMMAR, settlementResponse__amount="-10000"),
-    # the value found is extra's, so extra's is the one judged (amount is in grammar)
+    # under batch-settlement the value found is extra's, so extra's is the one judged
+    # (the top-level amount is in grammar)
     E("refuse_charged_amount_extra_out_of_grammar", X_GRAMMAR,
-      settlementResponse__extra={"chargedAmount": "007"}),
+      **evm_batch(extra={"chargedAmount": "007"})),
+    E("refuse_charged_amount_upto_out_of_grammar", X_GRAMMAR,
+      paymentPayload__accepted=ACC_UPTO, settlementResponse__amount="0x10"),
     # the grammar applies on every network
     E("refuse_charged_amount_leading_zero_svm", X_GRAMMAR,
       **dict(_SVM, settlementResponse=dict(_SOL_RESPONSE, amount="010"))),
@@ -951,10 +1056,14 @@ def expected_checks(exchange: dict) -> dict:
     ext = _obj(_obj(x.get("paymentRequired")).get("extensions")).get("action-receipt")
     advertised = isinstance(ext, dict) and isinstance(ext.get("info"), dict)
     net = resp.get("network")
+    # an issued receipt's accepted is an in-domain object (step 3), so a verifier
+    # holding it compares the charged amount whenever its scheme is a string (§5.8)
+    scheme = _obj(_obj(x.get("paymentPayload")).get("accepted")).get("scheme")
     return {"resourceUrl": "compared",
             "network": "compared" if isinstance(net, str) and A.RE_NETWORK.fullmatch(net) else "not_compared",
             "payer": "compared" if _present(resp.get("payer")) else "not_compared",
             "requirements": "matched", "payTo": "compared",
+            "chargedAmount": "compared" if isinstance(scheme, str) else "not_compared",
             "advertisement": "matched" if advertised else "not_evaluated", "freshness": "enforced"}
 
 

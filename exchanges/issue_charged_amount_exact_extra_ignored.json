@@ -62,7 +62,7 @@
     "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
     "amount": "4200",
     "extra": {
-      "chargedAmount": "0"
+      "chargedAmount": "2500"
     }
   },
   "statement": {

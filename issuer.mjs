@@ -85,14 +85,17 @@ function referenceOf(accepted, sr) {
   return present(v) ? v : '';
 }
 
-// The charged amount of the exchange (section 4.3): extra.chargedAmount when
-// present, else amount when present, else ''. Copied, never computed, whatever
-// the scheme.
-function chargedAmountOf(sr) {
-  const fromExtra = get(get(sr, 'extra'), 'chargedAmount');
-  if (present(fromExtra)) return fromExtra;
-  const amount = get(sr, 'amount');
-  return present(amount) ? amount : '';
+// The charged amount of the exchange (section 4.3), by accepted.scheme compared
+// exactly: exact and upto -> SettlementResponse.amount; batch-settlement ->
+// SettlementResponse.extra.chargedAmount, never the top-level amount; any other
+// scheme (auth-capture among them) -> none. Present per 4.6, else ''. Copied,
+// never computed.
+function chargedAmountOf(accepted, sr) {
+  const scheme = get(accepted, 'scheme');
+  let v;
+  if (scheme === 'exact' || scheme === 'upto') v = get(sr, 'amount');
+  else if (scheme === 'batch-settlement') v = get(get(sr, 'extra'), 'chargedAmount');
+  return present(v) ? v : '';
 }
 
 function issue(ex) {
@@ -148,7 +151,7 @@ function issue(ex) {
     if (transaction !== '' && !RE_TX.test(transaction)) return refuse('identifier_out_of_grammar');
   }
   // the charged amount as found; out of grammar it is refused, never repaired
-  const chargedAmount = chargedAmountOf(sr);
+  const chargedAmount = chargedAmountOf(accepted, sr);
   if (chargedAmount !== '' && !RE_CHARGED.test(chargedAmount)) return refuse('identifier_out_of_grammar');
 
   // 8

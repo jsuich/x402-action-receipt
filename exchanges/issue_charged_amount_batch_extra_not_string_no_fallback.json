@@ -9,7 +9,7 @@
     },
     "accepts": [
       {
-        "scheme": "exact",
+        "scheme": "batch-settlement",
         "network": "eip155:8453",
         "amount": "10000",
         "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -31,7 +31,7 @@
       "mimeType": "application/json"
     },
     "accepted": {
-      "scheme": "exact",
+      "scheme": "batch-settlement",
       "network": "eip155:8453",
       "amount": "10000",
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -61,7 +61,9 @@
     "network": "eip155:8453",
     "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
     "amount": "4200",
-    "extra": "2500"
+    "extra": {
+      "chargedAmount": 2500
+    }
   },
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
