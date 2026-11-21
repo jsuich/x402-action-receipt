@@ -18,25 +18,27 @@ on `PASS`, and the `receiptRef` relations. A claim cites the manifest's
 issuer adapter protocol of section 3, it handles every exchange in
 `exchanges/MANIFEST.json` as stated there: it produces exactly the expected
 payload (compared by RFC 8785 serialization) or refuses with the expected
-reason. Signing is not part of this class; a payload is signed under the header
-of spec section 3 and the result is a verifier input. Issuer requirements that
-an exchange cannot show (randomness of `receiptId`, key retention) are listed in
-section 4 as untested.
+reason, for the exchange as published and for a follow-up of it with a fresh
+`receiptId` and `issuedAt`, and answers the adapter-protocol cases of section 3.
+Signing is not part of this class: the exchanges compare payloads. The
+reference issuer's `sign()` (spec §6.3) is tested by its own suite, through
+both verifiers. Issuer requirements that an exchange cannot show (randomness
+of `receiptId`, key retention) are listed in section 4 as untested.
 
 **Consumer.** Requirements on how a verification result is used are listed for
 completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 129 requirements: 102 tested, 27 not tested.
-  - 4 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
+- 153 requirements: 122 tested, 31 not tested.
+  - 8 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
   - 13 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
 - 229 vectors, each named by at least one requirement.
-- 47 exchanges, each named by at least one requirement.
+- 151 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -112,11 +114,23 @@ line, with no arguments.
 ```
 
 - `payload` is the receipt payload object of spec section 6.3, not signed and
-  not serialized. `reason` is a refusal reason of spec section 6.2.
+  not serialized. `reason` is a refusal reason of spec section 6.2, or one of
+  three answers that are not refusals: `invalid_input` (the line is not a JSON
+  object; `id` is the line's if it can be read, else `null`), `issuer_fault`
+  (the issuer itself failed) and `self_check_failed` (the payload it built
+  failed its own §5.2/§5.3 check, spec §6.3). An issuer never reports its own
+  failure as a refusal, and a conforming issuer gives none of the three for a
+  JSON exchange.
 - Any part of an exchange may be missing or malformed; the issuer must answer
-  every line with a payload or a refusal.
+  every line, including valid JSON of any nesting depth or with integers of
+  any length (the value of a number is its IEEE 754 double, spec §4.6).
 - `python3 issuer.py --batch` and `node issuer.mjs` are the two issuers here.
-  `conformance/run_exchanges.py <command>` runs any issuer against the manifest.
+  `conformance/run_exchanges.py <command>` runs any issuer against the manifest
+  with opaque random ids in a shuffled order, a follow-up per exchange whose
+  answer follows from spec §6, and ten protocol cases (deep nesting, huge
+  integers, lines that are not JSON); it never trusts the adapter's exit code.
+  `python3 conformance/fuzz_issuer.py --issuer NAME=COMMAND` puts a third-party
+  issuer in the issuer fuzzer.
 
 ## 4. Requirements
 
@@ -219,38 +233,62 @@ every case; `suite` = a structural check of the suite itself.
 | ID | Spec | Level | Requirement | Tested by |
 |---|---|---|---|---|
 | I-ADV-1 | §2.3 | SHOULD | Advertise the extension in `PaymentRequired`. | not tested (`issuer-behaviour`) |
+| I-ADV-2 | §2.3 | MUST | Carry the advertised `actionType` and `scope` in the receipt. | `refuse_advertised_scope_conflict`, `refuse_advertised_actiontype_conflict`, `issue_advertised` |
+| I-ADV-3 | §2.3 | MUST | Commit the advertisement with the `advertised-info` binding; the client's echo is not what is committed. | `issue_advertised`, `issue_advertised_echo_ignored`, `issue_advertised_info_empty`, `issue_advertised_will_issue_false` |
 | I-BAS-1 | §2.4 | MAY | May emit both a base receipt and an action receipt. | not tested (`informative`) |
-| I-BAS-2 | §2.4 | MUST | When both are emitted, their common members are equal. | not tested (`issuer-behaviour`) |
+| I-BAS-2 | §2.4 | MUST | When both are emitted, `network` and `resourceUrl` are equal and `payer` and `transaction` name the same account and transaction. | not tested (`issuer-behaviour`) |
 | I-ID-1 | §4.3 | MUST | Generate `receiptId` with at least 128 bits of secure randomness and never reuse one. | not tested (`issuer-behaviour`) |
-| I-KEY-1 | §6 | RECOMMENDED | Use a signing key separate from the `payTo` key. | not tested (`informative`) |
-| I-PRV-1 | §10 | SHOULD | Use pseudonymous `agent` and `scope` where possible. | not tested (`informative`) |
-| I-ORD-1 | §6.2 | MUST | Perform the ten steps in order. | `refuse_order_settlement_before_statement`, `refuse_order_statement_before_advertisement` |
-| I-ORD-2 | §6.2 | MUST NOT | Issue nothing once a step fails. | `refuse_settlement_failed`, `refuse_no_identifier` |
-| I-STP-1 | §6.2 | MUST | Step 1: refuse unless settlement succeeded (strictly `true`). | `refuse_settlement_failed`, `refuse_settlement_truthy_string` |
-| I-STP-2 | §6.2 | MUST | Step 2: refuse without a transaction or a settlement reference. | `refuse_no_identifier`, `issue_batch`, `issue_both_identifiers` |
-| I-STP-3 | §6.2 | MUST | Step 3: refuse unless the accepted requirements are an object in the value domain. | `refuse_requirements_non_integer`, `refuse_requirements_missing`, `issue_requirements_float_spelling` |
+| I-SET-1 | §4.3 | MUST NOT | Use as `settlementRef` only a value the settlement result carried; never compute one. | `issue_batch`, `issue_transaction_wrong_type_with_reference`, `issue_surrogate_settlement_reference`, `refuse_no_identifier`, `refuse_cloudflare_no_identifier` |
+| I-SET-2 | §4.3 | MUST | The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; its receipt carries it with an empty transaction. | `issue_solana_batch_settlement` |
+| I-SUP-1 | §4.3 | MAY | May issue a later receipt for the same settlement, with `supersedes` set. | `issue_refund`, `issue_reversal_lowercased_evm` |
+| I-REV-1 | §4.3 | SHOULD | Carry a reversal or refund transaction in the reversal binding. | `issue_refund`, `issue_reversal_non_evm_verbatim` |
+| I-REQ-1 | §4.4 | MUST | Hash only accepted requirements that lie in the value domain. | `refuse_requirements_non_integer`, `refuse_requirements_unsafe_integer`, `refuse_requirements_depth_9`, `issue_requirements_depth_8` |
 | I-REQ-2 | §4.4 | MUST NOT | Issue no receipt when the requirements digest cannot be computed. | `refuse_requirements_non_integer` |
-| I-REQ-1 | §4.4 | MUST | Hash only accepted requirements that lie in the value domain. | `refuse_requirements_non_integer` |
-| I-STP-4 | §6.2 | MUST | Step 4: refuse unless the accepted network is CAIP-2 and does not conflict with a CAIP-2 response network. | `refuse_network_not_caip2`, `refuse_network_not_caip2_either_side`, `refuse_network_conflict`, `issue_response_network_not_caip2` |
-| I-STP-5 | §6.2 | MUST | Step 5: refuse without the resource URL. | `refuse_no_resource` |
-| I-STP-6 | §6.2 | MUST | Step 6: take the payer from the response, else from the scheme payload; refuse if neither. | `refuse_no_payer`, `issue_payer_from_authorization` |
-| I-STP-7 | §6.2 | MUST | Step 7: refuse unless `payTo` is had and the identifiers satisfy the grammar after lowercasing. | `refuse_payto_role_constant`, `refuse_payto_missing`, `refuse_transaction_not_hex` |
-| I-STP-7L | §6.2 | MUST | Lowercase EVM identifiers; copy others verbatim. | `issue_basic`, `issue_response_uppercase_hex`, `issue_non_evm` |
-| I-STP-8 | §6.2 | MUST | Step 8: refuse a statement that is not well formed. | `refuse_outcome_unknown`, `refuse_receiptid_short`, `refuse_issuedat_fraction`, `refuse_scope_unpaired_surrogate`, `issue_issuedat_float_spelling`, `issue_outcome_failed`, `refuse_outcome_retired_value` |
-| I-STP-9 | §6.2 | MUST | Step 9: refuse when an advertised `actionType` or `scope` is not a string equal to the statement's. | `refuse_advertised_scope_conflict`, `refuse_advertised_scope_not_string` |
-| I-ADV-2 | §2.3 | MUST | Carry the advertised `actionType` and `scope` in the receipt and commit the advertisement. | `refuse_advertised_scope_conflict`, `issue_advertised` |
-| I-STP-10 | §6.2 | MUST | Step 10: refuse bindings that break the shape, grammar, uniqueness or count. | `refuse_binding_duplicate_type`, `refuse_binding_grammar`, `refuse_seventeen_bindings`, `refuse_bindings_not_array`, `issue_sixteen_bindings` |
-| I-BND-2 | §6.2 | MUST | Add the advertisement binding when the extension was advertised. | `issue_advertised`, `refuse_advertised_info_not_hashable` |
-| I-BND-3 | §6.2 | MUST | Add the reversal binding when the statement has a reversal transaction. | `issue_refund` |
-| I-REV-1 | §4.3 | SHOULD | Carry a reversal or refund transaction in the reversal binding. | `issue_refund` |
-| I-BND-4 | §6.2 | MUST | Refuse a supplied binding in the `action-receipt:` namespace. | `refuse_binding_reserved_type`, `refuse_binding_duplicates_advertisement` |
-| I-BND-1 | §4.5.1 | MUST NOT | A binding does not restate or contradict a core member. | not tested (`issuer-behaviour`) |
+| I-REQ-3 | §4.4 | MUST | Check that `accepted` is what the server offered before signing. | `refuse_offered_amount_changed`, `refuse_offered_payto_changed` |
+| I-BND-1 | §4.5.1 | SHOULD NOT | A binding does not restate or contradict a core member. | not tested (`issuer-behaviour`) |
+| I-PRS-1 | §4.6 | MUST | Read every x402 string as present or absent by the one definition of §4.6; an unpaired surrogate is absent, and the receipt built from that reading verifies. | `issue_surrogate_response_transaction`, `issue_surrogate_response_payer`, `issue_surrogate_settlement_reference`, `issue_surrogate_authorization_from`, `refuse_no_identifier_surrogate`, `refuse_resource_url_surrogate`, `issue_payer_response_not_string` |
+| I-CNV-1 | §6.1 | MUST | An optional statement member that is missing or `null` is not given. | `issue_null_means_absent` |
+| I-CNV-3 | §6.1 | MUST | A given optional statement member is well formed, or the issuer refuses. | `refuse_supersedes_not_string`, `refuse_reversal_not_string`, `refuse_further_bindings_not_array`, `refuse_reversal_empty_string`, `refuse_reversal_malformed_evm`, `refuse_reversal_surrogate` |
+| I-CNV-4 | §6.1 | MUST | x402 objects are read leniently: a value of the wrong type is absent. | `issue_transaction_wrong_type_with_reference`, `refuse_no_identifier_wrong_type`, `issue_response_network_absent`, `issue_response_network_not_identifier` |
+| I-CNV-5 | §6.1 | MUST | Ignore unnamed members of the statement and of `action`, at those two levels only. | `issue_action_extra_member_ignored`, `issue_statement_extra_member_ignored` |
+| I-CNV-6 | §6.1 | MUST | A binding entry has exactly two members; one with another member is refused. | `refuse_binding_extra_member`, `refuse_binding_not_object` |
+| I-CNV-2 | §6.1 | MUST | Treat the extension as advertised only when the entry is an object whose `info` is a JSON object. | `issue_advertisement_info_not_object`, `issue_advertisement_entry_not_object`, `issue_advertised` |
+| I-CNV-7 | §6.1 | MUST | The advertised `info` is read strictly: a member whose value is `null` is a member. | `refuse_advertised_scope_null`, `refuse_advertised_actiontype_null` |
+| I-ORD-1 | §6.2 | MUST | Perform the ten steps in order. | `refuse_order_1_before_2`, `refuse_order_2_before_3`, `refuse_order_3_before_4`, `refuse_order_4_before_5`, `refuse_order_5_before_6`, `refuse_order_6_before_7`, `refuse_order_7_before_8`, `refuse_order_8_before_9`, `refuse_order_9_before_10`, `refuse_order_settlement_before_statement` |
+| I-ORD-2 | §6.2 | MUST NOT | Issue nothing once a step fails. | `refuse_settlement_failed`, `refuse_no_identifier` |
+| I-STP-1 | §6.2 | MUST | Step 1: refuse unless settlement succeeded (strictly `true`). | `refuse_settlement_failed`, `refuse_settlement_pending`, `refuse_settlement_truthy_string`, `refuse_settlement_success_one` |
+| I-STP-2 | §6.2 | MUST | Step 2: refuse without a transaction or a settlement reference. | `refuse_no_identifier`, `refuse_no_identifier_wrong_type`, `refuse_no_identifier_surrogate`, `refuse_cloudflare_no_identifier`, `issue_batch`, `issue_both_identifiers` |
+| I-STP-3 | §6.2 | MUST | Step 3: refuse unless the accepted requirements are an object in the value domain. | `refuse_requirements_non_integer`, `refuse_requirements_missing`, `refuse_requirements_array`, `refuse_requirements_unsafe_integer`, `refuse_requirements_depth_9`, `issue_requirements_float_spelling`, `issue_requirements_depth_8` |
+| I-STP-4 | §6.2 | MUST | Step 4: refuse unless `accepts` is an array and `accepted` equals one of its entries. | `refuse_offered_amount_changed`, `refuse_offered_payto_changed`, `refuse_offered_extra_changed`, `refuse_offered_member_added`, `refuse_offered_accepts_missing`, `refuse_offered_accepts_not_array`, `refuse_offered_accepts_empty`, `issue_offer_among_several` |
+| I-OFF-1 | §6.2 | MUST | Compare `accepted` with each offered entry by JCS bytes, both in the value domain: equal by value is equal; a case difference is not. | `issue_requirements_float_spelling`, `issue_offer_float_spelling`, `issue_offer_member_order_differs`, `issue_offer_entry_out_of_domain_skipped`, `refuse_offered_only_out_of_domain`, `refuse_offered_payto_case_differs` |
+| I-STP-5 | §6.2 | MUST | Step 5: refuse unless the accepted network is a network identifier and does not conflict with a response network that is one. | `refuse_network_not_identifier`, `refuse_network_namespace_33`, `refuse_network_namespace_2`, `refuse_network_reference_33`, `refuse_network_not_identifier_either_side`, `refuse_network_conflict`, `issue_network_namespace_32`, `issue_network_cloudflare`, `issue_response_network_not_identifier` |
+| I-STP-6 | §6.2 | MUST | Step 6: refuse unless the resource URL is present; copy it verbatim. | `refuse_no_resource`, `refuse_resource_url_empty`, `refuse_resource_url_not_string`, `refuse_resource_url_surrogate`, `issue_resource_url_whitespace_verbatim` |
+| I-STP-7 | §6.2 | MUST | Step 7: refuse unless `payTo` is present and the identifiers satisfy the grammar after lowercasing. | `refuse_payto_role_constant`, `refuse_payto_missing`, `refuse_payto_empty_non_evm`, `refuse_transaction_not_hex`, `refuse_payer_out_of_grammar_evm`, `refuse_payer_from_authorization_out_of_grammar` |
+| I-PAY-1 | §6.2 | MUST | The payer is the response's when present, else `authorization.from` when present, else `""`. | `issue_basic`, `issue_payer_from_authorization`, `issue_payer_response_wins_over_authorization`, `issue_payer_none`, `issue_payer_permit2_from_response`, `issue_payer_permit2_no_response_payer`, `issue_svm_exact`, `issue_svm_exact_no_response_payer` |
+| I-STP-7L | §6.2 | MUST | Lowercase `payer`, `payTo` and `transaction` on eip155 (ASCII only); copy them verbatim elsewhere. | `issue_basic`, `issue_response_uppercase_hex`, `issue_payer_from_authorization_lowercased`, `issue_network_namespace_32`, `issue_svm_exact` |
+| I-REF-1 | §6.2 | MUST | Never change the settlement reference, on any network. | `issue_settlement_ref_upper_case_evm`, `issue_solana_batch_settlement` |
+| I-STP-8 | §6.2 | MUST | Step 8: refuse a statement that is not well formed; each sub-check has its own exchange, with both sides of every bound. | `refuse_agent_empty`, `refuse_agent_surrogate`, `refuse_actiontype_empty`, `refuse_actiontype_missing`, `refuse_scope_not_string`, `refuse_scope_missing`, `refuse_scope_unpaired_surrogate`, `refuse_outcome_unknown`, `refuse_outcome_retired_value`, `refuse_status_unknown`, `refuse_status_case`, `refuse_receiptid_21`, `refuse_receiptid_65`, `refuse_receiptid_alphabet`, `refuse_issuedat_negative`, `refuse_issuedat_2_53`, `refuse_issuedat_fraction`, `refuse_issuedat_boolean`, `refuse_issuedat_string`, `refuse_supersedes_grammar`, `refuse_supersedes_not_string`, `refuse_reversal_not_string`, `refuse_further_bindings_not_array`, `refuse_statement_not_object`, `refuse_action_not_object`, `issue_receiptid_22`, `issue_receiptid_64`, `issue_issuedat_zero`, `issue_issuedat_max`, `issue_issuedat_float_spelling`, `issue_scope_empty`, `issue_outcome_failed`, `issue_outcome_partial`, `issue_status_capture_pending`, `issue_status_reversed`, `issue_supersedes_empty_string` |
+| I-STP-9 | §6.2 | MUST | Step 9: refuse when an advertised `actionType` or `scope` is a member whose value is not a string equal to the statement's. | `refuse_advertised_scope_conflict`, `refuse_advertised_actiontype_conflict`, `refuse_advertised_scope_not_string`, `refuse_advertised_scope_null`, `refuse_advertised_actiontype_null` |
+| I-STP-10 | §6.2 | MUST | Step 10: refuse bindings that break the shape, grammar, value form, uniqueness or count. | `refuse_binding_duplicate_type`, `refuse_binding_grammar`, `refuse_binding_value_grammar`, `refuse_binding_value_empty`, `refuse_seventeen_bindings`, `refuse_seventeen_with_issuer_added`, `refuse_reversal_malformed_evm`, `issue_sixteen_bindings`, `issue_sixteen_with_issuer_added` |
+| I-BND-4 | §6.2 | MUST | Refuse a supplied binding in the `action-receipt:` namespace. | `refuse_binding_reserved_type`, `refuse_binding_reserved_unknown_type`, `refuse_binding_duplicates_advertisement` |
+| I-BND-2 | §6.2 | MUST | Add the advertisement binding when the extension was advertised. | `issue_advertised`, `issue_bindings_sorted` |
+| I-BND-7 | §6.2 | MUST | Refuse an advertised `info` outside the value domain. | `refuse_advertised_info_not_hashable`, `refuse_advertised_info_depth_9` |
+| I-BND-3 | §6.2 | MUST | Add the reversal binding when the statement gives a reversal transaction, lowercased on eip155. | `issue_refund`, `issue_reversal_lowercased_evm`, `issue_reversal_non_evm_verbatim` |
 | I-BND-5 | §6.2 | MUST | Emit bindings in ascending order of `type`. | `issue_bindings_sorted`, `issue_sixteen_bindings` |
-| I-CNV-1 | §6.1 | MUST | Treat absent and `null` optional members alike; ignore unnamed members; treat a value that is not had as not there. | `issue_null_means_absent`, `issue_action_extra_member_ignored`, `issue_transaction_wrong_type_with_reference` |
-| I-CNV-2 | §6.1 | MUST | Treat the extension as advertised only when its `info` is a JSON object. | `issue_advertisement_info_not_object`, `issue_advertised` |
-| I-SRC-1 | §4.1 | MUST | Build each member from the source the table names. | `issue_basic`, `issue_batch`, `issue_both_identifiers`, `issue_refund`, `issue_non_evm` |
-| I-SET-1 | §4.3 | MUST NOT | Carry no settlement identifier that settlement did not return. | `issue_batch`, `issue_transaction_wrong_type_with_reference` |
-| I-E2E-1 | §6.3 | MUST | Every issued receipt verifies in the context of its own exchange. | suite: issuer.py signs each issued payload and verifies it in the context derived from its exchange; fuzz_issuer.py property Q3 does the same through both verifiers for every generated exchange |
+| I-SRC-1 | §4.1 | MUST | Build each member from the source the table names. | `issue_basic`, `issue_batch`, `issue_both_identifiers`, `issue_refund`, `issue_svm_exact`, `issue_offer_among_several` |
+| I-SLF-1 | §6.3 | SHOULD | Run §5.2 and §5.3 on the built payload and refuse if either fails (answer `self_check_failed`). | suite: issuer.py runs a self-check suite that breaks eight members of an issued payload and requires self_check() to refuse each; flip_issuer.py disables the self-check and requires that suite to go red |
+| I-SIG-1 | §6.3 | MUST | Sign the JCS payload under a header that is the JCS serialization of the three members of §3. | suite: issuer.py signs every issued exchange's payload with sign() and verifies it through both verifiers; flip_issuer.py replaces the JCS header by json.dumps and requires the suite to go red |
+| I-SIG-2 | §6.3 | MUST | Sign only under a `kid` the issuer's own source lists for `resourceUrl`, with a key of the type `alg` names. | suite: issuer.py's signing suite requires sign() to refuse an unlisted kid, a resource its source does not list, and three key/alg mismatches |
+| I-SIG-3 | §6.3 | MUST | Emit 64-byte `r || s` ECDSA signatures with low `s`, normalizing the library's output. | suite: issuer.py signs 400 payloads per algorithm with the library's randomized ECDSA and requires both verifiers to pass all of them, and an un-normalized control to be rejected at least once |
+| I-SIG-4 | §6.3 | MUST | Emit a compact string within the bound of §3. | suite: issuer.py's signing suite requires sign() to refuse a payload whose compact string would exceed 65536 |
+| I-E2E-1 | §6.3 | MUST | Every issued receipt, signed as §6.3 says, passes both verifiers in the context of its own exchange with the report §6.3 promises. | suite: issuer.py signs every issued payload and compares both verifiers' reports with the §6.3 promise; fuzz_issuer.py property Q3 does the same for every generated exchange |
+| I-STD-1 | §6.4 | MUST | Sign only after settlement returns. | not tested (`issuer-behaviour`) |
+| I-STD-2 | §6.4 | MUST | Keep every signing key resolvable and never rebind a `kid`. | not tested (`issuer-behaviour`) |
+| I-KEY-1 | §6.4 | RECOMMENDED | Use a signing key separate from the `payTo` key. | not tested (`informative`) |
+| I-STD-3 | §6.4 | MUST | A later receipt for the same settlement follows §4.3. | not tested (`issuer-behaviour`) |
+| I-STD-4 | §6.4 | MUST | When both receipts are emitted, keep them consistent. | not tested (`issuer-behaviour`) |
+| I-PRV-1 | §10 | SHOULD | Use pseudonymous `agent` and `scope` where possible. | not tested (`informative`) |
+| I-ADP-1 | §7 | MUST | Issuer adapter protocol: answer every line, including lines a naive parser cannot read (any nesting depth, integers of any length) and lines that are not JSON (`invalid_input`); never report the issuer's own fault as a refusal. | suite: run_exchanges.py sends ten protocol cases (200000-deep nesting, 5000-digit integers, NaN, truncated and malformed deep lines), opaque ids, a shuffled order and a follow-up per exchange to every adapter |
 
 ### Consumer
 
@@ -296,10 +334,10 @@ A stage that cannot run is reported as VOID and fails the cycle.
 | example | the second verifier reproduces the spec's worked example from the spec text |
 | flips | every listed check of either verifier, disabled, makes a named vector disagree |
 | fuzz | the two verifiers agree on generated cases and seven oracle-free properties hold on both; VOID below 500 cases per seed, FAIL if fewer cases ran than requested or a reason code, the configuration `ERROR` or an operator never fired |
-| issuer | the reference issuer reproduces the exchange manifest, and every receipt it issues verifies in the context of its own exchange |
-| issuer-n | the second issuer reproduces the exchange manifest |
-| issuer-fl | every step of the reference issuer, disabled, turns its suite red |
-| issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |
+| issuer | the reference issuer reproduces the exchange manifest; every receipt it issues, signed by its `sign()`, passes both verifiers with the §6.3 report; its self-check refuses broken payloads; 400 randomized ECDSA signatures per algorithm pass both verifiers |
+| issuer-n | the second issuer, driven by `run_exchanges.py`, reproduces the manifest, the follow-ups and the protocol cases |
+| issuer-fl | every listed sub-check of either issuer, disabled, makes a named exchange or suite check disagree; a crash counts as broken, not caught |
+| issuer-fz | the two issuers agree on generated exchanges; five properties hold on both; every issued payload, signed, passes both verifiers with the §6.3 report; VOID below 500 cases, FAIL if fewer ran or a refusal never fired |
 
 `python3 flip_probe.py <repo> <scratch> --fuzz N` additionally measures the
 fuzzer: how many disabled checks it detects in N cases.
