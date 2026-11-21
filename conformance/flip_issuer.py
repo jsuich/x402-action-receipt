@@ -235,9 +235,12 @@ FLIPS = [
 ]
 
 # A flip that changes one place of the source in a way no conforming input
-# can observe is not listed (for example the self-check call site in either
-# issuer: with every step intact the self-check never fails). Those are named
-# in conformance/CYCLES.md, not counted here.
+# can observe is not listed, and so not counted: the self-check CALL SITE in
+# either issuer (with every step intact the self-check never fails; the
+# self-check FUNCTION is flipped above and caught by issuer.py's self-check
+# suite), the advertised-info value-form check of step 10 (the issuer adds that
+# binding itself, always in form), and the "unknown action-receipt: type"
+# branch of step 10 (supplied action-receipt: types are refused earlier).
 
 
 def copy_repo(scratch_root: pathlib.Path) -> pathlib.Path:
