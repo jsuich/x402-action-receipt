@@ -9,7 +9,7 @@ How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --sav
 Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
 31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73, 81 to 83, 91 and 92, 101 to
 103 (the CI workflow's fixed seeds, run on every push), 111 to 113, 121 to 123,
-131 and 132, 141, 151 to 153, 161 and 162, 171 and 172.
+131 and 132, 141, 151 to 153, 161 and 162, 171 and 172, 181 to 183, 191 and 192.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
