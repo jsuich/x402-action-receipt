@@ -88,7 +88,9 @@
         "err_config_paid_url_number.json",
         "err_config_paid_url_array.json",
         "err_config_context_null.json",
-        "err_config_over_malformed_receipt.json"
+        "err_config_over_malformed_receipt.json",
+        "err_config_now_below_min.json",
+        "err_config_max_age_unsafe_integer.json"
       ]
     },
     {
@@ -116,7 +118,9 @@
         "err_config_paid_url_number.json",
         "err_config_paid_url_array.json",
         "err_config_context_null.json",
-        "err_config_over_malformed_receipt.json"
+        "err_config_over_malformed_receipt.json",
+        "err_config_now_below_min.json",
+        "err_config_max_age_unsafe_integer.json"
       ]
     },
     {
@@ -135,7 +139,8 @@
         "err_config_max_age_string.json",
         "err_config_max_age_boolean.json",
         "err_config_max_age_fraction.json",
-        "err_config_max_age_negative.json"
+        "err_config_max_age_negative.json",
+        "err_config_max_age_unsafe_integer.json"
       ]
     },
     {
@@ -143,7 +148,7 @@
       "role": "verifier",
       "section": "5",
       "level": "MUST",
-      "text": "The clock is an integer number of Unix seconds (read by value; a boolean is not one).",
+      "text": "The clock is an integer number of Unix seconds in [-(2^53 - 1), 2^53 - 1] (read by value; a boolean is not one): both ends are valid, one past either end is ERROR.",
       "anchor": "an integer number of Unix seconds",
       "tested_by": "vector",
       "vectors": [
@@ -152,7 +157,11 @@
         "err_config_now_string.json",
         "err_config_now_missing.json",
         "err_config_now_unsafe_integer.json",
-        "pos_config_clock_integer_float.json"
+        "pos_config_clock_integer_float.json",
+        "err_config_now_below_min.json",
+        "pos_clock_negative_archival.json",
+        "neg_freshness_clock_min_archival.json",
+        "pos_issuedat_max_archival.json"
       ]
     },
     {
@@ -356,14 +365,17 @@
       "role": "verifier",
       "section": "5.2",
       "level": "MUST",
-      "text": "Reject a payload outside the value domain: unsafe integers, unpaired surrogates, nesting deeper than 8.",
+      "text": "Reject a payload outside the value domain: integers outside [-(2^53 - 1), 2^53 - 1], unpaired surrogates, nesting deeper than 8; a payload at those bounds passes this step.",
       "anchor": "the parsed value lies in the value domain of \u00a74.6",
       "tested_by": "vector",
       "vectors": [
         "neg_canon_number_unsafe_integer.json",
         "neg_canon_issuedat_2_53.json",
         "neg_canon_lone_surrogate.json",
-        "neg_canon_nesting_depth.json"
+        "neg_canon_nesting_depth.json",
+        "neg_canon_issuedat_below_min_safe.json",
+        "neg_schema_issuedat_min_safe.json",
+        "neg_schema_nesting_depth_8.json"
       ]
     },
     {
@@ -460,7 +472,9 @@
         "neg_schema_agent_empty.json",
         "neg_schema_actiontype_empty.json",
         "neg_schema_digest_base64url.json",
-        "neg_schema_supersedes_grammar.json"
+        "neg_schema_supersedes_grammar.json",
+        "neg_schema_issuedat_min_safe.json",
+        "neg_schema_nesting_depth_8.json"
       ]
     },
     {
@@ -478,7 +492,10 @@
         "neg_schema_network_namespace_2.json",
         "neg_schema_network_namespace_33.json",
         "neg_schema_network_reference_33.json",
-        "pos_network_cloudflare_empty_payer.json"
+        "pos_network_cloudflare_empty_payer.json",
+        "neg_schema_network_reference_empty.json",
+        "neg_schema_network_reference_dot.json",
+        "neg_schema_network_namespace_dot.json"
       ]
     },
     {
@@ -605,7 +622,14 @@
         "pos_binding_prefix_64.json",
         "pos_binding_name_191.json",
         "pos_binding_value_1024.json",
-        "neg_order_binding_before_resource.json"
+        "neg_order_binding_before_resource.json",
+        "neg_binding_prefix_empty.json",
+        "neg_binding_name_empty.json",
+        "neg_binding_value_empty.json",
+        "neg_binding_value_space.json",
+        "neg_binding_value_del.json",
+        "neg_binding_name_del.json",
+        "pos_binding_printable_edges.json"
       ]
     },
     {
@@ -666,7 +690,9 @@
         "pos_binding_advertised_scope_differs.json",
         "pos_binding_advertised_actiontype_differs.json",
         "pos_binding_advertised_scope_not_string.json",
-        "pos_advertised_info_outside_domain.json"
+        "pos_advertised_info_outside_domain.json",
+        "pos_advertised_info_depth_8.json",
+        "pos_advertised_info_depth_9_not_evaluated.json"
       ]
     },
     {
@@ -696,7 +722,10 @@
         "pos_binding_advertised_digest_differs.json",
         "pos_es256_valid.json",
         "pos_advertised_info_outside_domain.json",
-        "pos_bindings_unheld.json"
+        "pos_bindings_unheld.json",
+        "pos_advertisement_absent_other_bindings.json",
+        "pos_advertised_info_depth_8.json",
+        "pos_advertised_info_depth_9_not_evaluated.json"
       ]
     },
     {
@@ -999,7 +1028,9 @@
       "tested_by": "vector",
       "vectors": [
         "neg_requirements_amount_changed.json",
-        "neg_order_requirements_before_freshness.json"
+        "neg_order_requirements_before_freshness.json",
+        "pos_requirements_max_safe_integer.json",
+        "pos_requirements_depth_8.json"
       ]
     },
     {
@@ -1048,7 +1079,9 @@
       "tested_by": "vector",
       "vectors": [
         "pos_requirements_not_held.json",
-        "pos_requirements_not_object.json"
+        "pos_requirements_not_object.json",
+        "pos_requirements_unsafe_integer_not_evaluated.json",
+        "pos_requirements_depth_9_not_evaluated.json"
       ]
     },
     {
@@ -1082,13 +1115,16 @@
       "role": "verifier",
       "section": "5.10",
       "level": "MUST",
-      "text": "In session mode, reject a receipt older than the maximum age.",
+      "text": "In session mode, reject a receipt older than the maximum age; the maximum age may be 0 or as large as 2^53 - 1.",
       "anchor": "In `session` mode, also reject if `age > maxAge`.",
       "tested_by": "vector",
       "vectors": [
         "neg_freshness_stale.json",
         "pos_freshness_max_age_100.json",
-        "neg_freshness_max_age_101.json"
+        "neg_freshness_max_age_101.json",
+        "pos_freshness_max_age_0.json",
+        "neg_freshness_max_age_0_age_1.json",
+        "pos_freshness_max_age_max.json"
       ]
     },
     {
@@ -1185,7 +1221,18 @@
         "pos_response_network_not_identifier.json",
         "pos_payer_empty_evm.json",
         "pos_authorization_marker_not_true.json",
-        "pos_config_clock_integer_float.json"
+        "pos_config_clock_integer_float.json",
+        "pos_advertisement_absent_other_bindings.json",
+        "pos_clock_negative_archival.json",
+        "pos_freshness_max_age_0.json",
+        "pos_freshness_max_age_max.json",
+        "pos_requirements_max_safe_integer.json",
+        "pos_requirements_unsafe_integer_not_evaluated.json",
+        "pos_requirements_depth_8.json",
+        "pos_requirements_depth_9_not_evaluated.json",
+        "pos_advertised_info_depth_8.json",
+        "pos_advertised_info_depth_9_not_evaluated.json",
+        "pos_binding_printable_edges.json"
       ],
       "note": "every positive's full report is declared by hand in the suite (EXPECT_REPORT over a default written from \u00a75.12) and compared member by member; run_vectors.py compares the full published report for any adapter"
     },

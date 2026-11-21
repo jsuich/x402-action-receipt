@@ -1082,6 +1082,24 @@ C_ARCHIVAL_END = "archival_at_end_of_time"
 C_NOW_FLOAT = "clock_integer_valued_float"
 C_RESP_NET_OTHER_FORM = "response_network_not_an_identifier"
 C_NOPAYER_EVM = "no_payer_receipt_payer_empty"
+# both sides of the configuration bounds of spec §5 (the clock may be negative)
+C_CLOCK_NEG = "archival_clock_negative"
+C_CLOCK_MIN = "archival_clock_min"
+C_MAX_AGE_0 = "session_max_age_0"
+C_MAX_AGE_MAX = "session_max_age_max_clock_max"
+# both sides of the value-domain bounds (spec §4.6) on what the verifier holds
+C_REQ_MAX_INT = "requirements_max_safe_integer"
+C_REQ_UNSAFE_INT = "requirements_unsafe_integer"
+C_REQ_DEPTH8 = "requirements_depth_8"
+C_REQ_DEPTH9 = "requirements_depth_9"
+C_ADVERT_DEPTH8 = "advertised_info_depth_8"
+C_ADVERT_DEPTH9 = "advertised_info_depth_9"
+ACCEPTED_MAX_INT = dict(ACCEPTED, extra={"name": "USD Coin", "version": "2", "n": SAFE_INT_MAX})
+ACCEPTED_UNSAFE_INT = dict(ACCEPTED, extra={"name": "USD Coin", "version": "2", "n": SAFE_INT_MAX + 1})
+ACCEPTED_DEPTH8 = dict(ACCEPTED, extra={"d": [[[[[["x"]]]]]]})       # level 8, counting accepted as 1
+ACCEPTED_DEPTH9 = dict(ACCEPTED, extra={"d": [[[[[[["x"]]]]]]]})
+ADVERTISED_DEPTH8 = dict(ADVERTISED_INFO, d=[[[[[[["x"]]]]]]])      # level 8, counting info as 1
+ADVERTISED_DEPTH9 = dict(ADVERTISED_INFO, d=[[[[[[[["x"]]]]]]]])
 # configuration outside the contract (spec §5): ERROR
 C_ERR = {
     "mode_upper_case": _ctx(mode="SESSION"),
@@ -1097,6 +1115,8 @@ C_ERR = {
     "max_age_null": _ctx(maxAgeSeconds=None),
     "max_age_boolean": _ctx(maxAgeSeconds=True),
     "max_age_fraction": _ctx(maxAgeSeconds=10.5),
+    "now_below_min": _ctx(now=-(2**53)),
+    "max_age_unsafe_integer": _ctx(maxAgeSeconds=2**53),
     "paid_url_number": _ctx(paidResourceUrl=5),
     "paid_url_array": _ctx(paidResourceUrl=[RESOURCE]),
 }
@@ -1169,6 +1189,16 @@ CONTEXTS = {
     C_NOW_FLOAT: _ctx(now=float(VERIFIER_NOW)),
     C_RESP_NET_OTHER_FORM: _ctx(network="Base Mainnet"),
     C_NOPAYER_EVM: _ctx(payer=_DROP),
+    C_CLOCK_NEG: _ctx(now=-1, mode="archival"),
+    C_CLOCK_MIN: _ctx(now=-SAFE_INT_MAX, mode="archival"),
+    C_MAX_AGE_0: _ctx(maxAgeSeconds=0),
+    C_MAX_AGE_MAX: _ctx(maxAgeSeconds=SAFE_INT_MAX, now=SAFE_INT_MAX),
+    C_REQ_MAX_INT: _ctx(accepted=ACCEPTED_MAX_INT),
+    C_REQ_UNSAFE_INT: _ctx(accepted=ACCEPTED_UNSAFE_INT),
+    C_REQ_DEPTH8: _ctx(accepted=ACCEPTED_DEPTH8),
+    C_REQ_DEPTH9: _ctx(accepted=ACCEPTED_DEPTH9),
+    C_ADVERT_DEPTH8: _ctx(advertisedInfo=ADVERTISED_DEPTH8),
+    C_ADVERT_DEPTH9: _ctx(advertisedInfo=ADVERTISED_DEPTH9),
     C_NULL: None,
     **{"config_" + k: v for k, v in C_ERR.items()},
 }
@@ -1256,6 +1286,17 @@ SUITE = [
     ("pos_payer_empty_evm.json", PASS, None, C_NOPAYER_EVM),
     ("pos_authorization_marker_not_true.json", PASS, None, C_OK),
     ("pos_config_clock_integer_float.json", PASS, None, C_NOW_FLOAT),
+    ("pos_advertisement_absent_other_bindings.json", PASS, None, C_ADVERT),
+    ("pos_clock_negative_archival.json", PASS, None, C_CLOCK_NEG),
+    ("pos_freshness_max_age_0.json", PASS, None, C_MAX_AGE_0),
+    ("pos_freshness_max_age_max.json", PASS, None, C_MAX_AGE_MAX),
+    ("pos_requirements_max_safe_integer.json", PASS, None, C_REQ_MAX_INT),
+    ("pos_requirements_unsafe_integer_not_evaluated.json", PASS, None, C_REQ_UNSAFE_INT),
+    ("pos_requirements_depth_8.json", PASS, None, C_REQ_DEPTH8),
+    ("pos_requirements_depth_9_not_evaluated.json", PASS, None, C_REQ_DEPTH9),
+    ("pos_advertised_info_depth_8.json", PASS, None, C_ADVERT_DEPTH8),
+    ("pos_advertised_info_depth_9_not_evaluated.json", PASS, None, C_ADVERT_DEPTH9),
+    ("pos_binding_printable_edges.json", PASS, None, C_OK),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
@@ -1295,6 +1336,7 @@ SUITE = [
     ("neg_canon_not_json.json", REJECT, R_NONCANONICAL, C_OK),
     ("neg_canon_nesting_depth.json", REJECT, R_NONCANONICAL, C_OK),
     ("neg_canon_invalid_utf8.json", REJECT, R_NONCANONICAL, C_OK),
+    ("neg_canon_issuedat_below_min_safe.json", REJECT, R_NONCANONICAL, C_ARCHIVAL),
     # §5.3 closed schema and field grammar
     ("neg_schema_not_object.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_null.json", REJECT, R_MALFORMED, C_OK),
@@ -1316,6 +1358,11 @@ SUITE = [
     ("neg_schema_network_namespace_2.json", REJECT, R_MALFORMED, C_LOOSE),
     ("neg_schema_network_namespace_33.json", REJECT, R_MALFORMED, C_LOOSE),
     ("neg_schema_network_reference_33.json", REJECT, R_MALFORMED, C_LOOSE),
+    ("neg_schema_network_reference_empty.json", REJECT, R_MALFORMED, C_LOOSE),
+    ("neg_schema_network_reference_dot.json", REJECT, R_MALFORMED, C_LOOSE),
+    ("neg_schema_network_namespace_dot.json", REJECT, R_MALFORMED, C_LOOSE),
+    ("neg_schema_issuedat_min_safe.json", REJECT, R_MALFORMED, C_ARCHIVAL),
+    ("neg_schema_nesting_depth_8.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_resourceurl_empty.json", REJECT, R_MALFORMED, C_OK),
     ("neg_schema_payto_empty_non_evm.json", REJECT, R_MALFORMED, C_LOOSE),
     ("neg_schema_payto_evm_grammar.json", REJECT, R_MALFORMED, C_OK),
@@ -1340,6 +1387,12 @@ SUITE = [
     ("neg_binding_prefix_65.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_name_192.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_value_1025.json", REJECT, R_BINDING, C_OK),
+    ("neg_binding_prefix_empty.json", REJECT, R_BINDING, C_OK),
+    ("neg_binding_name_empty.json", REJECT, R_BINDING, C_OK),
+    ("neg_binding_value_empty.json", REJECT, R_BINDING, C_OK),
+    ("neg_binding_value_space.json", REJECT, R_BINDING, C_OK),
+    ("neg_binding_value_del.json", REJECT, R_BINDING, C_OK),
+    ("neg_binding_name_del.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_reserved_unknown_type.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_advertised_value_form.json", REJECT, R_BINDING, C_OK),
     ("neg_binding_reversal_value_form_evm.json", REJECT, R_BINDING, C_OK),
@@ -1401,6 +1454,8 @@ SUITE = [
     ("neg_freshness_future_61.json", REJECT, R_STALE, C_OK),
     ("neg_freshness_default_max_age_3601.json", REJECT, R_STALE, C_DEFAULT_AGE),
     ("neg_freshness_max_age_101.json", REJECT, R_STALE, C_MAX_AGE_100),
+    ("neg_freshness_max_age_0_age_1.json", REJECT, R_STALE, C_MAX_AGE_0),
+    ("neg_freshness_clock_min_archival.json", REJECT, R_STALE, C_CLOCK_MIN),
     # step order: two faults in adjacent steps; the earlier step's code wins
     ("neg_order_header_canonical_before_typ.json", REJECT, R_MALFORMED, C_OK),
     ("neg_order_header_domain_before_typ.json", REJECT, R_MALFORMED, C_OK),
@@ -1531,6 +1586,24 @@ EXPECT_REPORT = {
     "pos_payer_empty_evm.json": {"checks": {"payer": "not_compared"}},
     "pos_settlement_ref_with_transaction.json": {"settlementStatus": "capturePending",
                                                  "checks": _BATCH_CHECKS},
+    # the info is held and the receipt has bindings, none of them the advertised-info one
+    "pos_advertisement_absent_other_bindings.json": {
+        "checks": {"advertisement": "absent"},
+        "bindings": [{"type": "a:one", "status": _NE},
+                     {"type": BT_REVERSAL_TX, "status": _NE}]},
+    "pos_clock_negative_archival.json": {"checks": {"freshness": "reported"}, "ageSeconds": -1},
+    "pos_freshness_max_age_0.json": {"ageSeconds": 0},
+    "pos_freshness_max_age_max.json": {"ageSeconds": SAFE_INT_MAX},
+    "pos_requirements_unsafe_integer_not_evaluated.json": {
+        "checks": {"requirements": _NE, "payTo": "not_compared"}},
+    "pos_requirements_depth_9_not_evaluated.json": {
+        "checks": {"requirements": _NE, "payTo": "not_compared"}},
+    "pos_advertised_info_depth_8.json": {
+        "checks": {"advertisement": "matched"},
+        "bindings": [{"type": BT_ADVERTISED, "status": "matched"}]},
+    "pos_advertised_info_depth_9_not_evaluated.json": {
+        "bindings": [{"type": BT_ADVERTISED, "status": _NE}]},
+    "pos_binding_printable_edges.json": {"bindings": [{"type": "a:!~", "status": _NE}]},
 }
 
 
@@ -1703,7 +1776,10 @@ def regenerate_vectors() -> None:
                       ("pos_network_reference_32.json", "abc:" + "R" * 32),
                       ("neg_schema_network_namespace_2.json", "ab:1"),
                       ("neg_schema_network_namespace_33.json", "a" * 33 + ":1"),
-                      ("neg_schema_network_reference_33.json", "abc:" + "R" * 33)):
+                      ("neg_schema_network_reference_33.json", "abc:" + "R" * 33),
+                      ("neg_schema_network_reference_empty.json", "abc:"),
+                      ("neg_schema_network_reference_dot.json", "abc:main.net"),
+                      ("neg_schema_network_namespace_dot.json", "ab.c:1")):
         w(name, signed(base(network=net)))
     # begins "eip1559:", not "eip155:": no EVM grammar, no lowercasing
     w("pos_network_lookalike_not_evm.json",
@@ -1729,6 +1805,13 @@ def regenerate_vectors() -> None:
     w("neg_binding_name_192.json", signed(base(bindings=[{"type": "a:" + "b" * 192, "value": "1"}])))
     w("pos_binding_value_1024.json", signed(base(bindings=[{"type": "a:one", "value": "x" * 1024}])))
     w("neg_binding_value_1025.json", signed(base(bindings=[{"type": "a:one", "value": "x" * 1025}])))
+    # the lower length bounds (1) and the character range (0x21 to 0x7E)
+    w("neg_binding_prefix_empty.json", signed(base(bindings=[{"type": ":one", "value": "1"}])))
+    w("neg_binding_name_empty.json", signed(base(bindings=[{"type": "a:", "value": "1"}])))
+    w("neg_binding_value_empty.json", signed(base(bindings=[{"type": "a:one", "value": ""}])))
+    w("neg_binding_value_space.json", signed(base(bindings=[{"type": "a:one", "value": "a b"}])))
+    w("neg_binding_value_del.json", signed(base(bindings=[{"type": "a:one", "value": "a\x7f"}])))
+    w("neg_binding_name_del.json", signed(base(bindings=[{"type": "a:o\x7fne", "value": "1"}])))
     # the closed action-receipt: namespace and its value forms (spec §4.5.1, §4.5.2, §5.3 step 7)
     w("neg_binding_reserved_unknown_type.json",
       signed(base(bindings=[{"type": "action-receipt:settlementStatus", "value": "refunded"}])))
@@ -1747,6 +1830,11 @@ def regenerate_vectors() -> None:
     w("pos_issuedat_max_archival.json", signed(base(issuedAt=SAFE_INT_MAX)))
     w("neg_canon_issuedat_2_53.json",
       signed_raw(base_text.replace(f'"issuedAt":{ISSUED_AT}', f'"issuedAt":{2**53}').encode()))
+    # the lower end of the value domain: -(2^53 - 1) is in it (and fails the
+    # grammar of issuedAt), -(2^53) is not (spec §4.6, §5.2, §5.3)
+    w("neg_schema_issuedat_min_safe.json", signed(base(issuedAt=-SAFE_INT_MAX)))
+    w("neg_canon_issuedat_below_min_safe.json",
+      signed_raw(base_text.replace(f'"issuedAt":{ISSUED_AT}', f'"issuedAt":{-(2**53)}').encode()))
     # freshness bounds, with the default and with an explicit maximum age
     w("pos_freshness_future_60.json", signed(base(issuedAt=VERIFIER_NOW + 60)))
     w("neg_freshness_future_61.json", signed(base(issuedAt=VERIFIER_NOW + 61)))
@@ -1768,6 +1856,30 @@ def regenerate_vectors() -> None:
     w("neg_settlement_payer_dropped.json", signed(base(payer="")))
     w("pos_authorization_marker_not_true.json",
       signed(base(resourceUrl=RES_UNAVAILABLE_NOT_TRUE), "EdDSA", KID_ED))
+    # checks.advertisement is `absent` whenever the advertised-info binding is
+    # missing, whatever other bindings the receipt has (spec §5.11)
+    w("pos_advertisement_absent_other_bindings.json",
+      signed(base(settlementStatus="settled",
+                  bindings=[{"type": "a:one", "value": "1"},
+                            {"type": BT_REVERSAL_TX, "value": "0x" + "ef" * 32}])))
+    # configuration bounds of spec §5: the clock may be negative; maxAge 0 and 2^53 - 1
+    w("pos_clock_negative_archival.json", signed(base(issuedAt=0)))
+    w("neg_freshness_clock_min_archival.json", signed(base(issuedAt=0)))
+    w("pos_freshness_max_age_0.json", signed(base(issuedAt=VERIFIER_NOW)))
+    w("neg_freshness_max_age_0_age_1.json", signed(base(issuedAt=VERIFIER_NOW - 1)))
+    w("pos_freshness_max_age_max.json", signed(base(issuedAt=0)))
+    # value-domain bounds of what the verifier holds (spec §4.6, §5.9, §5.11)
+    w("pos_requirements_max_safe_integer.json",
+      signed(base(requirementsDigest=requirements_digest(ACCEPTED_MAX_INT))))
+    w("pos_requirements_unsafe_integer_not_evaluated.json", signed(base()))
+    w("pos_requirements_depth_8.json", signed(base(requirementsDigest=requirements_digest(ACCEPTED_DEPTH8))))
+    w("pos_requirements_depth_9_not_evaluated.json", signed(base()))
+    w("pos_advertised_info_depth_8.json",
+      signed(base(bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(jcs(ADVERTISED_DEPTH8))}])))
+    w("pos_advertised_info_depth_9_not_evaluated.json",
+      signed(base(bindings=[{"type": BT_ADVERTISED, "value": sha256_tag(_canon(ADVERTISED_DEPTH9).encode())}])))
+    # binding characters at both ends of 0x21..0x7E
+    w("pos_binding_printable_edges.json", signed(base(bindings=[{"type": "a:!~", "value": "!~"}])))
 
     # ---- §5.1 envelope and header ----
     good = _sign_jws("ES256", KID_ES256, es, base_text.encode())
@@ -1858,6 +1970,8 @@ def regenerate_vectors() -> None:
     w("neg_canon_not_json.json", signed_raw(b"not json at all"))
     # nine levels of nested arrays: canonical bytes, but outside the admitted domain
     w("neg_canon_nesting_depth.json", signed_raw(b"[" * (MAX_DEPTH + 1) + b"]" * (MAX_DEPTH + 1)))
+    # eight levels is inside the domain, so it passes §5.2 and fails §5.3
+    w("neg_schema_nesting_depth_8.json", signed_raw(b"[" * MAX_DEPTH + b"]" * MAX_DEPTH))
     w("neg_canon_invalid_utf8.json",
       signed_raw(base_text.encode().replace(b"read:model-x", b"read:model-\xff")))
     w("neg_order_canonicalization_before_schema.json",
@@ -2123,6 +2237,16 @@ def write_vectors_md(manifest) -> None:
         C_RESP_NET_OTHER_FORM: "response `network` is `Base Mainnet`, not a network identifier",
         C_NOPAYER_EVM: "response carries no `payer` (member absent)",
         C_NULL: "the context is `null`: configuration outside the contract",
+        C_CLOCK_NEG: "archival mode, clock at -1 (the contract admits a negative clock)",
+        C_CLOCK_MIN: "archival mode, clock at -(2^53 - 1), the lowest the contract admits",
+        C_MAX_AGE_0: "session mode, `maxAgeSeconds` 0",
+        C_MAX_AGE_MAX: "session mode, clock and `maxAgeSeconds` both 2^53 - 1",
+        C_REQ_MAX_INT: "accepted requirements holding the integer 2^53 - 1",
+        C_REQ_UNSAFE_INT: "accepted requirements holding the integer 2^53, outside the value domain",
+        C_REQ_DEPTH8: "accepted requirements nested 8 levels deep",
+        C_REQ_DEPTH9: "accepted requirements nested 9 levels deep, outside the value domain",
+        C_ADVERT_DEPTH8: "the advertised `info` held is nested 8 levels deep",
+        C_ADVERT_DEPTH9: "the advertised `info` held is nested 9 levels deep, outside the value domain",
     }
     for k in C_ERR:
         notes["config_" + k] = f"configuration outside the contract: {k.replace('_', ' ')}"
@@ -2293,6 +2417,7 @@ _DEFAULT_REPORT_OK = {
     "pos_network_lookalike_not_evm.json", "pos_receiptid_22.json", "pos_receiptid_64.json",
     "pos_settlement_ref_evm_exact_case.json", "pos_requirements_utf16_order.json",
     "pos_authorization_marker_not_true.json", "pos_config_clock_integer_float.json",
+    "pos_requirements_max_safe_integer.json", "pos_requirements_depth_8.json",
 }
 
 
