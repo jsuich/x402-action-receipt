@@ -972,15 +972,21 @@
       "role": "verifier",
       "section": "5.8",
       "level": "MUST",
-      "text": "The receipt's `chargedAmount` equals the response's charged amount when it has one.",
-      "anchor": "the receipt's `chargedAmount` equals it.",
+      "text": "Holding `accepted`, the receipt's `chargedAmount` equals the charged amount the table of \u00a74.3 finds when there is one.",
+      "anchor": "If there is one, the receipt's `chargedAmount` equals it",
       "tested_by": "vector",
       "vectors": [
         "neg_settlement_charged_amount_mismatch.json",
         "neg_settlement_charged_amount_dropped.json",
         "pos_es256_valid.json",
         "pos_charged_amount_zero.json",
-        "pos_charged_amount_78_digits.json"
+        "pos_charged_amount_78_digits.json",
+        "pos_charged_amount_from_extra.json",
+        "pos_charged_amount_upto_reads_amount.json",
+        "pos_charged_amount_from_extra_cloudflare.json",
+        "pos_charged_amount_extra_zero.json",
+        "neg_settlement_charged_amount_exact_extra_not_read.json",
+        "neg_settlement_charged_amount_upto_extra_not_read.json"
       ]
     },
     {
@@ -988,13 +994,18 @@
       "role": "verifier",
       "section": "5.8",
       "level": "MUST",
-      "text": "The receipt carries no `chargedAmount` the response does not have.",
-      "anchor": "If it has none, the receipt's `chargedAmount` is `\"\"`.",
+      "text": "Holding `accepted`, the receipt carries no `chargedAmount` when the table finds none.",
+      "anchor": "if there is none, the receipt's `chargedAmount` is `\"\"`",
       "tested_by": "vector",
       "vectors": [
         "neg_settlement_charged_amount_uncorroborated.json",
         "pos_charged_amount_empty_no_amount.json",
-        "pos_charged_amount_response_amount_not_string.json"
+        "pos_charged_amount_response_amount_not_string.json",
+        "neg_settlement_charged_amount_auth_capture_amount.json",
+        "neg_settlement_charged_amount_batch_top_level_amount.json",
+        "neg_settlement_charged_amount_batch_extra_empty_falls_back.json",
+        "neg_settlement_charged_amount_extra_number_not_read.json",
+        "neg_settlement_charged_amount_top_level_when_extra.json"
       ]
     },
     {
@@ -1002,19 +1013,31 @@
       "role": "verifier",
       "section": "5.8",
       "level": "MUST",
-      "text": "The response's charged amount is `extra.chargedAmount` when present, else `amount` when present (\u00a74.6), whatever the scheme or network.",
-      "anchor": "`extra.chargedAmount`, else `amount`, each when present",
+      "text": "A verifier holding `accepted` as an in-domain object with a string `scheme` finds the charged amount by the table of \u00a74.3: `exact` and `upto` read `amount`, `batch-settlement` reads `extra.chargedAmount` and never `amount`, any other scheme (`auth-capture` among them) has none.",
+      "anchor": "If the verifier holds `accepted` as a JSON object in the value domain whose `scheme` is a string, it finds the exchange's charged amount by the table of \u00a74.3.",
       "tested_by": "vector",
       "vectors": [
+        "pos_es256_valid.json",
+        "pos_charged_amount_exact_extra_ignored.json",
+        "neg_settlement_charged_amount_exact_extra_not_read.json",
+        "pos_charged_amount_upto_reads_amount.json",
+        "neg_settlement_charged_amount_upto_extra_not_read.json",
         "pos_charged_amount_from_extra.json",
         "neg_settlement_charged_amount_top_level_when_extra.json",
-        "pos_charged_amount_extra_empty_falls_back.json",
-        "pos_charged_amount_extra_not_string_falls_back.json",
-        "pos_charged_amount_extra_not_object_falls_back.json",
+        "pos_charged_amount_batch_extra_empty_not_read.json",
+        "pos_charged_amount_batch_extra_not_string_not_read.json",
+        "pos_charged_amount_batch_extra_not_object_not_read.json",
+        "pos_charged_amount_batch_no_extra.json",
+        "neg_settlement_charged_amount_batch_top_level_amount.json",
+        "neg_settlement_charged_amount_batch_extra_empty_falls_back.json",
         "neg_settlement_charged_amount_extra_number_not_read.json",
-        "pos_charged_amount_from_extra_any_scheme.json",
         "pos_charged_amount_from_extra_cloudflare.json",
-        "pos_charged_amount_extra_zero.json"
+        "pos_charged_amount_extra_zero.json",
+        "pos_charged_amount_auth_capture_none.json",
+        "neg_settlement_charged_amount_auth_capture_amount.json",
+        "pos_charged_amount_unknown_scheme_none.json",
+        "pos_batch_committed.json",
+        "pos_settlement_ref_with_transaction.json"
       ]
     },
     {
@@ -1028,6 +1051,55 @@
       "vectors": [
         "neg_settlement_charged_amount_not_normalized.json",
         "neg_settlement_charged_amount_response_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "V-SET-15",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "Without `accepted` as an in-domain object whose `scheme` is a string, do not compare the charged amount: report `chargedAmount: not_compared`, and a receipt value the response contradicts still passes.",
+      "anchor": "A verifier that does not hold such an `accepted` cannot tell where the charged amount is, so it does not compare: the report records `chargedAmount: not_compared`, and the receipt's `chargedAmount` constrains nothing.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_not_compared_without_accepted.json",
+        "pos_charged_amount_not_compared_accepted_not_object.json",
+        "pos_charged_amount_not_compared_accepted_out_of_domain.json",
+        "pos_charged_amount_not_compared_scheme_not_string.json",
+        "pos_requirements_not_held.json",
+        "pos_response_junk_types.json",
+        "pos_requirements_depth_9_not_evaluated.json"
+      ]
+    },
+    {
+      "id": "V-SET-16",
+      "role": "verifier",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Scheme names are compared exactly; a value at a location the table does not name for the scheme is not a charged amount.",
+      "anchor": "Scheme names are compared exactly. A value at a location the table does not name for the scheme is not a charged amount.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_scheme_case_exact.json",
+        "neg_settlement_charged_amount_scheme_case_exact.json",
+        "pos_charged_amount_scheme_case_batch.json",
+        "pos_charged_amount_exact_extra_ignored.json"
+      ]
+    },
+    {
+      "id": "V-SET-17",
+      "role": "verifier",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "The value at the scheme's location is the charged amount only when present (\u00a74.6): a lone surrogate, a non-string or `\"\"` is none.",
+      "anchor": "The value at that location when present (\u00a74.6) is the charged amount; otherwise the exchange has none",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_batch_extra_surrogate_absent.json",
+        "pos_charged_amount_amount_surrogate_absent.json",
+        "pos_charged_amount_batch_extra_empty_not_read.json",
+        "pos_charged_amount_batch_extra_not_string_not_read.json",
+        "pos_charged_amount_response_amount_not_string.json"
       ]
     },
     {
@@ -1320,6 +1392,22 @@
       "note": "every positive's full report is declared by hand in the suite (EXPECT_REPORT over a default written from \u00a75.12) and compared member by member; run_vectors.py compares the full published report for any adapter"
     },
     {
+      "id": "V-RPT-5",
+      "role": "verifier",
+      "section": "5.12",
+      "level": "MUST",
+      "text": "Every PASS report carries `checks.chargedAmount`: `compared` when \u00a75.8 compared the charged amount, otherwise `not_compared`.",
+      "anchor": "| `checks.chargedAmount` | `compared` or `not_compared` (\u00a75.8) |",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_es256_valid.json",
+        "pos_charged_amount_auth_capture_none.json",
+        "pos_requirements_not_held.json",
+        "pos_charged_amount_not_compared_scheme_not_string.json",
+        "pos_charged_amount_not_compared_accepted_out_of_domain.json"
+      ]
+    },
+    {
       "id": "V-RPT-2",
       "role": "verifier",
       "section": "4.7",
@@ -1543,8 +1631,8 @@
       "role": "issuer",
       "section": "4.3",
       "level": "MUST",
-      "text": "`chargedAmount` is `extra.chargedAmount` when present, failing that `amount` when present, failing that `\"\"`; the lookup does not depend on the scheme.",
-      "anchor": "It is `SettlementResponse.extra.chargedAmount` when present (\u00a74.6); failing that `SettlementResponse.amount` when present; failing that `\"\"`.",
+      "text": "`chargedAmount` is found by `accepted.scheme` and the table of \u00a74.3: the value at the scheme's location when present (\u00a74.6), else `\"\"`.",
+      "anchor": "Take `accepted.scheme`; the location is:",
       "tested_by": "exchange",
       "exchanges": [
         "issue_basic.json",
@@ -1553,11 +1641,12 @@
         "issue_charged_amount_extra_overrides_amount_cloudflare_batch.json",
         "issue_solana_batch_settlement.json",
         "issue_settlement_ref_upper_case_verbatim.json",
-        "issue_charged_amount_extra_empty_falls_back.json",
-        "issue_charged_amount_extra_not_string_falls_back.json",
-        "issue_charged_amount_extra_not_object_falls_back.json",
+        "issue_charged_amount_batch_extra_empty_no_fallback.json",
+        "issue_charged_amount_batch_extra_not_string_no_fallback.json",
+        "issue_charged_amount_batch_extra_not_object_no_fallback.json",
         "issue_charged_amount_amount_surrogate.json",
-        "issue_charged_amount_extra_zero_overrides_amount.json"
+        "issue_charged_amount_batch_extra_surrogate.json",
+        "issue_charged_amount_batch_extra_zero.json"
       ]
     },
     {
@@ -1566,7 +1655,7 @@
       "section": "4.3",
       "level": "MUST NOT",
       "text": "Never compute `chargedAmount`, for example from `accepted.amount`: with no charged amount in the response it is `\"\"`.",
-      "anchor": "The issuer MUST NOT compute `chargedAmount`, for example from `accepted.amount`.",
+      "anchor": "The issuer MUST NOT compute `chargedAmount`, for example from `accepted.amount`; the receipt records only what the settlement result reported.",
       "tested_by": "exchange",
       "exchanges": [
         "issue_charged_amount_empty_no_amount.json",
@@ -1574,6 +1663,82 @@
         "issue_svm_exact.json",
         "issue_network_cloudflare.json"
       ]
+    },
+    {
+      "id": "I-CHG-5",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Under `exact` and `upto` the charged amount is `SettlementResponse.amount`; `extra.chargedAmount` is not read.",
+      "anchor": "| `exact`, `upto` | `SettlementResponse.amount` |",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_charged_amount_from_response_amount.json",
+        "issue_charged_amount_upto_reads_amount.json",
+        "issue_charged_amount_exact_extra_ignored.json",
+        "issue_charged_amount_exact_extra_out_of_grammar_ignored.json",
+        "issue_charged_amount_empty_no_amount.json",
+        "refuse_charged_amount_upto_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-CHG-6",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Under `batch-settlement` the charged amount is `SettlementResponse.extra.chargedAmount` and never the top-level `amount` (a deposit, a refund or a payout at close): with no `extra.chargedAmount` it is `\"\"`.",
+      "anchor": "| `batch-settlement` | `SettlementResponse.extra.chargedAmount` (never the top-level `amount`, which these schemes use for a deposit, a refund or a payout at close) |",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_batch_evm_refund_response.json",
+        "issue_batch_evm_deposit_response.json",
+        "issue_batch_svm_cooperative_refund_response.json",
+        "issue_batch_svm_seal_response.json",
+        "issue_charged_amount_batch_amount_only.json",
+        "issue_charged_amount_batch_amount_out_of_grammar_ignored.json",
+        "issue_charged_amount_extra_overrides_amount_solana_batch.json",
+        "issue_charged_amount_extra_overrides_amount_cloudflare_batch.json",
+        "issue_charged_amount_batch_extra_empty_no_fallback.json",
+        "issue_charged_amount_batch_extra_zero.json"
+      ]
+    },
+    {
+      "id": "I-CHG-7",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "A scheme with no row, `auth-capture` among them, has no charged amount: `chargedAmount` is `\"\"` whatever the response carries, and its `amount` is not judged.",
+      "anchor": "Schemes with no row include `auth-capture`, whose settlement result reports an authorized hold at one step and a captured amount at another; this draft records neither",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_auth_capture_none.json",
+        "issue_charged_amount_auth_capture_amount_out_of_grammar_ignored.json",
+        "issue_charged_amount_unknown_scheme_none.json",
+        "issue_charged_amount_scheme_not_string.json"
+      ]
+    },
+    {
+      "id": "I-CHG-8",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Scheme names are compared exactly: `Exact` and `batch-Settlement` have no row.",
+      "anchor": "Scheme names are compared exactly.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_scheme_case_exact.json",
+        "issue_charged_amount_scheme_case_batch.json"
+      ]
+    },
+    {
+      "id": "I-CHG-9",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "The `SettlementResponse` read is the one the server returns to the client with the receipt, not a different result its facilitator gave it (a self-managed batch deposit result reports the deposit).",
+      "anchor": "The `SettlementResponse` read here and throughout is the one the server returns to the client with this receipt.",
+      "tested_by": "issuer-behaviour"
     },
     {
       "id": "I-PAY-2",
@@ -1976,7 +2141,7 @@
       "role": "issuer",
       "section": "6.2",
       "level": "MUST",
-      "text": "Step 7: refuse when the charged amount found (\u00a74.3) is outside the grammar of \u00a74.6; never repair it.",
+      "text": "Step 7: refuse when the charged amount found (\u00a74.3) is outside the grammar of \u00a74.6; never repair it. A value at a location the table does not name is not judged.",
       "anchor": "and `chargedAmount` (\u00a74.3) satisfies \u00a74.6",
       "tested_by": "exchange",
       "exchanges": [
@@ -1985,10 +2150,14 @@
         "refuse_charged_amount_non_digit.json",
         "refuse_charged_amount_negative.json",
         "refuse_charged_amount_extra_out_of_grammar.json",
+        "refuse_charged_amount_upto_out_of_grammar.json",
         "refuse_order_charged_amount_before_statement.json",
         "issue_charged_amount_78_digits.json",
         "issue_charged_amount_zero.json",
-        "refuse_charged_amount_leading_zero_svm.json"
+        "refuse_charged_amount_leading_zero_svm.json",
+        "issue_charged_amount_batch_amount_out_of_grammar_ignored.json",
+        "issue_charged_amount_exact_extra_out_of_grammar_ignored.json",
+        "issue_charged_amount_auth_capture_amount_out_of_grammar_ignored.json"
       ]
     },
     {
@@ -2316,9 +2485,23 @@
       "role": "issuer",
       "section": "6.4",
       "level": "MUST",
-      "text": "A later receipt for the same settlement follows \u00a74.3.",
+      "text": "A later receipt for the same settlement follows \u00a74.3: same settlement members, `supersedes` set, a permitted status pair.",
       "anchor": "A later receipt for the same settlement follows \u00a74.3: same settlement members, `supersedes` set, a permitted status pair.",
       "tested_by": "issuer-behaviour"
+    },
+    {
+      "id": "I-STD-5",
+      "role": "issuer",
+      "section": "6.4",
+      "level": "MUST",
+      "text": "A superseding receipt is built from the exchange of the receipt it supersedes, with a new statement, `receiptId` and clock, not from a later settlement result; the later event's transaction goes in the reversal binding. The exchanges show the result: every settlement member, `chargedAmount` included, is the original's. Which exchange a server feeds its issuer is not observable here.",
+      "anchor": "It is built from the exchange of the receipt it supersedes, with a new statement, `receiptId` and clock, not from a later settlement result: the later event's own transaction goes in the `action-receipt:reversal-transaction` binding.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json",
+        "issue_reversal_lowercased_evm.json",
+        "issue_reversal_non_evm_verbatim.json"
+      ]
     },
     {
       "id": "I-STD-4",
