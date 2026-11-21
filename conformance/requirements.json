@@ -616,7 +616,8 @@
         "neg_schema_charged_amount_leading_zero.json",
         "neg_schema_charged_amount_non_digit.json",
         "neg_schema_charged_amount_negative.json",
-        "neg_schema_charged_amount_not_string.json"
+        "neg_schema_charged_amount_not_string.json",
+        "neg_schema_charged_amount_leading_zero_non_evm.json"
       ]
     },
     {
@@ -1001,7 +1002,7 @@
       "role": "verifier",
       "section": "5.8",
       "level": "MUST",
-      "text": "The response's charged amount is `extra.chargedAmount` when present, else `amount` when present (\u00a74.6), whatever the scheme.",
+      "text": "The response's charged amount is `extra.chargedAmount` when present, else `amount` when present (\u00a74.6), whatever the scheme or network.",
       "anchor": "`extra.chargedAmount`, else `amount`, each when present",
       "tested_by": "vector",
       "vectors": [
@@ -1010,7 +1011,10 @@
         "pos_charged_amount_extra_empty_falls_back.json",
         "pos_charged_amount_extra_not_string_falls_back.json",
         "pos_charged_amount_extra_not_object_falls_back.json",
-        "neg_settlement_charged_amount_extra_number_not_read.json"
+        "neg_settlement_charged_amount_extra_number_not_read.json",
+        "pos_charged_amount_from_extra_any_scheme.json",
+        "pos_charged_amount_from_extra_cloudflare.json",
+        "pos_charged_amount_extra_zero.json"
       ]
     },
     {
@@ -1552,7 +1556,8 @@
         "issue_charged_amount_extra_empty_falls_back.json",
         "issue_charged_amount_extra_not_string_falls_back.json",
         "issue_charged_amount_extra_not_object_falls_back.json",
-        "issue_charged_amount_amount_surrogate.json"
+        "issue_charged_amount_amount_surrogate.json",
+        "issue_charged_amount_extra_zero_overrides_amount.json"
       ]
     },
     {
@@ -1982,7 +1987,8 @@
         "refuse_charged_amount_extra_out_of_grammar.json",
         "refuse_order_charged_amount_before_statement.json",
         "issue_charged_amount_78_digits.json",
-        "issue_charged_amount_zero.json"
+        "issue_charged_amount_zero.json",
+        "refuse_charged_amount_leading_zero_svm.json"
       ]
     },
     {

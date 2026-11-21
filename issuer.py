@@ -693,6 +693,9 @@ SUITE = [
     E("issue_charged_amount_extra_not_object_falls_back", {"chargedAmount": "4200"},
       settlementResponse__amount="4200", settlementResponse__extra="2500"),
     E("issue_charged_amount_amount_not_string", {"chargedAmount": ""}, settlementResponse__amount=10000),
+    # "0" is a present value: extra's 0 wins over amount
+    E("issue_charged_amount_extra_zero_overrides_amount", {"chargedAmount": "0"},
+      settlementResponse__amount="4200", settlementResponse__extra={"chargedAmount": "0"}),
     E("issue_charged_amount_amount_surrogate", {"chargedAmount": ""}, settlementResponse__amount="1\ud800"),
     # ---- refused, step 1 ---------------------------------------------------
     E("refuse_settlement_failed", X_SETTLEMENT,
@@ -807,6 +810,9 @@ SUITE = [
     # the value found is extra's, so extra's is the one judged (amount is in grammar)
     E("refuse_charged_amount_extra_out_of_grammar", X_GRAMMAR,
       settlementResponse__extra={"chargedAmount": "007"}),
+    # the grammar applies on every network
+    E("refuse_charged_amount_leading_zero_svm", X_GRAMMAR,
+      **dict(_SVM, settlementResponse=dict(_SOL_RESPONSE, amount="010"))),
     # ---- step 8, one exchange per sub-check -----------------------------------
     E("refuse_agent_empty", X_STATEMENT, statement__action__agent=""),
     E("refuse_agent_surrogate", X_STATEMENT, statement__action__agent="did:web:\udfff"),

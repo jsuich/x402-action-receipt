@@ -1168,6 +1168,10 @@ C_EXTRA_NOT_OBJECT = "extra_not_an_object"
 AMOUNT_78 = "9" * 78
 AMOUNT_79 = "1" + "0" * 78
 BATCH_CHARGED = "2500"       # the charge for this request; the top-level amount is the deposit
+C_CHARGED_EXTRA_EXACT = "extra_charged_amount_any_scheme"
+C_CHARGED_EXTRA_CF = "cloudflare_charged_amount_in_extra"
+C_CHARGED_EXTRA_ZERO = "extra_charged_amount_zero"
+C_AMOUNT_LEADING_ZERO_CF = "cloudflare_amount_leading_zero"
 
 CONTEXTS = {
     C_OK: _ctx(),
@@ -1263,6 +1267,13 @@ CONTEXTS = {
     C_CHARGED_EXTRA_EMPTY: _ctx(extra={"chargedAmount": ""}),
     C_CHARGED_EXTRA_NUMBER: _ctx(extra={"chargedAmount": 2500}),
     C_EXTRA_NOT_OBJECT: _ctx(extra=BATCH_CHARGED),
+    # the lookup does not depend on the scheme or network (mutants M01, M03, M07 of cycle 11)
+    C_CHARGED_EXTRA_EXACT: _ctx(extra={"chargedAmount": BATCH_CHARGED}),
+    C_CHARGED_EXTRA_CF: _ctx(transaction=CF_TX, network=CF_NET, payer=None, accepted=ACCEPTED_CF,
+                             amount="50000", extra={"chargedAmount": BATCH_CHARGED}),
+    C_CHARGED_EXTRA_ZERO: _ctx(extra={"chargedAmount": "0"}),
+    C_AMOUNT_LEADING_ZERO_CF: _ctx(transaction=CF_TX, network=CF_NET, payer=None, accepted=ACCEPTED_CF,
+                                   amount="010"),
     **{"config_" + k: v for k, v in C_ERR.items()},
 }
 
@@ -1369,6 +1380,9 @@ SUITE = [
     ("pos_charged_amount_extra_not_string_falls_back.json", PASS, None, C_CHARGED_EXTRA_NUMBER),
     ("pos_charged_amount_extra_not_object_falls_back.json", PASS, None, C_EXTRA_NOT_OBJECT),
     ("pos_charged_amount_response_amount_not_string.json", PASS, None, C_AMOUNT_NOT_STRING),
+    ("pos_charged_amount_from_extra_any_scheme.json", PASS, None, C_CHARGED_EXTRA_EXACT),
+    ("pos_charged_amount_from_extra_cloudflare.json", PASS, None, C_CHARGED_EXTRA_CF),
+    ("pos_charged_amount_extra_zero.json", PASS, None, C_CHARGED_EXTRA_ZERO),
     # §5.1 envelope and header
     ("neg_not_jws_format.json", REJECT, R_MALFORMED, C_OK),
     ("neg_base64url_trailing_bits.json", REJECT, R_MALFORMED, C_OK),
@@ -1450,6 +1464,7 @@ SUITE = [
     ("neg_schema_charged_amount_non_digit.json", REJECT, R_MALFORMED, C_AMOUNT_NON_DIGIT),
     ("neg_schema_charged_amount_negative.json", REJECT, R_MALFORMED, C_AMOUNT_NEGATIVE),
     ("neg_schema_charged_amount_not_string.json", REJECT, R_MALFORMED, C_AMOUNT_NOT_STRING),
+    ("neg_schema_charged_amount_leading_zero_non_evm.json", REJECT, R_MALFORMED, C_AMOUNT_LEADING_ZERO_CF),
     ("neg_unsupported_version.json", REJECT, R_UNSUPPORTED_VERSION, C_OK),
     ("neg_invalid_outcome.json", REJECT, R_INVALID_OUTCOME, C_OK),
     ("neg_outcome_retired_refused.json", REJECT, R_INVALID_OUTCOME, C_OK),
@@ -1691,6 +1706,7 @@ EXPECT_REPORT = {
         "bindings": [{"type": BT_ADVERTISED, "status": _NE}]},
     "pos_binding_printable_edges.json": {"bindings": [{"type": "a:!~", "status": _NE}]},
     "pos_charged_amount_from_extra.json": {"settlementStatus": "capturePending", "checks": _BATCH_CHECKS},
+    "pos_charged_amount_from_extra_cloudflare.json": {"checks": {"payer": "not_compared"}},
 }
 
 
@@ -1992,6 +2008,12 @@ def regenerate_vectors() -> None:
       signed(base(chargedAmount=BATCH_CHARGED)))
     w("neg_settlement_charged_amount_response_out_of_grammar.json", signed(base(chargedAmount="")))
     w("neg_settlement_charged_amount_not_normalized.json", signed(base(chargedAmount="10")))
+    cf = dict(network=CF_NET, payer="", payTo=CF_PAY_TO, transaction=CF_TX,
+              requirementsDigest=requirements_digest(ACCEPTED_CF))
+    w("pos_charged_amount_from_extra_any_scheme.json", signed(base(chargedAmount=BATCH_CHARGED), "EdDSA", KID_ED))
+    w("pos_charged_amount_from_extra_cloudflare.json", signed(base(chargedAmount=BATCH_CHARGED, **cf)))
+    w("pos_charged_amount_extra_zero.json", signed(base(chargedAmount="0"), "ES256K", KID_ES256K))
+    w("neg_schema_charged_amount_leading_zero_non_evm.json", signed(base(chargedAmount="010", **cf)))
 
     # ---- §5.1 envelope and header ----
     good = _sign_jws("ES256", KID_ES256, es, base_text.encode())
@@ -2372,6 +2394,10 @@ def write_vectors_md(manifest) -> None:
         C_CHARGED_EXTRA_EMPTY: "response `extra.chargedAmount` is the empty string; `amount` 10000",
         C_CHARGED_EXTRA_NUMBER: "response `extra.chargedAmount` is the number 2500; `amount` 10000",
         C_EXTRA_NOT_OBJECT: "response `extra` is a string, not an object; `amount` 10000",
+        C_CHARGED_EXTRA_EXACT: "EVM `exact` response with `extra.chargedAmount` 2500 beside `amount` 10000",
+        C_CHARGED_EXTRA_CF: "network `cloudflare:402`, no payer; `extra.chargedAmount` 2500 beside `amount` 50000",
+        C_CHARGED_EXTRA_ZERO: "response `extra.chargedAmount` is `0`; `amount` 10000",
+        C_AMOUNT_LEADING_ZERO_CF: "network `cloudflare:402`, no payer; response `amount` is `010`",
     }
     for k in C_ERR:
         notes["config_" + k] = f"configuration outside the contract: {k.replace('_', ' ')}"
@@ -2548,6 +2574,7 @@ _DEFAULT_REPORT_OK = {
     "pos_charged_amount_extra_not_string_falls_back.json",
     "pos_charged_amount_extra_not_object_falls_back.json",
     "pos_charged_amount_response_amount_not_string.json",
+    "pos_charged_amount_from_extra_any_scheme.json", "pos_charged_amount_extra_zero.json",
 }
 
 
