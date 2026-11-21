@@ -58,7 +58,7 @@
   "settlementResponse": {
     "success": true,
     "transaction": "0xabababababababababababababababababababababababababababababababab",
-    "network": "eip155:8453",
+    "network": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:x",
     "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66"
   },
   "settlementReference": null,

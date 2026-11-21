@@ -1744,6 +1744,11 @@
       "reason": "network_unusable"
     },
     {
+      "file": "refuse_network_reference_33.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
       "file": "refuse_network_not_identifier_either_side.json",
       "issued": false,
       "reason": "network_unusable"

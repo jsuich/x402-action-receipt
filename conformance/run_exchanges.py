@@ -62,6 +62,50 @@ def cases_for(manifest: dict, rng: random.Random):
     return out
 
 
+def protocol_cases(manifest: dict) -> list:
+    """Adapter-protocol cases (CONFORMANCE.md, issuer adapter protocol): raw
+    lines that are valid JSON a naive parser cannot read, and lines that are not
+    JSON. [(opaque id, label, raw line, expected entry)]. The expected answers
+    follow from spec §6 (the value of a number is its double, §4.6; a member the
+    procedure does not name is ignored, §6.1) and from the protocol
+    (`invalid_input` for a line that is not a JSON object)."""
+    by_file = {e["file"]: e for e in manifest["exchanges"]}
+    basic = by_file.get("issue_basic.json")
+    if basic is None or not basic["issued"]:
+        return []
+    x = json.loads((ROOT / "exchanges" / "issue_basic.json").read_text())
+
+    def line(cid, path, raw):
+        y = copy.deepcopy(x)
+        obj = y
+        for k in path[:-1]:
+            obj = obj[k]
+        obj[path[-1]] = "@@RAW@@"
+        return json.dumps({"id": cid, "exchange": y}).replace('"@@RAW@@"', raw)
+
+    refuse = lambda r: {"issued": False, "reason": r}  # noqa: E731
+    issued = {"issued": True, "payload": basic["payload"]}
+    specs = [
+        ("deep_accepted_200000", ["paymentPayload", "accepted", "extra"], "[" * 200000 + "]" * 200000,
+         refuse("requirements_not_hashable")),
+        ("deep_ignored_member_100000", ["statement", "note"], "[" * 100000 + "]" * 100000, issued),
+        ("deep_ignored_object_5000", ["statement", "note"], '{"a":' * 5000 + "1" + "}" * 5000, issued),
+        ("int_5000_digits_in_accepted", ["paymentPayload", "accepted", "extra"], '{"n":' + "9" * 5000 + "}",
+         refuse("requirements_not_hashable")),
+        ("int_5000_digits_issuedAt", ["statement", "issuedAt"], "1" * 5000, refuse("invalid_statement")),
+        ("issuedAt_exponent_spelling", ["statement", "issuedAt"], "1.703123456e9", issued),
+        ("not_json_nan", ["paymentPayload", "accepted", "maxTimeoutSeconds"], "NaN", refuse("invalid_input")),
+        ("not_json_truncated", ["statement"], '{"receiptId": ', refuse("invalid_input")),
+        ("not_json_deep_unclosed", ["statement", "note"], "[" * 100000, refuse("invalid_input")),
+        ("not_json_deep_balanced", ["statement", "note"], "[" * 100 + "1 2" + "]" * 100, refuse("invalid_input")),
+    ]
+    out = []
+    for label, path, raw, want in specs:
+        cid = secrets.token_hex(12)
+        out.append((cid, "protocol:" + label, line(cid, path, raw), want))
+    return out
+
+
 def judge(g, e) -> str | None:
     if g is None:
         return "no result"
@@ -110,6 +154,13 @@ def main(argv=None) -> int:
     rng = random.Random(a.seed if a.seed is not None else secrets.randbits(32))
     cases = cases_for(manifest, rng)
     lines = [json.dumps({"id": cid, "exchange": x}) for cid, _, x, _, _ in cases]
+    proto = protocol_cases(manifest)
+    for cid, label, raw, want in proto:
+        cases.append((cid, label, None, want, "protocol"))
+        lines.append(raw)
+    order = list(range(len(lines)))
+    rng.shuffle(order)
+    cases, lines = [cases[i] for i in order], [lines[i] for i in order]
     r = subprocess.run(cmd, input=("\n".join(lines) + "\n").encode(), capture_output=True, cwd=ROOT)
     broken = None
     if r.returncode != 0:
@@ -136,14 +187,22 @@ def main(argv=None) -> int:
             if not a.quiet:
                 print(f"DISAGREE {file} ({kind}): {problem}")
     n_fixed = sum(1 for c in cases if c[4] == "fixed")
-    n_follow = len(cases) - n_fixed
+    n_proto = sum(1 for c in cases if c[4] == "protocol")
+    n_follow = len(cases) - n_fixed - n_proto
+    bad_kind = {k: sum(1 for c in cases if c[4] == k and judge(got.get(c[0]), c[3]))
+                for k in ("fixed", "follow-up", "protocol")}
     if a.json:
-        print(json.dumps({"exchanges": n_fixed, "follow_ups": n_follow, "disagree": bad,
-                          "broken": broken, "disagreeing": sorted(set(disagreeing))}))
+        print(json.dumps({"exchanges": n_fixed, "follow_ups": n_follow, "protocol": n_proto,
+                          "disagree": bad, "broken": broken,
+                          "disagreeing": sorted(set(disagreeing)),
+                          "answers": {c[1] + ("#" + c[4] if c[4] != "fixed" else ""):
+                                      (got.get(c[0]) or {}).get("reason", "issued" if (got.get(c[0]) or {}).get("issued") else None)
+                                      for c in cases if judge(got.get(c[0]), c[3])}}))
     if broken:
         print(f"BROKEN {broken}")
-    print(f"SUMMARY exchanges {n_fixed - fixed_bad}/{n_fixed} agree, follow-ups "
-          f"{n_follow - (bad - fixed_bad)}/{n_follow} agree, {bad} disagree"
+    print(f"SUMMARY exchanges {n_fixed - bad_kind['fixed']}/{n_fixed} agree, follow-ups "
+          f"{n_follow - bad_kind['follow-up']}/{n_follow} agree, protocol cases "
+          f"{n_proto - bad_kind['protocol']}/{n_proto} agree, {bad} disagree"
           + ("; adapter BROKEN" if broken else ""))
     return 0 if bad == 0 and broken is None else 1
 

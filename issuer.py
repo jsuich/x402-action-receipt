@@ -619,9 +619,16 @@ SUITE = [
     E("refuse_offered_only_out_of_domain", X_OFFERED,
       paymentRequired__accepts=[dict(A.ACCEPTED, amount=1.5)]),
     # ---- step 5 ------------------------------------------------------------
-    E("refuse_network_not_identifier", X_NETWORK, paymentPayload__accepted__network="base"),
-    E("refuse_network_namespace_33", X_NETWORK, paymentPayload__accepted__network="a" * 33 + ":x"),
-    E("refuse_network_namespace_2", X_NETWORK, paymentPayload__accepted__network="ab:1"),
+    # the response's network is absent or not an identifier, so only the grammar of
+    # accepted.network can refuse (the conflict rule needs both to be identifiers)
+    E("refuse_network_not_identifier", X_NETWORK, paymentPayload__accepted__network="base",
+      settlementResponse__network=DELETE),
+    E("refuse_network_namespace_33", X_NETWORK, paymentPayload__accepted__network="a" * 33 + ":x",
+      settlementResponse__network="a" * 33 + ":x"),
+    E("refuse_network_namespace_2", X_NETWORK, paymentPayload__accepted__network="ab:1",
+      settlementResponse__network="ab:1"),
+    E("refuse_network_reference_33", X_NETWORK, paymentPayload__accepted__network="eip155:" + "1" * 33,
+      settlementResponse__network=DELETE),
     E("refuse_network_not_identifier_either_side", X_NETWORK,
       paymentPayload__accepted__network="base", settlementResponse__network="base"),
     E("refuse_network_conflict", X_NETWORK, settlementResponse__network="eip155:1"),
@@ -712,7 +719,8 @@ SUITE = [
       paymentRequired__accepts=[A.ACCEPTED]),
     E("refuse_order_4_before_5", X_OFFERED, paymentPayload__accepted__network="base",
       paymentRequired__accepts=[A.ACCEPTED]),
-    E("refuse_order_5_before_6", X_NETWORK, paymentPayload__accepted__network="base", **_NO_RESOURCE),
+    E("refuse_order_5_before_6", X_NETWORK, paymentPayload__accepted__network="base",
+      settlementResponse__network="base", **_NO_RESOURCE),
     E("refuse_order_6_before_7", X_RESOURCE, paymentPayload__accepted__payTo="merchant", **_NO_RESOURCE),
     E("refuse_order_7_before_8", X_GRAMMAR, paymentPayload__accepted__payTo="merchant",
       statement__action__outcome="shipped"),
@@ -849,6 +857,16 @@ def round_trips(issued: list) -> dict:
     return problems
 
 
+def _must_refuse_to_sign(label, payload, **kw) -> list[str]:
+    try:
+        sign(payload, **kw)
+    except SigningError:
+        return []
+    except Exception as e:  # noqa: BLE001
+        return [f"signing with {label} raised {type(e).__name__}, not SigningError"]
+    return [f"signed with {label}"]
+
+
 def signing_suite(per_alg: int = 400) -> list[str]:
     """§6.3 signing, through both verifiers: for each algorithm, `per_alg`
     payloads signed with the library's ordinary randomized ECDSA signer and
@@ -880,9 +898,11 @@ def signing_suite(per_alg: int = 400) -> list[str]:
         for vname, (verdict, reason, _) in results[c["id"]].items():
             if verdict != A.PASS:
                 problems.append(f"signed {c['id']}: {vname} verifier {verdict}/{reason}")
+    ctl = {}
     for alg in ("ES256", "ES256K"):
         rejected = {v: sum(1 for c in control if c["id"].startswith(f"control:{alg}:")
                            and results[c["id"]][v][0] == A.REJECT) for v in ("python", "node")}
+        ctl[alg] = rejected["python"]
         if min(rejected.values()) == 0:
             problems.append(f"control {alg}: no un-normalized signature was rejected ({rejected}); "
                             "the low-s check cannot fail")
@@ -890,19 +910,16 @@ def signing_suite(per_alg: int = 400) -> list[str]:
                       ("ES256K key under ES256", dict(alg="ES256", kid=A.KID_ES256, private_key=keys["ES256K"])),
                       ("EC key under EdDSA", dict(alg="EdDSA", kid=A.KID_ED, private_key=keys["ES256"])),
                       ("Ed25519 key under ES256K", dict(alg="ES256K", kid=A.KID_ES256K, private_key=keys["EdDSA"]))]:
-        try:
-            sign(payload, authorized=authorized, **kw)
-            problems.append(f"signed with {label}")
-        except SigningError:
-            pass
+        problems += _must_refuse_to_sign(label, payload, authorized=authorized, **kw)
     other = dict(payload, resourceUrl="https://other.example/x")
-    try:
-        sign(other, alg="ES256", kid=A.KID_ES256, private_key=keys["ES256"], authorized=authorized)
-        problems.append("signed for a resourceUrl its own source does not list")
-    except SigningError:
-        pass
+    problems += _must_refuse_to_sign("a resourceUrl its own source does not list", other, alg="ES256",
+                                     kid=A.KID_ES256, private_key=keys["ES256"], authorized=authorized)
+    big = dict(payload, action=dict(payload["action"], scope="s" * 50000))
+    problems += _must_refuse_to_sign("a compact string over 65536 characters", big, alg="EdDSA",
+                                     kid=A.KID_ED, private_key=keys["EdDSA"], authorized=authorized)
     print(f"signing: {len(cases)} receipts ({per_alg} per algorithm, randomized ECDSA, low-s normalized) "
-          f"through both verifiers; {len(control)} un-normalized controls; 5 refusals to sign"
+          f"through both verifiers; un-normalized controls rejected {ctl.get('ES256')}/100 ES256, "
+          f"{ctl.get('ES256K')}/100 ES256K; 6 refusals to sign"
           + ("" if not problems else f"; {len(problems)} problem(s)"))
     return problems
 
@@ -926,8 +943,11 @@ def self_check_suite() -> list[str]:
     for label, f in breaks.items():
         p = copy.deepcopy(good)
         f(p)
-        if self_check(p):
-            problems.append(f"self-check accepts a payload with {label}")
+        try:
+            if self_check(p):
+                problems.append(f"self-check accepts a payload with {label}")
+        except Exception as e:  # noqa: BLE001
+            problems.append(f"self-check raises {type(e).__name__} on a payload with {label}")
     return problems
 
 
