@@ -527,14 +527,14 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "eip155:8453",
-        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
-        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
         "resourceUrl": "https://api.example.com/v1/complete",
-        "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
-        "settlementStatus": "settled",
+        "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "settlementStatus": "capturePending",
         "supersedes": "",
         "transaction": "",
         "version": 1
@@ -552,21 +552,21 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "eip155:8453",
-        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
-        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
         "resourceUrl": "https://api.example.com/v1/complete",
-        "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
-        "settlementStatus": "settled",
+        "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "settlementStatus": "capturePending",
         "supersedes": "",
-        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
         "version": 1
       }
     },
     {
-      "file": "issue_settlement_ref_upper_case_evm.json",
+      "file": "issue_settlement_ref_upper_case_verbatim.json",
       "issued": true,
       "payload": {
         "action": {
@@ -577,14 +577,14 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "eip155:8453",
-        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
-        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
         "resourceUrl": "https://api.example.com/v1/complete",
         "settlementRef": "Batch:Voucher:9F3C1D0A-0000-4A11-B2CC-Settlement-Root-01",
-        "settlementStatus": "settled",
+        "settlementStatus": "capturePending",
         "supersedes": "",
         "transaction": "",
         "version": 1
@@ -612,6 +612,81 @@
         "settlementStatus": "capturePending",
         "supersedes": "",
         "transaction": "",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_commitment_id_ignored_exact_solana.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "payer": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:60ea5a3bab3ffeaaf42fcae332e100fdd58e49ac82139e74277763c9fff2154b",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_commitment_id_ignored_batch_off_solana.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "cloudflare:402",
+        "payTo": "merchant",
+        "payer": "",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:344600e74e80d8402de2f2aefd0c2f8c0f2c2dd3a1bf1a242ca3cd87144818e6",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "cf-settlement-000000000001",
+        "version": 1
+      }
+    },
+    {
+      "file": "issue_payer_from_authorization_non_evm.json",
+      "issued": true,
+      "payload": {
+        "action": {
+          "actionType": "inference.completion",
+          "agent": "did:web:agent.example",
+          "outcome": "delivered",
+          "scope": "read:model-x"
+        },
+        "bindings": [],
+        "issuedAt": 1703123456,
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "payer": "8vRnXk2Q9mTzL4cY7bHf3PwA6sDj1GeU5oNiQtZr",
+        "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
+        "requirementsDigest": "sha256:60ea5a3bab3ffeaaf42fcae332e100fdd58e49ac82139e74277763c9fff2154b",
+        "resourceUrl": "https://api.example.com/v1/complete",
+        "settlementRef": "",
+        "settlementStatus": "settled",
+        "supersedes": "",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
         "version": 1
       }
     },
@@ -1555,14 +1630,14 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "eip155:8453",
-        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
-        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
         "resourceUrl": "https://api.example.com/v1/complete",
-        "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
-        "settlementStatus": "settled",
+        "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "settlementStatus": "capturePending",
         "supersedes": "",
         "transaction": "",
         "version": 1
@@ -1605,14 +1680,14 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "eip155:8453",
-        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
-        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
         "resourceUrl": "https://api.example.com/v1/complete",
-        "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
-        "settlementStatus": "settled",
+        "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "settlementStatus": "capturePending",
         "supersedes": "",
         "transaction": "",
         "version": 1
@@ -1655,16 +1730,16 @@
         },
         "bindings": [],
         "issuedAt": 1703123456,
-        "network": "eip155:8453",
-        "payTo": "0x209693bc6afc0c5328ba36faf03c514ef312287c",
-        "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "payer": "",
         "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
-        "requirementsDigest": "sha256:928ef8ee5f5df7a325dc5a5e2dbd9a3cdf89ab71fe28dec7c713e6efdd36aabc",
+        "requirementsDigest": "sha256:d510811d2179b2233463632c7982e339e630ccc7a49c70a9f116938fd908ccea",
         "resourceUrl": "https://api.example.com/v1/complete",
         "settlementRef": "",
-        "settlementStatus": "settled",
+        "settlementStatus": "capturePending",
         "supersedes": "",
-        "transaction": "0xabababababababababababababababababababababababababababababababab",
+        "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
         "version": 1
       }
     },
@@ -1734,6 +1809,51 @@
       "reason": "no_settlement_identifier"
     },
     {
+      "file": "refuse_commitment_only_exact.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_commitment_only_batch_off_solana.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_solana_batch_scheme_case.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_solana_batch_namespace_prefix.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_solana_batch_commitment_empty.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_solana_batch_commitment_not_string.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_solana_batch_commitment_missing.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_solana_batch_extra_not_object.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
+      "file": "refuse_out_of_band_reference_ignored.json",
+      "issued": false,
+      "reason": "no_settlement_identifier"
+    },
+    {
       "file": "refuse_requirements_non_integer.json",
       "issued": false,
       "reason": "requirements_not_hashable"
@@ -1775,6 +1895,26 @@
     },
     {
       "file": "refuse_offered_member_added.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_asset_changed.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_max_timeout_changed.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_scheme_changed.json",
+      "issued": false,
+      "reason": "requirements_not_offered"
+    },
+    {
+      "file": "refuse_offered_network_changed.json",
       "issued": false,
       "reason": "requirements_not_offered"
     },
@@ -1835,6 +1975,21 @@
     },
     {
       "file": "refuse_network_conflict.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
+      "file": "refuse_network_reference_dot.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
+      "file": "refuse_network_namespace_dot.json",
+      "issued": false,
+      "reason": "network_unusable"
+    },
+    {
+      "file": "refuse_batch_network_out_of_grammar.json",
       "issued": false,
       "reason": "network_unusable"
     },
@@ -2055,6 +2210,11 @@
     },
     {
       "file": "refuse_binding_reserved_type.json",
+      "issued": false,
+      "reason": "invalid_bindings"
+    },
+    {
+      "file": "refuse_binding_reserved_reversal_type.json",
       "issued": false,
       "reason": "invalid_bindings"
     },

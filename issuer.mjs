@@ -71,6 +71,18 @@ const evmLower = (s) => s.replace(/[A-Z]/g, (c) => c.toLowerCase());
 
 const refuse = (reason) => ({ issued: false, reason });
 
+// The settlement reference of the exchange (section 4.3): found by the table from
+// accepted.scheme and accepted.network and nothing else. The one row:
+// `batch-settlement` on `solana:*` -> SettlementResponse.extra.commitmentId.
+// The `*` matches whatever follows `solana:`; step 5 judges its grammar.
+function referenceOf(accepted, sr) {
+  const scheme = get(accepted, 'scheme');
+  const network = get(accepted, 'network');
+  if (scheme !== 'batch-settlement' || typeof network !== 'string' || !network.startsWith('solana:')) return '';
+  const v = get(get(sr, 'extra'), 'commitmentId');
+  return present(v) ? v : '';
+}
+
 function issue(ex) {
   const pr = get(ex, 'paymentRequired');
   const pp = get(ex, 'paymentPayload');
@@ -82,9 +94,8 @@ function issue(ex) {
 
   // 2
   const srTx = get(sr, 'transaction');
-  const sref = get(ex, 'settlementReference');
   let transaction = present(srTx) ? srTx : '';
-  const settlementRef = present(sref) ? sref : '';
+  const settlementRef = referenceOf(get(pp, 'accepted'), sr);
   if (transaction === '' && settlementRef === '') return refuse('no_settlement_identifier');
 
   // 3
@@ -270,7 +281,9 @@ function selfCheck(p) {
 }
 
 // ---------- adapter ----------
-const fatalUtf8 = new TextDecoder('utf-8', { fatal: true });
+// ignoreBOM keeps a leading U+FEFF in the text, so JSON.parse rejects the line
+// (a byte-order mark is not JSON whitespace, RFC 8259 section 8.1): invalid_input.
+const fatalUtf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 
 function handle(bytes) {
   let line;

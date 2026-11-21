@@ -308,8 +308,9 @@ class Context:
         here; a malformed one is absent or rejected, never an ERROR.
     accepted : the PaymentRequirements object the client accepted
         (PaymentPayload.accepted), or None when the verifier does not hold it.
-    advertised_info : the `action-receipt` extension `info` object as echoed in
-        the PaymentPayload, or None.
+    advertised_info : the `info` object the server advertised in its
+        PaymentRequired (`extensions["action-receipt"].info`, spec §2.3), or
+        None. Not the copy the client echoes in the PaymentPayload.
 
     The verifier's own CONFIGURATION (spec §5 inputs table). Outside this
     contract verify_detailed returns ERROR / invalid_configuration:
@@ -380,6 +381,25 @@ def configuration(ctx, key_registry):
     if paid is not None and not isinstance(paid, str):
         return None
     return mode, now, max_age, paid
+
+
+def settlement_reference_of(accepted, settlement_response) -> str:
+    """The settlement reference a verifier that holds `accepted` finds for an
+    exchange (spec §4.3): `batch-settlement` on `solana:*` names
+    `SettlementResponse.extra.commitmentId`; nothing else names one. Returns
+    `""` when there is none. The conformance contexts supply this value
+    directly (spec §7); the issuer suite uses this to build the context a
+    verifier holding the same exchange would verify in."""
+    if not isinstance(accepted, dict) or not isinstance(settlement_response, dict):
+        return ""
+    network = accepted.get("network")
+    if accepted.get("scheme") != "batch-settlement" or not isinstance(network, str):
+        return ""
+    if network.split(":", 1)[0] != "solana" or ":" not in network:
+        return ""
+    extra = settlement_response.get("extra")
+    value = extra.get("commitmentId") if isinstance(extra, dict) else None
+    return value if _has(value) else ""
 
 
 def _is_evm(network: str) -> bool:
@@ -1113,7 +1133,7 @@ CONTEXTS = {
     C_PAID_OTHER: _ctx(paidResourceUrl="https://api.example.com/v1/other"),
     # the advertised info carries a scope that is not a string
     C_ADVERT_NONSTRING: _ctx(advertisedInfo=ADVERTISED_NONSTRING),
-    # the verifier also holds the echoed extension info
+    # the verifier also holds the info the server advertised
     C_ADVERT: _ctx(advertisedInfo=ADVERTISED_INFO),
     # the info held is not in the value domain: nothing about the advertisement is evaluated
     C_ADVERT_FLOAT: _ctx(advertisedInfo=ADVERTISED_FLOAT),
@@ -2072,7 +2092,7 @@ def write_vectors_md(manifest) -> None:
         C_CASE_PREFIX: "response `transaction` and `payer` with an upper-case `0X` prefix",
         C_NOPAYER: "response carries no `payer`",
         C_ARCHIVAL: "archival mode, 180 days after issue",
-        C_ADVERT: "the echoed extension `info` is also held",
+        C_ADVERT: "the `info` the server advertised is also held",
         C_REQ_FLOAT: "accepted requirements spell an integer as `60.0`",
         C_REQ_NONOBJ: "what is held as accepted requirements is not a JSON object",
         C_PAYER_EMPTY: "response `payer` is the empty string",

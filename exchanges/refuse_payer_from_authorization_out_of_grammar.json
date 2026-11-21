@@ -60,7 +60,6 @@
     "transaction": "0xabababababababababababababababababababababababababababababababab",
     "network": "eip155:8453"
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,

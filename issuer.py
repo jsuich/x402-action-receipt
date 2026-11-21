@@ -4,10 +4,11 @@ issuer.py — reference issuer + issuer conformance suite for `action-receipt`
 (spec §6, draft 0.4).
 
 An EXCHANGE is what a resource server holds when it decides to issue: the
-PaymentRequired it sent, the PaymentPayload it received, the SettlementResponse,
-the scheme's settlement reference if any, and its own statement. The issuer
-either builds the receipt payload or refuses with one of the ten reasons of
-§6.2. `sign()` turns a payload into a compact JWS (§6.3).
+PaymentRequired it sent, the PaymentPayload it received, the SettlementResponse
+and its own statement. The settlement reference is not an input: the issuer
+finds it by the table of §4.3 from `accepted.scheme` and `accepted.network`.
+The issuer either builds the receipt payload or refuses with one of the ten
+reasons of §6.2. `sign()` turns a payload into a compact JWS (§6.3).
 
     python3 issuer.py                 # run the exchange suite (exchanges/MANIFEST.json)
     python3 issuer.py --regenerate    # rewrite exchanges/ from the tables below, then run
@@ -98,6 +99,27 @@ def _int_value(v):
     return None
 
 
+# The settlement references of spec §4.3, as (scheme, network namespace, the
+# member of SettlementResponse.extra that holds the reference). A row's `*`
+# matches whatever follows `<namespace>:`; step 5 judges that part's grammar.
+REFERENCE_ROWS = [("batch-settlement", "solana", "commitmentId")]
+
+
+def settlement_reference(accepted, resp) -> str:
+    """The settlement reference of the exchange (spec §4.3): found from
+    `accepted.scheme` and `accepted.network` by the table, and nothing else;
+    `""` when no row matches or the value at the row's location is absent."""
+    acc, extra = _obj(accepted), _obj(_obj(resp).get("extra"))
+    scheme, network = acc.get("scheme"), acc.get("network")
+    if not (isinstance(scheme, str) and isinstance(network, str)):
+        return ""
+    for row_scheme, namespace, member in REFERENCE_ROWS:
+        if scheme == row_scheme and network.startswith(namespace + ":"):
+            value = extra.get(member)
+            return value if _present(value) else ""
+    return ""
+
+
 def issue(exchange) -> tuple[dict | None, str | None]:
     """Return (payload, None) or (None, reason). Never raises on junk."""
     try:
@@ -118,7 +140,7 @@ def _issue(exchange):
         return None, X_SETTLEMENT
     # 2 a settlement identifier
     transaction = resp.get("transaction") if _present(resp.get("transaction")) else ""
-    reference = x.get("settlementReference") if _present(x.get("settlementReference")) else ""
+    reference = settlement_reference(pay.get("accepted"), resp)
     if not (transaction or reference):
         return None, X_NO_ID
     # 3 accepted is hashable
@@ -367,6 +389,7 @@ CASE_ORDER_DIGEST = "sha256:8f2e32697a6cab1955177391ab83e5fcbe68f46fabbc55a4547a
 PAYER_OTHER = "0x" + "22" * 20
 PAYER_MIXED = "0xAbCdEf0123456789aBcDeF0123456789AbCdEf01"
 UPPER_REF = "Batch:Voucher:9F3C1D0A-0000-4A11-B2CC-Settlement-Root-01"
+AUTH_FROM_NON_EVM = "8vRnXk2Q9mTzL4cY7bHf3PwA6sDj1GeU5oNiQtZr"   # mixed case: copied verbatim off eip155
 REVERSAL = "0x" + "ef" * 32
 SOL_REVERSAL = "4aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789aBcDeFgHiJkLmNoPqRsTuVwXyZ1"
 URL_WS = "  " + A.RESOURCE + " \t"
@@ -396,7 +419,6 @@ def base_exchange() -> dict:
         },
         "settlementResponse": {"success": True, "transaction": A.SETTLEMENT_TX,
                                "network": A.NETWORK, "payer": A.PAYER_CHECKSUM},
-        "settlementReference": None,
         "statement": {
             "receiptId": A.RECEIPT_ID, "issuedAt": A.ISSUED_AT,
             "action": {"agent": "did:web:agent.example", "actionType": "inference.completion",
@@ -466,8 +488,27 @@ _SOL_BATCH_EXPECT = {"network": SOL_NET, "payer": "", "payTo": A.SOL_PAY_TO, "tr
                      "requirementsDigest": SOL_BATCH_DIGEST}
 _SOL_BATCH = dict(paymentPayload__accepted=ACC_SOL_BATCH, paymentPayload__payload=_SOL_BATCH_PAYLOAD,
                   paymentRequired__accepts=[A.ACCEPTED, ACC_SOL_BATCH],
-                  settlementResponse=_SOL_BATCH_RESPONSE, settlementReference=A.COMMITMENT_ID,
+                  settlementResponse=_SOL_BATCH_RESPONSE,
                   statement__settlementStatus="capturePending")
+
+
+def sol_batch(response=None, **edit):
+    """The Solana `batch-settlement` exchange (the one row of spec §4.3), with
+    the SettlementResponse changed by `response` (DELETE removes a member)."""
+    resp = copy.deepcopy(_SOL_BATCH_RESPONSE)
+    for k, v in (response or {}).items():
+        if v is DELETE:
+            resp.pop(k, None)
+        else:
+            resp[k] = v
+    return dict(_SOL_BATCH, settlementResponse=resp, **edit)
+
+
+# `batch-settlement` with the accepted network changed (the response names the same network)
+def sol_batch_on(network, scheme="batch-settlement"):
+    acc = dict(ACC_SOL_BATCH, network=network, scheme=scheme)
+    return sol_batch({"network": network}, paymentPayload__accepted=acc,
+                     paymentRequired__accepts=[A.ACCEPTED, acc])
 _SVM = dict(paymentPayload__accepted=ACC_SVM_EXACT, paymentPayload__payload=_SVM_PAYLOAD,
             paymentRequired__accepts=[A.ACCEPTED, ACC_SVM_EXACT], settlementResponse=_SOL_RESPONSE)
 _SVM_EXPECT = {"network": SOL_NET, "payer": SOL_PAYER, "payTo": SOL_PAYTO, "transaction": SOL_TX,
@@ -515,12 +556,26 @@ SUITE = [
       {"network": "hedera:main_net", "payer": A.PAYER_CHECKSUM, "payTo": "0.0.12345",
        "requirementsDigest": UNDERSCORE_DIGEST},
       paymentPayload__accepted=ACC_UNDERSCORE, settlementResponse__network="hedera:main_net"),
-    E("issue_batch", {"transaction": "", "settlementRef": A.BATCH_REF},
-      settlementResponse__transaction="", settlementReference=A.BATCH_REF),
-    E("issue_both_identifiers", {"settlementRef": A.BATCH_REF}, settlementReference=A.BATCH_REF),
-    E("issue_settlement_ref_upper_case_evm", {"transaction": "", "settlementRef": UPPER_REF},
-      settlementResponse__transaction="", settlementReference=UPPER_REF),
+    # ---- the settlement reference is found by the table of §4.3, nothing else ----
+    # the reference alone, the response having no `transaction` member at all
+    E("issue_batch", _SOL_BATCH_EXPECT, **sol_batch({"transaction": DELETE})),
+    # a batch response may also name a transaction: both are carried
+    E("issue_both_identifiers", dict(_SOL_BATCH_EXPECT, transaction=SOL_TX),
+      **sol_batch({"transaction": SOL_TX})),
+    # the reference is copied verbatim, case and all
+    E("issue_settlement_ref_upper_case_verbatim", dict(_SOL_BATCH_EXPECT, settlementRef=UPPER_REF),
+      **sol_batch({"extra": {"commitmentId": UPPER_REF}})),
     E("issue_solana_batch_settlement", _SOL_BATCH_EXPECT, **_SOL_BATCH),
+    # extra.commitmentId under a scheme or network with no row is not a reference
+    E("issue_commitment_id_ignored_exact_solana", _SVM_EXPECT,
+      **dict(_SVM, settlementResponse=dict(_SOL_RESPONSE, extra={"commitmentId": A.COMMITMENT_ID}))),
+    E("issue_commitment_id_ignored_batch_off_solana", _CF_EXPECT,
+      **dict(_CF, settlementResponse={"success": True, "transaction": A.CF_TX, "network": "cloudflare:402",
+                                      "extra": {"commitmentId": A.COMMITMENT_ID}})),
+    # the payer comes from authorization.from on any network, copied verbatim off eip155
+    E("issue_payer_from_authorization_non_evm", dict(_SVM_EXPECT, payer=AUTH_FROM_NON_EVM),
+      **dict(_SVM, settlementResponse=dict(_SOL_RESPONSE, payer=None),
+             paymentPayload__payload=dict(_SVM_PAYLOAD, authorization={"from": AUTH_FROM_NON_EVM}))),
     E("issue_svm_exact", _SVM_EXPECT, **_SVM),
     E("issue_svm_exact_no_response_payer", dict(_SVM_EXPECT, payer=""),
       **dict(_SVM, settlementResponse=dict(_SOL_RESPONSE, payer=None))),
@@ -579,16 +634,16 @@ SUITE = [
     E("issue_supersedes_empty_string", {}, statement__supersedes=""),
     E("issue_action_extra_member_ignored", {}, statement__action__note="ignored"),
     E("issue_statement_extra_member_ignored", {}, statement__note={"deep": [1.5]}),
-    E("issue_transaction_wrong_type_with_reference", {"transaction": "", "settlementRef": A.BATCH_REF},
-      settlementResponse__transaction=123, settlementReference=A.BATCH_REF),
+    E("issue_transaction_wrong_type_with_reference", _SOL_BATCH_EXPECT, **sol_batch({"transaction": 123})),
     E("issue_resource_url_whitespace_verbatim", {"resourceUrl": URL_WS},
       paymentRequired__resource__url=URL_WS),
     # C-F1: a response string with an unpaired surrogate is absent (§4.6), and
     # the receipt built from that reading passes both verifiers.
-    E("issue_surrogate_response_transaction", {"transaction": "", "settlementRef": A.BATCH_REF},
-      settlementResponse__transaction="0x\ud800", settlementReference=A.BATCH_REF),
+    E("issue_surrogate_response_transaction", _SOL_BATCH_EXPECT,
+      **sol_batch({"transaction": SOL_TX[:20] + "\ud800"})),
     E("issue_surrogate_response_payer", {}, settlementResponse__payer="\ud800" + A.PAYER[1:]),
-    E("issue_surrogate_settlement_reference", {}, settlementReference="batch\udfff"),
+    E("issue_surrogate_settlement_reference", dict(_SOL_BATCH_EXPECT, transaction=SOL_TX, settlementRef=""),
+      **sol_batch({"transaction": SOL_TX, "extra": {"commitmentId": "batch\udfff"}})),
     E("issue_surrogate_authorization_from", {"payer": ""}, settlementResponse__payer=DELETE,
       paymentPayload__payload__authorization__from="0x\udc00"),
     # ---- refused, step 1 ---------------------------------------------------
@@ -607,6 +662,22 @@ SUITE = [
     E("refuse_cloudflare_no_identifier", X_NO_ID,
       **dict(_CF, settlementResponse={"success": True, "transaction": "", "network": "cloudflare:402",
                                       "extra": {"timestamp": 1730872968}})),
+    # no row of §4.3 matches, so extra.commitmentId is no identifier
+    E("refuse_commitment_only_exact", X_NO_ID, settlementResponse__transaction="",
+      settlementResponse__extra={"commitmentId": A.COMMITMENT_ID}),
+    E("refuse_commitment_only_batch_off_solana", X_NO_ID,
+      **dict(_CF, settlementResponse={"success": True, "transaction": "", "network": "cloudflare:402",
+                                      "extra": {"commitmentId": A.COMMITMENT_ID}})),
+    E("refuse_solana_batch_scheme_case", X_NO_ID, **sol_batch_on(SOL_NET, scheme="Batch-Settlement")),
+    E("refuse_solana_batch_namespace_prefix", X_NO_ID, **sol_batch_on("solanax:" + SOL_NET[7:])),
+    # the row matches, but the value at its location is not present (§4.6)
+    E("refuse_solana_batch_commitment_empty", X_NO_ID, **sol_batch({"extra": {"commitmentId": ""}})),
+    E("refuse_solana_batch_commitment_not_string", X_NO_ID, **sol_batch({"extra": {"commitmentId": 12345}})),
+    E("refuse_solana_batch_commitment_missing", X_NO_ID, **sol_batch({"extra": {"chargedAmount": "10000"}})),
+    E("refuse_solana_batch_extra_not_object", X_NO_ID, **sol_batch({"extra": "commitmentId"})),
+    # a reference handed in outside the x402 objects is not one (§4.3 "and nothing else")
+    E("refuse_out_of_band_reference_ignored", X_NO_ID, settlementResponse__transaction="",
+      settlementReference=A.BATCH_REF),
     # ---- step 3 ------------------------------------------------------------
     E("refuse_requirements_non_integer", X_REQUIREMENTS, paymentPayload__accepted__extra={"rate": 1.5}),
     E("refuse_requirements_missing", X_REQUIREMENTS, paymentPayload__accepted=None),
@@ -624,6 +695,15 @@ SUITE = [
       paymentRequired__accepts=[A.ACCEPTED]),
     E("refuse_offered_member_added", X_OFFERED, paymentPayload__accepted__clientNote="anything",
       paymentRequired__accepts=[A.ACCEPTED]),
+    E("refuse_offered_asset_changed", X_OFFERED, paymentPayload__accepted__asset="0x" + "55" * 20,
+      paymentRequired__accepts=[A.ACCEPTED]),
+    E("refuse_offered_max_timeout_changed", X_OFFERED, paymentPayload__accepted__maxTimeoutSeconds=61,
+      paymentRequired__accepts=[A.ACCEPTED]),
+    E("refuse_offered_scheme_changed", X_OFFERED, paymentPayload__accepted__scheme="upto",
+      paymentRequired__accepts=[A.ACCEPTED]),
+    # the response agrees with the changed network, so only step 4 can refuse
+    E("refuse_offered_network_changed", X_OFFERED, paymentPayload__accepted__network="eip155:1",
+      settlementResponse__network="eip155:1", paymentRequired__accepts=[A.ACCEPTED]),
     E("refuse_offered_payto_case_differs", X_OFFERED, paymentPayload__accepted__payTo=A.PAY_TO,
       paymentRequired__accepts=[A.ACCEPTED]),
     E("refuse_offered_accepts_missing", X_OFFERED, paymentRequired__accepts=DELETE),
@@ -648,6 +728,13 @@ SUITE = [
     E("refuse_network_not_identifier_either_side", X_NETWORK,
       paymentPayload__accepted__network="base", settlementResponse__network="base"),
     E("refuse_network_conflict", X_NETWORK, settlementResponse__network="eip155:1"),
+    E("refuse_network_reference_dot", X_NETWORK, paymentPayload__accepted__network="hedera:main.net",
+      settlementResponse__network="hedera:main.net"),
+    E("refuse_network_namespace_dot", X_NETWORK, paymentPayload__accepted__network="hed.era:mainnet",
+      settlementResponse__network="hed.era:mainnet"),
+    # §4.3's row matches `solana:` and anything after it, so the reference is found
+    # (step 2 passes) and step 5 judges the network's grammar
+    E("refuse_batch_network_out_of_grammar", X_NETWORK, **sol_batch_on("solana:" + "a" * 33)),
     E("refuse_network_conflict_reference_case", X_NETWORK, **dict(
         _SVM, settlementResponse=dict(_SOL_RESPONSE, network=SOL_NET.upper().replace("SOLANA:", "solana:")))),
     # ---- step 6 ------------------------------------------------------------
@@ -705,6 +792,8 @@ SUITE = [
     # ---- step 10 -----------------------------------------------------------
     E("refuse_binding_reserved_type", X_BINDINGS,
       statement__bindings=[{"type": "action-receipt:advertised-info", "value": "sha256:" + "00" * 32}]),
+    E("refuse_binding_reserved_reversal_type", X_BINDINGS, statement__settlementStatus="refunded",
+      statement__bindings=[B_REV]),
     E("refuse_binding_reserved_unknown_type", X_BINDINGS,
       statement__bindings=[{"type": "action-receipt:other", "value": "1"}]),
     E("refuse_binding_duplicates_advertisement", X_BINDINGS, **advert(ADVERT_INFO),
@@ -784,7 +873,8 @@ def context_json(exchange: dict) -> dict:
     issued = _int_value(_obj(x.get("statement")).get("issuedAt")) or 0
     return {"paidResourceUrl": _obj(req.get("resource")).get("url"),
             "success": resp.get("success"), "transaction": resp.get("transaction"),
-            "settlementRef": x.get("settlementReference"), "network": resp.get("network"),
+            "settlementRef": A.settlement_reference_of(_obj(x.get("paymentPayload")).get("accepted"), resp),
+            "network": resp.get("network"),
             "payer": resp.get("payer"), "accepted": _obj(x.get("paymentPayload")).get("accepted"),
             "advertisedInfo": ext.get("info") if isinstance(ext, dict) else None,
             "now": min(issued + 1, A.SAFE_INT_MAX), "maxAgeSeconds": 3600, "mode": "session"}

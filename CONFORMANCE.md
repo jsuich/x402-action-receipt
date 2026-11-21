@@ -30,15 +30,15 @@ completeness. They are not testable through this suite.
 
 ## 2. Counts
 
-- 153 requirements: 122 tested, 31 not tested.
+- 156 requirements: 124 tested, 32 not tested.
   - 8 not tested, `issuer-behaviour`: binds how a receipt is produced; needs an issuer under test.
-  - 13 not tested, `consumer-behaviour`: binds how a result is used after verification.
+  - 14 not tested, `consumer-behaviour`: binds how a result is used after verification.
   - 4 not tested, `needs-network`: needs live key or anchor resolution, or a payment rail.
   - 5 not tested, `informative`: permission or recommendation with nothing to observe.
   - 0 not tested, `not-observable`: cannot be provoked or observed from outside the implementation.
   - 1 not tested, `caller-context`: depends on something the caller knows that the adapter protocol does not carry.
 - 229 vectors, each named by at least one requirement.
-- 158 exchanges, each named by at least one requirement.
+- 178 exchanges, each named by at least one requirement.
 
 ## 3. Adapter protocol
 
@@ -102,7 +102,7 @@ line, with no arguments.
 
 ```json
 {"id": "any string", "exchange": {"paymentRequired": {...}, "paymentPayload": {...},
-   "settlementResponse": {...}, "settlementReference": "..." or null,
+   "settlementResponse": {...},
    "statement": {"receiptId": "...", "issuedAt": 1703123456, "action": {...},
       "settlementStatus": "settled", "supersedes": "", "reversalTransaction": null,
       "bindings": []}}}
@@ -116,19 +116,27 @@ line, with no arguments.
 - `payload` is the receipt payload object of spec section 6.3, not signed and
   not serialized. `reason` is a refusal reason of spec section 6.2, or one of
   three answers that are not refusals: `invalid_input` (the line is not a JSON
-  object; `id` is the line's if it can be read, else `null`), `issuer_fault`
+  object, which includes a line that begins with a UTF-8 byte-order mark;
+  `id` is the line's if it can be read, else `null`), `issuer_fault`
   (the issuer itself failed) and `self_check_failed` (the payload it built
   failed its own §5.2/§5.3 check, spec §6.3). An issuer never reports its own
   failure as a refusal, and a conforming issuer gives none of the three for a
   JSON exchange.
+- There is no settlement-reference input. The issuer finds the reference by
+  the table of spec §4.3 from `paymentPayload.accepted.scheme` and
+  `paymentPayload.accepted.network` (`batch-settlement` on `solana:*`:
+  `settlementResponse.extra.commitmentId`), as a verifier holding `accepted`
+  would; a value anywhere else, a top-level `settlementReference` member
+  among them, is ignored like any member the procedure does not name.
 - Any part of an exchange may be missing or malformed; the issuer must answer
   every line, including valid JSON of any nesting depth or with integers of
   any length (the value of a number is its IEEE 754 double, spec §4.6).
 - `python3 issuer.py --batch` and `node issuer.mjs` are the two issuers here.
   `conformance/run_exchanges.py <command>` runs any issuer against the manifest
   with opaque random ids in a shuffled order, a follow-up per exchange whose
-  answer follows from spec §6, and ten protocol cases (deep nesting, huge
-  integers, lines that are not JSON); it never trusts the adapter's exit code.
+  answer follows from spec §6, and eleven protocol cases (deep nesting, huge
+  integers, lines that are not JSON, a line that begins with a byte-order
+  mark); it never trusts the adapter's exit code.
   `python3 conformance/fuzz_issuer.py --issuer NAME=COMMAND` puts a third-party
   issuer in the issuer fuzzer.
 
@@ -238,13 +246,15 @@ every case; `suite` = a structural check of the suite itself.
 | I-BAS-1 | §2.4 | MAY | May emit both a base receipt and an action receipt. | not tested (`informative`) |
 | I-BAS-2 | §2.4 | MUST | When both are emitted, `network` and `resourceUrl` are equal and `payer` and `transaction` name the same account and transaction. | not tested (`issuer-behaviour`) |
 | I-ID-1 | §4.3 | MUST | Generate `receiptId` with at least 128 bits of secure randomness and never reuse one. | not tested (`issuer-behaviour`) |
-| I-SET-1 | §4.3 | MUST NOT | Use as `settlementRef` only a value the settlement result carried; never compute one. | `issue_batch`, `issue_transaction_wrong_type_with_reference`, `issue_surrogate_settlement_reference`, `refuse_no_identifier`, `refuse_cloudflare_no_identifier`, `issue_commitment_id_ignored_off_solana` |
-| I-SET-2 | §4.3 | MUST | The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; its receipt carries it with an empty transaction. | `issue_solana_batch_settlement` |
+| I-SET-1 | §4.3 | MUST NOT | Use as `settlementRef` only a value the settlement result carried at the location §4.3 names; never compute one, and never take one from anywhere else. | `refuse_no_identifier`, `refuse_cloudflare_no_identifier`, `issue_commitment_id_ignored_off_solana`, `issue_commitment_id_ignored_exact_solana`, `issue_commitment_id_ignored_batch_off_solana`, `refuse_commitment_only_exact`, `refuse_commitment_only_batch_off_solana`, `refuse_solana_batch_commitment_empty`, `refuse_solana_batch_commitment_not_string`, `refuse_solana_batch_commitment_missing`, `refuse_solana_batch_extra_not_object`, `refuse_out_of_band_reference_ignored`, `issue_surrogate_settlement_reference` |
+| I-SET-2 | §4.3 | MUST | The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; the receipt carries it beside the response's transaction, or with an empty one. | `issue_solana_batch_settlement`, `issue_batch`, `issue_both_identifiers`, `issue_transaction_wrong_type_with_reference`, `issue_surrogate_response_transaction`, `issue_settlement_ref_upper_case_verbatim`, `refuse_batch_network_out_of_grammar` |
+| I-SET-3 | §4.3 | MUST | Find the settlement reference by the table alone, from `accepted.scheme` and `accepted.network`: the scheme exactly, the namespace exactly; no row, no reference. | `refuse_solana_batch_scheme_case`, `refuse_solana_batch_namespace_prefix`, `refuse_out_of_band_reference_ignored`, `issue_commitment_id_ignored_exact_solana`, `issue_commitment_id_ignored_batch_off_solana`, `refuse_commitment_only_batch_off_solana`, `refuse_commitment_only_exact`, `refuse_batch_network_out_of_grammar` |
+| I-PAY-2 | §4.3 | MUST | Without a response payer, the payer is `authorization.from` when present, on any network, and `""` when neither has one. | `issue_payer_from_authorization`, `issue_payer_from_authorization_non_evm`, `issue_payer_none`, `issue_svm_exact_no_response_payer` |
 | I-SUP-1 | §4.3 | MAY | May issue a later receipt for the same settlement, with `supersedes` set. | `issue_refund`, `issue_reversal_lowercased_evm` |
 | I-REV-1 | §4.3 | SHOULD | Carry a reversal or refund transaction in the reversal binding. | `issue_refund`, `issue_reversal_non_evm_verbatim` |
 | I-REQ-1 | §4.4 | MUST | Hash only accepted requirements that lie in the value domain. | `refuse_requirements_non_integer`, `refuse_requirements_unsafe_integer`, `refuse_requirements_depth_9`, `issue_requirements_depth_8` |
 | I-REQ-2 | §4.4 | MUST NOT | Issue no receipt when the requirements digest cannot be computed. | `refuse_requirements_non_integer` |
-| I-REQ-3 | §4.4 | MUST | Check that `accepted` is what the server offered before signing. | `refuse_offered_amount_changed`, `refuse_offered_payto_changed` |
+| I-REQ-3 | §4.4 | MUST | Check that `accepted` is what the server offered before signing. | `refuse_offered_amount_changed`, `refuse_offered_payto_changed`, `refuse_offered_asset_changed`, `refuse_offered_max_timeout_changed`, `refuse_offered_scheme_changed`, `refuse_offered_network_changed` |
 | I-BND-1 | §4.5.1 | SHOULD NOT | A binding does not restate or contradict a core member. | not tested (`issuer-behaviour`) |
 | I-PRS-1 | §4.6 | MUST | Read every x402 string as present or absent by the one definition of §4.6; an unpaired surrogate is absent, and the receipt built from that reading verifies. | `issue_surrogate_response_transaction`, `issue_surrogate_response_payer`, `issue_surrogate_settlement_reference`, `issue_surrogate_authorization_from`, `refuse_no_identifier_surrogate`, `refuse_resource_url_surrogate`, `issue_payer_response_not_string` |
 | I-CNV-1 | §6.1 | MUST | An optional statement member that is missing or `null` is not given. | `issue_null_means_absent` |
@@ -257,20 +267,20 @@ every case; `suite` = a structural check of the suite itself.
 | I-ORD-1 | §6.2 | MUST | Perform the ten steps in order. | `refuse_order_1_before_2`, `refuse_order_2_before_3`, `refuse_order_3_before_4`, `refuse_order_4_before_5`, `refuse_order_5_before_6`, `refuse_order_6_before_7`, `refuse_order_7_before_8`, `refuse_order_8_before_9`, `refuse_order_9_before_10`, `refuse_order_settlement_before_statement` |
 | I-ORD-2 | §6.2 | MUST NOT | Issue nothing once a step fails. | `refuse_settlement_failed`, `refuse_no_identifier` |
 | I-STP-1 | §6.2 | MUST | Step 1: refuse unless settlement succeeded (strictly `true`). | `refuse_settlement_failed`, `refuse_settlement_pending`, `refuse_settlement_truthy_string`, `refuse_settlement_success_one` |
-| I-STP-2 | §6.2 | MUST | Step 2: refuse without a transaction or a settlement reference. | `refuse_no_identifier`, `refuse_no_identifier_wrong_type`, `refuse_no_identifier_surrogate`, `refuse_cloudflare_no_identifier`, `issue_batch`, `issue_both_identifiers` |
+| I-STP-2 | §6.2 | MUST | Step 2: refuse without a transaction or a settlement reference. | `refuse_no_identifier`, `refuse_no_identifier_wrong_type`, `refuse_no_identifier_surrogate`, `refuse_cloudflare_no_identifier`, `issue_batch`, `issue_both_identifiers`, `refuse_commitment_only_exact`, `refuse_solana_batch_commitment_empty` |
 | I-STP-3 | §6.2 | MUST | Step 3: refuse unless the accepted requirements are an object in the value domain. | `refuse_requirements_non_integer`, `refuse_requirements_missing`, `refuse_requirements_array`, `refuse_requirements_unsafe_integer`, `refuse_requirements_depth_9`, `issue_requirements_float_spelling`, `issue_requirements_depth_8` |
-| I-STP-4 | §6.2 | MUST | Step 4: refuse unless `accepts` is an array and `accepted` equals one of its entries. | `refuse_offered_amount_changed`, `refuse_offered_payto_changed`, `refuse_offered_extra_changed`, `refuse_offered_member_added`, `refuse_offered_accepts_missing`, `refuse_offered_accepts_not_array`, `refuse_offered_accepts_empty`, `issue_offer_among_several` |
+| I-STP-4 | §6.2 | MUST | Step 4: refuse unless `accepts` is an array and `accepted` equals one of its entries. | `refuse_offered_amount_changed`, `refuse_offered_payto_changed`, `refuse_offered_extra_changed`, `refuse_offered_member_added`, `refuse_offered_accepts_missing`, `refuse_offered_accepts_not_array`, `refuse_offered_accepts_empty`, `issue_offer_among_several`, `refuse_offered_asset_changed`, `refuse_offered_max_timeout_changed`, `refuse_offered_scheme_changed`, `refuse_offered_network_changed` |
 | I-OFF-1 | §6.2 | MUST | Compare `accepted` with each offered entry by JCS bytes, both in the value domain: equal by value is equal; a case difference is not. | `issue_requirements_float_spelling`, `issue_offer_float_spelling`, `issue_offer_member_order_differs`, `issue_offer_entry_out_of_domain_skipped`, `refuse_offered_only_out_of_domain`, `refuse_offered_payto_case_differs`, `refuse_offered_true_is_not_one`, `issue_requirements_member_order_utf16` |
-| I-STP-5 | §6.2 | MUST | Step 5: refuse unless the accepted network is a network identifier and does not conflict with a response network that is one. | `refuse_network_not_identifier`, `refuse_network_namespace_33`, `refuse_network_namespace_2`, `refuse_network_reference_33`, `refuse_network_not_identifier_either_side`, `refuse_network_conflict`, `issue_network_namespace_32`, `issue_network_cloudflare`, `issue_response_network_not_identifier`, `refuse_network_conflict_reference_case`, `issue_network_reference_underscore` |
+| I-STP-5 | §6.2 | MUST | Step 5: refuse unless the accepted network is a network identifier and does not conflict with a response network that is one. | `refuse_network_not_identifier`, `refuse_network_namespace_33`, `refuse_network_namespace_2`, `refuse_network_reference_33`, `refuse_network_not_identifier_either_side`, `refuse_network_conflict`, `issue_network_namespace_32`, `issue_network_cloudflare`, `issue_response_network_not_identifier`, `refuse_network_conflict_reference_case`, `issue_network_reference_underscore`, `refuse_network_reference_dot`, `refuse_network_namespace_dot`, `refuse_batch_network_out_of_grammar` |
 | I-STP-6 | §6.2 | MUST | Step 6: refuse unless the resource URL is present; copy it verbatim. | `refuse_no_resource`, `refuse_resource_url_empty`, `refuse_resource_url_not_string`, `refuse_resource_url_surrogate`, `issue_resource_url_whitespace_verbatim` |
 | I-STP-7 | §6.2 | MUST | Step 7: refuse unless `payTo` is present and the identifiers satisfy the grammar after lowercasing. | `refuse_payto_role_constant`, `refuse_payto_missing`, `refuse_payto_empty_non_evm`, `refuse_transaction_not_hex`, `refuse_payer_out_of_grammar_evm`, `refuse_payer_from_authorization_out_of_grammar` |
-| I-PAY-1 | §6.2 | MUST | The payer is the response's when present, else `authorization.from` when present, else `""`. | `issue_basic`, `issue_payer_from_authorization`, `issue_payer_response_wins_over_authorization`, `issue_payer_none`, `issue_payer_permit2_from_response`, `issue_payer_permit2_no_response_payer`, `issue_svm_exact`, `issue_svm_exact_no_response_payer` |
+| I-PAY-1 | §6.2 | MUST | The payer is the response's when present, else `authorization.from` when present (on any network), else `""`. | `issue_basic`, `issue_payer_from_authorization`, `issue_payer_response_wins_over_authorization`, `issue_payer_none`, `issue_payer_permit2_from_response`, `issue_payer_permit2_no_response_payer`, `issue_svm_exact`, `issue_svm_exact_no_response_payer`, `issue_payer_from_authorization_non_evm` |
 | I-STP-7L | §6.2 | MUST | Lowercase `payer`, `payTo` and `transaction` on eip155 (ASCII only); copy them verbatim elsewhere. | `issue_basic`, `issue_response_uppercase_hex`, `issue_payer_from_authorization_lowercased`, `issue_network_namespace_32`, `issue_svm_exact` |
-| I-REF-1 | §6.2 | MUST | Never change the settlement reference, on any network. | `issue_settlement_ref_upper_case_evm`, `issue_solana_batch_settlement` |
+| I-REF-1 | §6.2 | MUST | Never change the settlement reference, on any network. | `issue_settlement_ref_upper_case_verbatim`, `issue_solana_batch_settlement` |
 | I-STP-8 | §6.2 | MUST | Step 8: refuse a statement that is not well formed; each sub-check has its own exchange, with both sides of every bound. | `refuse_receiptid_short`, `refuse_agent_empty`, `refuse_agent_surrogate`, `refuse_actiontype_empty`, `refuse_actiontype_missing`, `refuse_scope_not_string`, `refuse_scope_missing`, `refuse_scope_unpaired_surrogate`, `refuse_outcome_unknown`, `refuse_outcome_retired_value`, `refuse_status_unknown`, `refuse_status_case`, `refuse_receiptid_21`, `refuse_receiptid_65`, `refuse_receiptid_alphabet`, `refuse_issuedat_negative`, `refuse_issuedat_2_53`, `refuse_issuedat_fraction`, `refuse_issuedat_boolean`, `refuse_issuedat_string`, `refuse_supersedes_grammar`, `refuse_supersedes_not_string`, `refuse_reversal_not_string`, `refuse_further_bindings_not_array`, `refuse_statement_not_object`, `refuse_action_not_object`, `issue_receiptid_22`, `issue_receiptid_64`, `issue_issuedat_zero`, `issue_issuedat_max`, `issue_issuedat_float_spelling`, `issue_scope_empty`, `issue_outcome_failed`, `issue_outcome_partial`, `issue_status_capture_pending`, `issue_status_reversed`, `issue_supersedes_empty_string`, `refuse_receiptid_trailing_newline` |
 | I-STP-9 | §6.2 | MUST | Step 9: refuse when an advertised `actionType` or `scope` is a member whose value is not a string equal to the statement's. | `refuse_advertised_scope_conflict`, `refuse_advertised_actiontype_conflict`, `refuse_advertised_scope_not_string`, `refuse_advertised_scope_null`, `refuse_advertised_actiontype_null` |
 | I-STP-10 | §6.2 | MUST | Step 10: refuse bindings that break the shape, grammar, value form, uniqueness or count. | `refuse_binding_duplicate_type`, `refuse_binding_grammar`, `refuse_binding_value_grammar`, `refuse_binding_value_empty`, `refuse_seventeen_bindings`, `refuse_seventeen_with_issuer_added`, `refuse_reversal_malformed_evm`, `issue_sixteen_bindings`, `issue_sixteen_with_issuer_added` |
-| I-BND-4 | §6.2 | MUST | Refuse a supplied binding in the `action-receipt:` namespace. | `refuse_binding_reserved_type`, `refuse_binding_reserved_unknown_type`, `refuse_binding_duplicates_advertisement` |
+| I-BND-4 | §6.2 | MUST | Refuse a supplied binding in the `action-receipt:` namespace. | `refuse_binding_reserved_type`, `refuse_binding_reserved_unknown_type`, `refuse_binding_duplicates_advertisement`, `refuse_binding_reserved_reversal_type` |
 | I-BND-2 | §6.2 | MUST | Add the advertisement binding when the extension was advertised. | `issue_advertised`, `issue_bindings_sorted` |
 | I-BND-7 | §6.2 | MUST | Refuse an advertised `info` outside the value domain. | `refuse_advertised_info_not_hashable`, `refuse_advertised_info_depth_9` |
 | I-BND-3 | §6.2 | MUST | Add the reversal binding when the statement gives a reversal transaction, lowercased on eip155. | `issue_refund`, `issue_reversal_lowercased_evm`, `issue_reversal_non_evm_verbatim` |
@@ -306,6 +316,7 @@ every case; `suite` = a structural check of the suite itself.
 | C-10 | §4.3 | MUST NOT | Do not pick one of two receipts that each validly supersede the same receipt. | not tested (`consumer-behaviour`) |
 | C-11 | §4.5.1 | MUST NOT | Never let a binding change how a member of §4.1 is read. | not tested (`consumer-behaviour`) |
 | C-12 | §9 | SHOULD NOT | Do not read a signature failure on an old receipt as forgery unless the resolved key is known to be the one bound at issuedAt. | not tested (`consumer-behaviour`) |
+| C-13 | §5.8 | MUST NOT | Do not treat a settlement-mismatch rejection of a receipt with a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`. | not tested (`consumer-behaviour`) |
 
 ## 5. Verifier requirements the suite does not test
 

@@ -20,8 +20,9 @@ issuer adapter (ISSUER ADAPTER PROTOCOL in CONFORMANCE.md), and reports:
         Q5  an issued payload copies its sources (§4.1, §6.3) — checked with
             the independent `rfc8785` canonicalizer, not either issuer's: success
             is true; accepted is byte-equal to an entry of accepts; network,
-            resourceUrl, settlementRef, the action and the status are copied;
-            requirementsDigest is the digest of accepted
+            resourceUrl, the action and the status are copied; settlementRef
+            is the reference §4.3's table names for accepted.scheme and
+            accepted.network, or ""; requirementsDigest is the digest of accepted
 
     python3 conformance/fuzz_issuer.py --seed 1 --n 2000
     python3 conformance/fuzz_issuer.py --issuer mine="java -jar my-issuer.jar"
@@ -104,14 +105,58 @@ def x_transaction(r, x):
     x["settlementResponse"]["transaction"] = r.choice(V.TXS + [None, 1, "0x1234", "0X" + "Ab" * 32])
 
 
+REF_VALUES = [A.BATCH_REF, "", None, 1, "batch:other", " ", I.UPPER_REF, A.COMMITMENT_ID,
+              A.COMMITMENT_ID.upper(), ["x"], {"id": "x"}]
+
+
+def _extra(x) -> dict:
+    """The response's `extra`, made an object if it was not one."""
+    resp = x["settlementResponse"]
+    if not isinstance(resp.get("extra"), dict):
+        resp["extra"] = {}
+    return resp["extra"]
+
+
 def x_reference(r, x):
-    x["settlementReference"] = r.choice([A.BATCH_REF, "", None, 1, "batch:other", " ", I.UPPER_REF,
-                                         A.COMMITMENT_ID, A.COMMITMENT_ID.upper()])
+    """The value at the location §4.3 names (extra.commitmentId), on any scheme and
+    network: a reference only under `batch-settlement` on `solana:*`."""
+    c = r.randrange(4)
+    if c == 0:
+        _extra(x)["commitmentId"] = r.choice(REF_VALUES)
+    elif c == 1:
+        _extra(x).pop("commitmentId", None)
+    elif c == 2:
+        x["settlementResponse"]["extra"] = r.choice(JUNK)
+    else:
+        # a reference handed in outside the x402 objects is never one (§4.3)
+        x["settlementReference"] = r.choice([A.BATCH_REF, A.COMMITMENT_ID])
 
 
 def x_no_tx_with_ref(r, x):
-    x["settlementResponse"]["transaction"] = ""
-    x["settlementReference"] = r.choice([A.BATCH_REF, I.UPPER_REF, ""])
+    x["settlementResponse"]["transaction"] = r.choice(["", None])
+    _extra(x)["commitmentId"] = r.choice([A.COMMITMENT_ID, I.UPPER_REF, A.BATCH_REF, ""])
+
+
+def x_scheme(r, x):
+    """The row of §4.3 is chosen by accepted.scheme and accepted.network."""
+    acc = x["paymentPayload"]["accepted"]
+    c = r.randrange(3)
+    if c == 0:
+        acc["scheme"] = r.choice(["exact", "batch-settlement", "Batch-Settlement", "batch-settlement ",
+                                  "upto", None, 1])
+    elif c == 1:
+        acc["network"] = r.choice([I.SOL_NET, "solanax:" + I.SOL_NET[7:], "solana:", "solana:" + "a" * 33,
+                                   "SOLANA:" + I.SOL_NET[7:], "solana-devnet:x", A.NETWORK, "cloudflare:402"])
+        if r.random() < 0.6:
+            x["settlementResponse"]["network"] = acc["network"]
+    else:
+        acc.update(scheme="batch-settlement", network=I.SOL_NET)
+        x["settlementResponse"]["network"] = I.SOL_NET
+    if r.random() < 0.7:
+        _extra(x)["commitmentId"] = r.choice([A.COMMITMENT_ID, I.UPPER_REF])
+    if r.random() < 0.5:
+        x["settlementResponse"]["transaction"] = ""
+    mirror(r, x)
 
 
 CASE_NET = "solana:5EYKT4USFV8P8NJDTREPY1VZQKQZKVDP"     # SOL_NET with the reference in upper case
@@ -129,11 +174,11 @@ def x_resp_surrogate(r, x):
     if c == 0:
         x["settlementResponse"]["transaction"] = r.choice(SURROGATES)
         if r.random() < 0.6:
-            x["settlementReference"] = A.BATCH_REF
+            _extra(x)["commitmentId"] = A.COMMITMENT_ID
     elif c == 1:
         x["settlementResponse"]["payer"] = r.choice(SURROGATES)
     elif c == 2:
-        x["settlementReference"] = r.choice(SURROGATES)
+        _extra(x)["commitmentId"] = r.choice(SURROGATES)
     else:
         p = x["paymentPayload"].get("payload")
         if isinstance(p, dict):
@@ -372,7 +417,7 @@ def x_top(r, x):
 
 
 OPERATORS = [
-    (x_none, 4), (x_success, 2), (x_transaction, 4), (x_reference, 3), (x_no_tx_with_ref, 2),
+    (x_none, 4), (x_success, 2), (x_transaction, 4), (x_reference, 4), (x_no_tx_with_ref, 2), (x_scheme, 3),
     (x_resp_network, 3), (x_resp_payer, 3), (x_resp_surrogate, 4), (x_resp_delete, 2), (x_resp_shape, 1),
     (x_auth_from, 3), (x_accepted_shape, 1), (x_accepted_network, 3), (x_accepted_payto, 3),
     (x_accepted_member, 4), (x_accepts, 5), (x_non_evm, 2), (x_resource, 3), (x_statement_ids, 6),
@@ -460,6 +505,20 @@ def _rjcs(v) -> bytes | None:
         return None
 
 
+def table_reference(accepted, resp) -> str:
+    """§4.3, written here a third time (independently of issuer.py and
+    action_receipt.py): `batch-settlement` on `solana:*` names
+    SettlementResponse.extra.commitmentId when it is present (§4.6)."""
+    if not (isinstance(accepted, dict) and accepted.get("scheme") == "batch-settlement"):
+        return ""
+    net = accepted.get("network")
+    if not (isinstance(net, str) and net[:7] == "solana:"):
+        return ""
+    extra = resp.get("extra") if isinstance(resp, dict) else None
+    v = extra.get("commitmentId") if isinstance(extra, dict) else None
+    return v if isinstance(v, str) and v and A.in_domain(v) else ""
+
+
 def copies_sources(exchange, payload) -> list[str]:
     """Q5: what §4.1/§6.3 say an issued payload must copy, from the exchange."""
     x = I._obj(exchange)
@@ -482,10 +541,8 @@ def copies_sources(exchange, payload) -> list[str]:
         out.append("network not copied from accepted")
     if payload.get("resourceUrl") != I._obj(req.get("resource")).get("url"):
         out.append("resourceUrl not copied verbatim")
-    ref = x.get("settlementReference")
-    want_ref = ref if A._has(ref) else ""
-    if payload.get("settlementRef") != want_ref:
-        out.append("settlementRef not copied verbatim")
+    if payload.get("settlementRef") != table_reference(acc, resp):
+        out.append("settlementRef is not the reference §4.3's table names, copied verbatim")
     if payload.get("settlementStatus") != st.get("settlementStatus") or payload.get("receiptId") != st.get("receiptId"):
         out.append("status or receiptId not copied")
     if ({k: I._obj(payload.get("action")).get(k) for k in A.ACTION_KEYS}

@@ -50,7 +50,6 @@
     "network": "eip155:8453",
     "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66"
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,

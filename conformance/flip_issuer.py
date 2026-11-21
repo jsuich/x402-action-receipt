@@ -51,13 +51,25 @@ FLIPS = [
     (P, "2 transaction present (well-formed)",
      'transaction = resp.get("transaction") if _present(resp.get("transaction")) else ""',
      'transaction = resp.get("transaction") if isinstance(resp.get("transaction"), str) else ""', X),
-    (P, "2 reference present (well-formed)",
-     'reference = x.get("settlementReference") if _present(x.get("settlementReference")) else ""',
-     'reference = x.get("settlementReference") if isinstance(x.get("settlementReference"), str) else ""', X),
+    (P, "2 reference present (well-formed)", '            return value if _present(value) else ""',
+     '            return value if isinstance(value, str) else ""', X),
+    (P, "2 reference: the row's scheme", 'if scheme == row_scheme and network.startswith(namespace + ":"):',
+     'if network.startswith(namespace + ":"):', X),
+    (P, "2 reference: the row's network", 'if scheme == row_scheme and network.startswith(namespace + ":"):',
+     'if scheme == row_scheme:', X),
+    (P, "2 reference: namespace exact, not a prefix", 'network.startswith(namespace + ":")',
+     'network.startswith(namespace)', X),
+    (P, "2 reference: from the table only, never out of band",
+     '    reference = settlement_reference(pay.get("accepted"), resp)\n',
+     '    reference = settlement_reference(pay.get("accepted"), resp) or (x.get("settlementReference") or "")\n', X),
     (P, "3 requirements in the value domain", '    digest = A.requirements_digest(accepted)\n',
      '    digest = A.requirements_digest(accepted) or (A.sha256_tag(b"x") if isinstance(accepted, dict) else None)\n', X),
     (P, "4 accepts must be an array", '    if not isinstance(accepts, list):\n        return None, X_OFFERED',
      '    if not isinstance(accepts, list):\n        accepts = [accepted]', X),
+    (P, "4 every member compared (asset)",
+     "    if not any(A.in_domain(entry) and A.jcs(entry) == accepted_bytes for entry in accepts):",
+     "    _strip = lambda o: A.jcs({k: v for k, v in o.items() if k != 'asset'}) if isinstance(o, dict) else b''\n"
+     "    if not any(A.in_domain(entry) and _strip(entry) == _strip(accepted) for entry in accepts):", X),
     (P, "4 accepted must be offered", 'if not any(A.in_domain(entry) and A.jcs(entry) == accepted_bytes for entry in accepts):',
      'if not accepts:', X),
     (P, "4 offered compared by JCS bytes, not by network+payTo",
@@ -72,6 +84,9 @@ FLIPS = [
      '    if resource is None:\n        return None, X_RESOURCE', X),
     (P, "6 resource well-formed", '    if not _present(resource):\n        return None, X_RESOURCE',
      '    if not (isinstance(resource, str) and resource):\n        return None, X_RESOURCE', X),
+    (P, "7 authorization.from on any network",
+     '        payer = _obj(_obj(pay.get("payload")).get("authorization")).get("from")',
+     '        payer = _obj(_obj(pay.get("payload")).get("authorization")).get("from") if network.startswith("eip155:") else None', X),
     (P, "7 response payer wins over authorization", '    payer = resp.get("payer")\n    if not _present(payer):',
      '    payer = _obj(_obj(pay.get("payload")).get("authorization")).get("from") or resp.get("payer")\n    if not _present(payer):', X),
     (P, "7 payer falls back to authorization.from",
@@ -165,6 +180,10 @@ FLIPS = [
     (J, "2 identifier required", "if (transaction === '' && settlementRef === '') return", "if (false) return", X),
     (J, "4.6 present means well-formed", "const present = (v) => typeof v === 'string' && v.length > 0 && wf(v);",
      "const present = (v) => typeof v === 'string' && v.length > 0;", X),
+    (J, "2 reference: the row's scheme", "if (scheme !== 'batch-settlement' || typeof network", "if (typeof network", X),
+    (J, "2 reference: the row's network", " || !network.startsWith('solana:')) return '';", ") return '';", X),
+    (J, "2 reference: namespace exact, not a prefix", "!network.startsWith('solana:')", "!network.startsWith('solana')", X),
+    (J, "2 reference present (well-formed)", "return present(v) ? v : '';", "return typeof v === 'string' ? v : '';", X),
     (J, "3 requirements in the value domain", "if (!isObj(accepted) || !inDomain(accepted)) return",
      "if (!isObj(accepted)) return", X),
     (J, "4 accepts must be an array", "const accepts = get(pr, 'accepts');",
@@ -172,6 +191,12 @@ FLIPS = [
     (J, "4 accepted must be offered", "if (!accepts.some((e) => inDomain(e) && jcs(e) === acceptedJcs)) return",
      "if (false) return", X),
     (J, "5 network namespace bound 3..32", "const RE_NETWORK = /^[-a-z0-9]{3,32}:", "const RE_NETWORK = /^[-a-z0-9]{3,8}:", X),
+    (J, "5 network reference grammar", "const RE_NETWORK = /^[-a-z0-9]{3,32}:[-_a-zA-Z0-9]{1,32}$/;",
+     "const RE_NETWORK = /^[-a-z0-9]{3,32}:[-_.a-zA-Z0-9]{1,32}$/;", X),
+    (J, "4 every member compared (maxTimeoutSeconds)",
+     "  if (!accepts.some((e) => inDomain(e) && jcs(e) === acceptedJcs)) return refuse('requirements_not_offered');",
+     "  const _s = (o) => (isObj(o) ? jcs(Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'maxTimeoutSeconds'))) : '');\n"
+     "  if (!accepts.some((e) => inDomain(e) && _s(e) === _s(accepted))) return refuse('requirements_not_offered');", X),
     (J, "5 network conflict", "&& srNet !== network) return", "&& false) return", X),
     (J, "6 resource required", "if (!present(url)) return refuse('resource_unavailable');",
      "if (url === undefined) return refuse('resource_unavailable');", X),
@@ -217,6 +242,8 @@ FLIPS = [
      "if (own(info, 'scope') && info.scope !== null && !(", X),
     (J, "10 supplied action-receipt: types refused", "e.type.startsWith(RESERVED)) return refuse('invalid_bindings');",
      "e.type === ADVERTISED + 'x') return refuse('invalid_bindings');", X),
+    (J, "10 supplied reversal binding refused", "e.type.startsWith(RESERVED)) return refuse('invalid_bindings');",
+     "e.type.startsWith(RESERVED) && e.type !== REVERSAL) return refuse('invalid_bindings');", X),
     (J, "10 advertisement committed", "    entries.push({ type: ADVERTISED, value: digest(info) });\n", "", X),
     (J, "10 advertised info hashable", "    if (!inDomain(info)) return refuse('invalid_bindings');\n", "", X),
     (J, "10 reversal binding added", "if (reversal !== NOT_GIVEN) entries.push(", "if (false) entries.push(", X),
@@ -232,6 +259,8 @@ FLIPS = [
     (J, "10 unique types", "if (bindings[i - 1].type === bindings[i].type) return refuse('invalid_bindings');", "", X),
     (J, "adapter: a non-JSON line is invalid_input", "    return { id, ...refuse('invalid_input') };\n  }\n  if (!isObj(msg))",
      "    return { id, ...refuse('settlement_not_successful') };\n  }\n  if (!isObj(msg))", X),
+    (J, "adapter: a leading byte-order mark is not stripped", "{ fatal: true, ignoreBOM: true }",
+     "{ fatal: true, ignoreBOM: false }", X),
 ]
 
 # A flip that changes one place of the source in a way no conforming input
@@ -353,6 +382,8 @@ def main(argv=None) -> int:
               + ("agrees on every case" if ok else f"disagrees: {res}"))
         ctl_ok = ctl_ok and ok
     n = len(flips)
+    if n == 0:
+        print("NO FLIPS: the flip list is empty, so nothing was shown to be able to fail")
     print(f"{caught} of {n} issuer flips caught by a named exchange or suite check "
           f"({sum(1 for f in flips if f[0] == P)} issuer.py, {sum(1 for f in flips if f[0] == J)} issuer.mjs); "
           f"{missed} missed, {broken} broken, {setup} setup errors; control {'ok' if ctl_ok else 'FAILED'}")
@@ -362,7 +393,7 @@ def main(argv=None) -> int:
     print(json.dumps({"flips": n, "caught": caught, "missed": missed, "broken": broken, "setup": setup,
                       "control_ok": ctl_ok}))
     shutil.rmtree(scratch_root, ignore_errors=True) if a.scratch is None else None
-    return 0 if caught == n and ctl_ok else 1
+    return 0 if n > 0 and caught == n and ctl_ok else 1
 
 
 if __name__ == "__main__":

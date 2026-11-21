@@ -1352,16 +1352,23 @@
       "role": "issuer",
       "section": "4.3",
       "level": "MUST NOT",
-      "text": "Use as `settlementRef` only a value the settlement result carried; never compute one.",
+      "text": "Use as `settlementRef` only a value the settlement result carried at the location \u00a74.3 names; never compute one, and never take one from anywhere else.",
       "anchor": "An issuer MUST NOT use as `settlementRef` a value the settlement result did not carry, and MUST NOT compute one.",
       "tested_by": "exchange",
       "exchanges": [
-        "issue_batch.json",
-        "issue_transaction_wrong_type_with_reference.json",
-        "issue_surrogate_settlement_reference.json",
         "refuse_no_identifier.json",
         "refuse_cloudflare_no_identifier.json",
-        "issue_commitment_id_ignored_off_solana.json"
+        "issue_commitment_id_ignored_off_solana.json",
+        "issue_commitment_id_ignored_exact_solana.json",
+        "issue_commitment_id_ignored_batch_off_solana.json",
+        "refuse_commitment_only_exact.json",
+        "refuse_commitment_only_batch_off_solana.json",
+        "refuse_solana_batch_commitment_empty.json",
+        "refuse_solana_batch_commitment_not_string.json",
+        "refuse_solana_batch_commitment_missing.json",
+        "refuse_solana_batch_extra_not_object.json",
+        "refuse_out_of_band_reference_ignored.json",
+        "issue_surrogate_settlement_reference.json"
       ]
     },
     {
@@ -1369,11 +1376,51 @@
       "role": "issuer",
       "section": "4.3",
       "level": "MUST",
-      "text": "The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; its receipt carries it with an empty transaction.",
+      "text": "The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; the receipt carries it beside the response's transaction, or with an empty one.",
       "anchor": "| `batch-settlement` on `solana:*` | `SettlementResponse.extra.commitmentId` |",
       "tested_by": "exchange",
       "exchanges": [
-        "issue_solana_batch_settlement.json"
+        "issue_solana_batch_settlement.json",
+        "issue_batch.json",
+        "issue_both_identifiers.json",
+        "issue_transaction_wrong_type_with_reference.json",
+        "issue_surrogate_response_transaction.json",
+        "issue_settlement_ref_upper_case_verbatim.json",
+        "refuse_batch_network_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-SET-3",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Find the settlement reference by the table alone, from `accepted.scheme` and `accepted.network`: the scheme exactly, the namespace exactly; no row, no reference.",
+      "anchor": "is found by this table and nothing else: take `accepted.scheme` and `accepted.network`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_solana_batch_scheme_case.json",
+        "refuse_solana_batch_namespace_prefix.json",
+        "refuse_out_of_band_reference_ignored.json",
+        "issue_commitment_id_ignored_exact_solana.json",
+        "issue_commitment_id_ignored_batch_off_solana.json",
+        "refuse_commitment_only_batch_off_solana.json",
+        "refuse_commitment_only_exact.json",
+        "refuse_batch_network_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-PAY-2",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Without a response payer, the payer is `authorization.from` when present, on any network, and `\"\"` when neither has one.",
+      "anchor": "none, it is `PaymentPayload.payload.authorization.from`, on any network, when present",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_payer_from_authorization.json",
+        "issue_payer_from_authorization_non_evm.json",
+        "issue_payer_none.json",
+        "issue_svm_exact_no_response_payer.json"
       ]
     },
     {
@@ -1439,7 +1486,11 @@
       "tested_by": "exchange",
       "exchanges": [
         "refuse_offered_amount_changed.json",
-        "refuse_offered_payto_changed.json"
+        "refuse_offered_payto_changed.json",
+        "refuse_offered_asset_changed.json",
+        "refuse_offered_max_timeout_changed.json",
+        "refuse_offered_scheme_changed.json",
+        "refuse_offered_network_changed.json"
       ]
     },
     {
@@ -1629,7 +1680,9 @@
         "refuse_no_identifier_surrogate.json",
         "refuse_cloudflare_no_identifier.json",
         "issue_batch.json",
-        "issue_both_identifiers.json"
+        "issue_both_identifiers.json",
+        "refuse_commitment_only_exact.json",
+        "refuse_solana_batch_commitment_empty.json"
       ]
     },
     {
@@ -1666,7 +1719,11 @@
         "refuse_offered_accepts_missing.json",
         "refuse_offered_accepts_not_array.json",
         "refuse_offered_accepts_empty.json",
-        "issue_offer_among_several.json"
+        "issue_offer_among_several.json",
+        "refuse_offered_asset_changed.json",
+        "refuse_offered_max_timeout_changed.json",
+        "refuse_offered_scheme_changed.json",
+        "refuse_offered_network_changed.json"
       ]
     },
     {
@@ -1707,7 +1764,10 @@
         "issue_network_cloudflare.json",
         "issue_response_network_not_identifier.json",
         "refuse_network_conflict_reference_case.json",
-        "issue_network_reference_underscore.json"
+        "issue_network_reference_underscore.json",
+        "refuse_network_reference_dot.json",
+        "refuse_network_namespace_dot.json",
+        "refuse_batch_network_out_of_grammar.json"
       ]
     },
     {
@@ -1748,7 +1808,7 @@
       "role": "issuer",
       "section": "6.2",
       "level": "MUST",
-      "text": "The payer is the response's when present, else `authorization.from` when present, else `\"\"`.",
+      "text": "The payer is the response's when present, else `authorization.from` when present (on any network), else `\"\"`.",
       "anchor": "`payer` is `SettlementResponse.payer` when present; failing that the scheme payload's payer when present",
       "tested_by": "exchange",
       "exchanges": [
@@ -1759,7 +1819,8 @@
         "issue_payer_permit2_from_response.json",
         "issue_payer_permit2_no_response_payer.json",
         "issue_svm_exact.json",
-        "issue_svm_exact_no_response_payer.json"
+        "issue_svm_exact_no_response_payer.json",
+        "issue_payer_from_authorization_non_evm.json"
       ]
     },
     {
@@ -1787,7 +1848,7 @@
       "anchor": "The settlement reference is never changed.",
       "tested_by": "exchange",
       "exchanges": [
-        "issue_settlement_ref_upper_case_evm.json",
+        "issue_settlement_ref_upper_case_verbatim.json",
         "issue_solana_batch_settlement.json"
       ]
     },
@@ -1887,7 +1948,8 @@
       "exchanges": [
         "refuse_binding_reserved_type.json",
         "refuse_binding_reserved_unknown_type.json",
-        "refuse_binding_duplicates_advertisement.json"
+        "refuse_binding_duplicates_advertisement.json",
+        "refuse_binding_reserved_reversal_type.json"
       ]
     },
     {
@@ -2190,6 +2252,15 @@
       "level": "SHOULD NOT",
       "text": "Do not read a signature failure on an old receipt as forgery unless the resolved key is known to be the one bound at issuedAt.",
       "anchor": "A consumer SHOULD NOT read a signature failure on an old receipt as proof the presenter forged it unless it knows the key it resolved is the key that was bound at `issuedAt`.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-13",
+      "role": "consumer",
+      "section": "5.8",
+      "level": "MUST NOT",
+      "text": "Do not treat a settlement-mismatch rejection of a receipt with a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`.",
+      "anchor": "a consumer MUST NOT treat a `invalid_actionreceipt_settlement_mismatch` on a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`.",
       "tested_by": "consumer-behaviour"
     },
     {

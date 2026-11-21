@@ -103,6 +103,12 @@ def protocol_cases(manifest: dict) -> list:
     for label, path, raw, want in specs:
         cid = secrets.token_hex(12)
         out.append((cid, "protocol:" + label, line(cid, path, raw), want))
+    # a line that begins with a UTF-8 byte-order mark is not a JSON text (RFC 8259
+    # §8.1 lets a parser ignore one, so an issuer that silently strips it and one
+    # that does not would disagree); the protocol answers `invalid_input`
+    cid = secrets.token_hex(12)
+    out.append((cid, "protocol:not_json_leading_bom", "﻿" + json.dumps({"id": cid, "exchange": x}),
+                refuse("invalid_input")))
     return out
 
 
@@ -132,7 +138,8 @@ def judge(g, e) -> str | None:
 
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    ap = argparse.ArgumentParser(description="run an issuer adapter over the exchange manifest")
+    ap = argparse.ArgumentParser(description="run an issuer adapter over the exchange manifest",
+                                 add_help=False)
     ap.add_argument("--seed", type=int, default=None, help="follow-up values and order (default: random)")
     ap.add_argument("--json", action="store_true", help="also print a one-line JSON summary")
     ap.add_argument("--quiet", action="store_true")
@@ -144,9 +151,16 @@ def main(argv=None) -> int:
         while k < len(argv) and argv[k].startswith("--") and argv[k] in ("--seed", "--json", "--quiet"):
             k += 2 if argv[k] == "--seed" else 1
         opts, cmd = argv[:k], argv[k:]
-    a = ap.parse_args(opts)
-    if not cmd:
-        sys.exit(__doc__)
+    # `-h`/`--help`, no adapter command, or an option this runner does not know
+    # where the command should be: print the usage and exit 2 (never a traceback)
+    if any(o in ("-h", "--help") for o in opts) or not cmd or cmd[0].startswith("-"):
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+    try:
+        a = ap.parse_args(opts)
+    except SystemExit:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
     manifest = json.loads((ROOT / "exchanges" / "MANIFEST.json").read_text())
     if not manifest.get("exchanges"):
         print("SUMMARY exchanges 0/0: the manifest is empty; nothing was tested")
@@ -161,7 +175,12 @@ def main(argv=None) -> int:
     order = list(range(len(lines)))
     rng.shuffle(order)
     cases, lines = [cases[i] for i in order], [lines[i] for i in order]
-    r = subprocess.run(cmd, input=("\n".join(lines) + "\n").encode(), capture_output=True, cwd=ROOT)
+    try:
+        r = subprocess.run(cmd, input=("\n".join(lines) + "\n").encode(), capture_output=True, cwd=ROOT)
+    except OSError as e:
+        print(f"BROKEN cannot start the adapter {cmd[0]!r}: {e}")
+        print(f"SUMMARY exchanges 0/{len(cases)}: the adapter did not run")
+        return 1
     broken = None
     if r.returncode != 0:
         broken = f"adapter failed (exit {r.returncode}): {r.stderr.decode()[-1500:]}"

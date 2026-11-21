@@ -47,7 +47,6 @@
     "transaction": "cf-settlement-000000000001",
     "network": "cloudflare:402"
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,

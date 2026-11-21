@@ -61,7 +61,6 @@
     "network": "eip155:8453",
     "payer": 7
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,

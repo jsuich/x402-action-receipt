@@ -63,7 +63,6 @@
     "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
     "payer": null
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,
