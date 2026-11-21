@@ -2158,7 +2158,11 @@ def spec_reason_codes() -> set[str] | None:
     if start < 0:
         return set()
     end = text.find("\n## ", start)
-    return set(re.findall(r"`(invalid_[a-z_]+)`", text[start:end if end > 0 else len(text)]))
+    section = text[start:end if end > 0 else len(text)]
+    # table rows only: the prose after the table names the two ERROR causes,
+    # which are not reason codes ("ERROR carries no reason code on the wire")
+    rows = "\n".join(line for line in section.splitlines() if line.startswith("|"))
+    return set(re.findall(r"`(invalid_[a-z_]+)`", rows))
 
 
 def run_suite(regenerate: bool) -> int:
