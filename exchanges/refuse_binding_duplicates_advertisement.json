@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -27,7 +29,19 @@
           "scope": "read:model-x"
         },
         "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
+          "properties": {
+            "willIssueReceipt": {
+              "type": "boolean"
+            },
+            "actionType": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string"
+            }
+          },
           "required": [
             "willIssueReceipt"
           ]
@@ -37,6 +51,11 @@
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -60,15 +79,23 @@
         "nonce": "0xf3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3"
       }
     },
-    "extensions": {}
+    "extensions": {
+      "action-receipt": {
+        "info": {
+          "willIssueReceipt": true,
+          "actionType": "inference.completion",
+          "scope": "read:model-x"
+        }
+      }
+    }
   },
   "settlementResponse": {
     "success": true,
     "transaction": "0xabababababababababababababababababababababababababababababababab",
     "network": "eip155:8453",
-    "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66"
+    "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+    "amount": "10000"
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,

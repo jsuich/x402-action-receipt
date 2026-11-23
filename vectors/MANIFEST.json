@@ -1,9 +1,9 @@
 {
   "profile": "action-receipt",
   "version": 1,
-  "specDraft": "0.3",
-  "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT, and the report on PASS. keys.json is a test fixture standing in for anchor and key resolution.",
-  "vectorsDigest": "sha256:299cb37197fbe4352a5f1bc216eb5f84e9c0143f5ca0196a3ea4caacbf3fbc58",
+  "specDraft": "0.4",
+  "note": "Expected results for the action-receipt conformance vectors. A conformant verifier loads keys.json, each vector and the named context, and MUST reproduce the verdict, the reason on REJECT (and on ERROR), and the report on PASS. keys.json is a test fixture standing in for authorization and key resolution. vectorsDigest is the sha256 over the JCS form of {file name: sha256 hex of the file} for every vector file and keys.json.",
+  "vectorsDigest": "sha256:5cf47d2c40c9b31be589df4e8c12bdc3f2a87566db0944857ab36205bb5d769c",
   "indeterminateReasons": [
     "invalid_actionreceipt_key_unresolved"
   ],
@@ -15,6 +15,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -39,6 +40,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -60,49 +62,49 @@
       "paidResourceUrl": null,
       "success": true,
       "transaction": "",
-      "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
-      "network": "eip155:8453",
-      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "payer": null,
       "accepted": {
-        "scheme": "exact",
-        "network": "eip155:8453",
+        "scheme": "batch-settlement",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "amount": "10000",
-        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
         "maxTimeoutSeconds": 60,
-        "extra": {
-          "name": "USD Coin",
-          "version": "2"
-        }
+        "extra": {}
       },
       "advertisedInfo": null,
       "now": 1703123500,
       "maxAgeSeconds": 3600,
-      "mode": "session"
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "10000"
+      }
     },
     "both": {
       "paidResourceUrl": null,
       "success": true,
-      "transaction": "0xabababababababababababababababababababababababababababababababab",
-      "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
-      "network": "eip155:8453",
-      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+      "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "payer": null,
       "accepted": {
-        "scheme": "exact",
-        "network": "eip155:8453",
+        "scheme": "batch-settlement",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
         "amount": "10000",
-        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
         "maxTimeoutSeconds": 60,
-        "extra": {
-          "name": "USD Coin",
-          "version": "2"
-        }
+        "extra": {}
       },
       "advertisedInfo": null,
       "now": 1703123500,
       "maxAgeSeconds": 3600,
-      "mode": "session"
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "10000"
+      }
     },
     "no_requirements": {
       "paidResourceUrl": null,
@@ -111,6 +113,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": null,
       "advertisedInfo": null,
       "now": 1703123500,
@@ -124,6 +127,32 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_transaction_upper_case_prefix": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0XABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0X857b06519E91e3A54538791bDbb0E22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -148,6 +177,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": null,
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -172,6 +202,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -196,6 +227,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -220,6 +252,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": [],
       "advertisedInfo": null,
       "now": 1703123500,
@@ -233,6 +266,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -257,6 +291,7 @@
       "settlementRef": "",
       "network": "base",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:1",
@@ -281,6 +316,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -305,6 +341,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -329,6 +366,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -356,6 +394,7 @@
       "settlementRef": "",
       "network": "eip155:8453",
       "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
       "accepted": {
         "scheme": "exact",
         "network": "eip155:8453",
@@ -376,6 +415,1943 @@
       "now": 1703123500,
       "maxAgeSeconds": 3600,
       "mode": "session"
+    },
+    "advertised_info_outside_value_domain": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "actionType": "inference.completion",
+        "scope": "read:model-x",
+        "ttl": 1.5
+      },
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "session_default_max_age": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "mode": "session"
+    },
+    "session_max_age_100": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 100,
+      "mode": "session"
+    },
+    "settlement_transaction_only": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": null,
+      "payer": null,
+      "amount": "10000",
+      "accepted": null,
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "lookalike_network": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+      "settlementRef": "",
+      "network": "eip1559:1",
+      "payer": "0x857B06519E91E3A54538791BDBB0E22373E36B66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip1559:1",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "Merchant-0x209693Bc",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "cloudflare_network": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "cf-settlement-000000000001",
+      "settlementRef": "",
+      "network": "cloudflare:402",
+      "payer": null,
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "cloudflare:402",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "acct_merchant_0001",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "evm_settlement_reference_upper_case": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "BATCH:VOUCHER:9F3C1D0A-0000-4A11-B2CC-SETTLEMENT-ROOT-01",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "evm_settlement_reference_mixed_case": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "Batch:Voucher:9F3C1D0A-Root-01",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "batch_response_has_transaction_only": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW",
+      "settlementRef": "",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "payer": null,
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "amount": "10000",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "maxTimeoutSeconds": 60,
+        "extra": {}
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "10000"
+      }
+    },
+    "requirements_utf16_member_order": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2",
+          "\ud835\udcb3": "a",
+          "\ufeff": "b"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_values_absent_forms": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": 123,
+      "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+      "network": null,
+      "payer": "\ud800",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "amount": "10000",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "maxTimeoutSeconds": 60,
+        "extra": {}
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "10000"
+      }
+    },
+    "response_values_junk_types": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": 5,
+      "payer": {
+        "a": 1
+      },
+      "amount": "10000",
+      "accepted": "x",
+      "advertisedInfo": [
+        {
+          "willIssueReceipt": true,
+          "actionType": "inference.completion",
+          "scope": "read:model-x"
+        }
+      ],
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "success_without_identifier": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "success_false_with_transaction": {
+      "paidResourceUrl": null,
+      "success": false,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "success_is_the_string_true": {
+      "paidResourceUrl": null,
+      "success": "true",
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "paid_resource_empty_string": {
+      "paidResourceUrl": "",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "paid_resource_nfc": {
+      "paidResourceUrl": "https://api.example.com/v1/caf\u00e9",
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised_scope_nfc": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "actionType": "inference.completion",
+        "scope": "lire:mod\u00e8le-x"
+      },
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "archival_at_end_of_time": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 9007199254740991,
+      "maxAgeSeconds": 3600,
+      "mode": "archival"
+    },
+    "clock_integer_valued_float": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500.0,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_network_not_an_identifier": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "Base Mainnet",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "no_payer_receipt_payer_empty": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "archival_clock_negative": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": -1,
+      "maxAgeSeconds": 3600,
+      "mode": "archival"
+    },
+    "archival_clock_min": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": -9007199254740991,
+      "maxAgeSeconds": 3600,
+      "mode": "archival"
+    },
+    "session_max_age_0": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 0,
+      "mode": "session"
+    },
+    "session_max_age_max_clock_max": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 9007199254740991,
+      "maxAgeSeconds": 9007199254740991,
+      "mode": "session"
+    },
+    "requirements_max_safe_integer": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2",
+          "n": 9007199254740991
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "requirements_unsafe_integer": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2",
+          "n": 9007199254740992
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "requirements_depth_8": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "d": [
+            [
+              [
+                [
+                  [
+                    [
+                      "x"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "requirements_depth_9": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "d": [
+            [
+              [
+                [
+                  [
+                    [
+                      [
+                        "x"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised_info_depth_8": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "actionType": "inference.completion",
+        "scope": "read:model-x",
+        "d": [
+          [
+            [
+              [
+                [
+                  [
+                    [
+                      "x"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      },
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "advertised_info_depth_9": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": {
+        "willIssueReceipt": true,
+        "actionType": "inference.completion",
+        "scope": "read:model-x",
+        "d": [
+          [
+            [
+              [
+                [
+                  [
+                    [
+                      [
+                        "x"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      },
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "context_null": null,
+    "response_no_charged_amount": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_zero": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "0",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_78_digits": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "999999999999999999999999999999999999999999999999999999999999999999999999999999",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_79_digits": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "1000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_leading_zero": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "010",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_non_digit": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "1e4",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_negative": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "-10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "response_amount_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": 10000,
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "batch_charged_amount_in_extra": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "",
+      "settlementRef": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "payer": null,
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "amount": "10000",
+        "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "payTo": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "maxTimeoutSeconds": 60,
+        "extra": {}
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "commitmentId": "3vZ8kq2Yb9WdTq7cCz1xHq5mFJv4p2uHn6rT8sLwXyAe",
+        "chargedAmount": "2500"
+      }
+    },
+    "batch_extra_charged_amount_empty": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": ""
+      }
+    },
+    "batch_extra_charged_amount_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": 2500
+      }
+    },
+    "batch_extra_not_an_object": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": "2500"
+    },
+    "batch_amount_without_extra_charged_amount": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "exact_extra_charged_amount_not_read": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "2500"
+      }
+    },
+    "cloudflare_charged_amount_in_extra": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "cf-settlement-000000000001",
+      "settlementRef": "",
+      "network": "cloudflare:402",
+      "payer": null,
+      "amount": "50000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "cloudflare:402",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "acct_merchant_0001",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "2500"
+      }
+    },
+    "batch_extra_charged_amount_zero": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "0"
+      }
+    },
+    "cloudflare_amount_leading_zero": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "cf-settlement-000000000001",
+      "settlementRef": "",
+      "network": "cloudflare:402",
+      "payer": null,
+      "amount": "010",
+      "accepted": {
+        "scheme": "exact",
+        "network": "cloudflare:402",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "acct_merchant_0001",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "upto_amount_beside_extra_charged_amount": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "7500",
+      "accepted": {
+        "scheme": "upto",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "2500"
+      }
+    },
+    "auth_capture_amount_and_extra_charged_amount": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "auth-capture",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "10000"
+      }
+    },
+    "unknown_scheme_amount": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "streaming",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "scheme_exact_in_other_case": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "Exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "scheme_batch_settlement_in_other_case": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "batch-Settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "2500"
+      }
+    },
+    "requirements_scheme_not_a_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": 5,
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "batch_extra_charged_amount_surrogate": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "accepted": {
+        "scheme": "batch-settlement",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session",
+      "extra": {
+        "chargedAmount": "2500\ud800"
+      }
+    },
+    "response_amount_surrogate": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "1\ud800",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_mode_upper_case": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "SESSION"
+    },
+    "config_mode_missing": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600
+    },
+    "config_mode_null": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": null
+    },
+    "config_now_boolean": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": true,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_now_fraction": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500.5,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_now_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": "1703123500",
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_now_missing": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_now_unsafe_integer": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 9007199254740992,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_max_age_negative": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": -1,
+      "mode": "session"
+    },
+    "config_max_age_string": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": "10",
+      "mode": "session"
+    },
+    "config_max_age_null": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": null,
+      "mode": "session"
+    },
+    "config_max_age_boolean": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": true,
+      "mode": "session"
+    },
+    "config_max_age_fraction": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 10.5,
+      "mode": "session"
+    },
+    "config_now_below_min": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": -9007199254740992,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_max_age_unsafe_integer": {
+      "paidResourceUrl": null,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 9007199254740992,
+      "mode": "session"
+    },
+    "config_paid_url_number": {
+      "paidResourceUrl": 5,
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
+    },
+    "config_paid_url_array": {
+      "paidResourceUrl": [
+        "https://api.example.com/v1/complete"
+      ],
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519e91e3a54538791bdbb0e22373e36b66",
+      "amount": "10000",
+      "accepted": {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x209693Bc6afc0C5328bA36FaF03C514EF312287C",
+        "maxTimeoutSeconds": 60,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      "advertisedInfo": null,
+      "now": 1703123500,
+      "maxAgeSeconds": 3600,
+      "mode": "session"
     }
   },
   "vectors": [
@@ -385,7 +2361,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -395,6 +2371,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -407,7 +2385,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -417,6 +2395,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -429,7 +2409,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -439,6 +2419,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -451,7 +2433,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -461,6 +2443,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -473,7 +2457,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:f6e3956487bf0a1d00cf58a787eaa48d8a493e84d6d1ed19b74404fb3bafff7f",
+        "receiptRef": "sha256:ebd3f12f862cc77653f0c5d6aa85aebee204719445cd3989549b23a23fb8e750",
         "outcome": "failed",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -483,6 +2467,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -495,7 +2481,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:ed054f645aefd8b1f343f7500f897d049c9282bf0a182ce43e131ea1be56cea7",
+        "receiptRef": "sha256:bd4ee7db5c824079253a11981b99f138b018754ab958a1792bde8343a67ec17f",
         "outcome": "partial",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -505,6 +2491,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -512,21 +2500,23 @@
       }
     },
     {
-      "file": "pos_batch_settled.json",
+      "file": "pos_batch_committed.json",
       "expect": "PASS",
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:a4394c372a34485e3d96a358172877d4bcdca87d1401d9bcc2cb9f0514ed47f7",
+        "receiptRef": "sha256:d00ffa023c7fd6fcf51cfef0825f6c18fc0c41e7c97d0b37707229fde3a4c3eb",
         "outcome": "delivered",
-        "settlementStatus": "settled",
+        "settlementStatus": "capturePending",
         "ageSeconds": 44,
         "checks": {
           "resourceUrl": "not_compared",
           "network": "compared",
-          "payer": "compared",
+          "payer": "not_compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -539,16 +2529,18 @@
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:5e8fb0d82452f8f23336c93ec0b19026f21e589c2d9bfdd533184cd891af0693",
+        "receiptRef": "sha256:06f869d3d4f479e618f3dca2c945444aad24b36acaf730a4b65f4bfb97114149",
         "outcome": "delivered",
-        "settlementStatus": "settled",
+        "settlementStatus": "capturePending",
         "ageSeconds": 44,
         "checks": {
           "resourceUrl": "not_compared",
           "network": "compared",
-          "payer": "compared",
+          "payer": "not_compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -559,9 +2551,9 @@
       "file": "pos_capture_pending.json",
       "expect": "PASS",
       "reason": null,
-      "context": "batch",
+      "context": "ok",
       "report": {
-        "receiptRef": "sha256:b24330db0498aea67b02a2c2e3bf395f8af1c24166bea3db527e6087c667a2e1",
+        "receiptRef": "sha256:830961fa8d65790f6b09f13ed0432f21a5f0d08d4a4a62bd0856d3eb4cf77bcc",
         "outcome": "delivered",
         "settlementStatus": "capturePending",
         "ageSeconds": 44,
@@ -571,6 +2563,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -583,19 +2577,21 @@
       "reason": null,
       "context": "batch",
       "report": {
-        "receiptRef": "sha256:53f813148b4079915cd6d416ffed6d46cd715a0a1bd15c6da60817953601c751",
+        "receiptRef": "sha256:97b3e4c627347c7c3879a7816f5473b5710c3566ddd6b7cc258fe3fc487d130c",
         "outcome": "delivered",
         "settlementStatus": "reversed",
         "ageSeconds": 44,
         "checks": {
           "resourceUrl": "not_compared",
           "network": "compared",
-          "payer": "compared",
+          "payer": "not_compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
-        "supersedes": "sha256:b24330db0498aea67b02a2c2e3bf395f8af1c24166bea3db527e6087c667a2e1",
+        "supersedes": "sha256:d00ffa023c7fd6fcf51cfef0825f6c18fc0c41e7c97d0b37707229fde3a4c3eb",
         "bindings": []
       }
     },
@@ -605,7 +2601,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:95859f85938652a0ad0c0fca7f5763c30e6da7cb30599848d1c56953ca72ce0d",
+        "receiptRef": "sha256:fd487e7af1bc5fd98cb3814f24c09a6adc8efc280142c3280597aa3c9e83c9ed",
         "outcome": "delivered",
         "settlementStatus": "refunded",
         "ageSeconds": 44,
@@ -615,9 +2611,11 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
-        "supersedes": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "supersedes": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "bindings": [
           {
             "type": "action-receipt:reversal-transaction",
@@ -632,7 +2630,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:f3c3828f3d3f693cf755038e66da8bc50bab55bdf8e1a5998917411cd89bcf6a",
+        "receiptRef": "sha256:c0436b75977c0ffe9220370e1c1edfbef82be7c0d444d577cf41b9d46265fab8",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -642,6 +2640,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "matched",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -679,7 +2679,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:f3c3828f3d3f693cf755038e66da8bc50bab55bdf8e1a5998917411cd89bcf6a",
+        "receiptRef": "sha256:c0436b75977c0ffe9220370e1c1edfbef82be7c0d444d577cf41b9d46265fab8",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -689,6 +2689,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -726,7 +2728,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:6e2cf6e26f9c7473d4d02a4a8e06fd810776f59461e5b1738695a78179dd68cc",
+        "receiptRef": "sha256:f2ad023c81b90b53369b3a24cfb87d09eda364a77303cdaef3eb9d8e953e4ee4",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -736,6 +2738,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "mismatched",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -753,7 +2757,7 @@
       "reason": null,
       "context": "advertised",
       "report": {
-        "receiptRef": "sha256:56ffe4b810da2ec560bf6f30fc14c57776edf8a918da31a73205922768b0ecf5",
+        "receiptRef": "sha256:44bc36acf606c6eab9cf98db30f1b5cc385f6495a4c914a6032072df91f66bdc",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -763,6 +2767,37 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "mismatched",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_advertised_actiontype_differs.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised",
+      "report": {
+        "receiptRef": "sha256:e1807a8912b2ae143ba86b9c1f34dfca44c01e4c6fd4c87372098fd69b7c89ec",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "mismatched",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -780,7 +2815,7 @@
       "reason": null,
       "context": "advertised_scope_not_a_string",
       "report": {
-        "receiptRef": "sha256:fe664fd35fa59acda82dd588f2af62d089e076caadf9a14202868691bb4a593c",
+        "receiptRef": "sha256:b043b46c558681f1b6f3602f15a7e13cc81a2e4a4de3d5fd7d0cb0769b906052",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -790,6 +2825,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "mismatched",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -802,12 +2839,94 @@
       }
     },
     {
+      "file": "pos_binding_advertised_scope_nfd.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_scope_nfc",
+      "report": {
+        "receiptRef": "sha256:70d5814a86c2c7bbf940efe82c4654414fcd6b84b95f367be690415f1d7493d1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "mismatched",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "mismatched"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_advertisement_absent.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "absent",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_advertised_info_outside_domain.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_info_outside_value_domain",
+      "report": {
+        "receiptRef": "sha256:cd6a7e3245b716fa9214912d34040f41aa85e2dd733bcc58de45be4281dc872d",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
       "file": "pos_requirements_not_held.json",
       "expect": "PASS",
       "reason": null,
       "context": "no_requirements",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -817,6 +2936,8 @@
           "payer": "compared",
           "requirements": "not_evaluated",
           "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -829,7 +2950,7 @@
       "reason": null,
       "context": "response_casing",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -839,6 +2960,32 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_response_transaction_upper_prefix.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_transaction_upper_case_prefix",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -851,7 +2998,7 @@
       "reason": null,
       "context": "no_payer",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -861,6 +3008,8 @@
           "payer": "not_compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -873,7 +3022,7 @@
       "reason": null,
       "context": "archival",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 15552000,
@@ -883,6 +3032,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "reported"
         },
         "supersedes": "",
@@ -895,7 +3046,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:ac97f20be6976a1f16c95269258b6fe54dfc17712d1b963847ed24233f19617d",
+        "receiptRef": "sha256:b7c47c9789d5b349d0dbe65ac061ec8dd0a068a80b98c7d239a53cc519f69162",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -905,6 +3056,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -917,7 +3070,7 @@
       "reason": null,
       "context": "ok",
       "report": {
-        "receiptRef": "sha256:a6b4629e2fe5083a79444b35feceb08885a8f0474f39f1072a49499850687a9c",
+        "receiptRef": "sha256:d38a231a6ae76c4297f4821929c88ab05d402e3212dcc6f305a9deed4bd4f587",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -927,6 +3080,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -939,7 +3094,7 @@
       "reason": null,
       "context": "requirements_float_spelling",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -949,6 +3104,8 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -961,7 +3118,7 @@
       "reason": null,
       "context": "requirements_not_object",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -971,6 +3128,8 @@
           "payer": "compared",
           "requirements": "not_evaluated",
           "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -983,7 +3142,7 @@
       "reason": null,
       "context": "payer_empty_string",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -993,6 +3152,8 @@
           "payer": "not_compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -1005,7 +3166,7 @@
       "reason": null,
       "context": "paid_this_resource",
       "report": {
-        "receiptRef": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
         "outcome": "delivered",
         "settlementStatus": "settled",
         "ageSeconds": 44,
@@ -1015,6 +3176,1634 @@
           "payer": "compared",
           "requirements": "matched",
           "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_envelope_extra_member.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_compact_at_size_limit.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:20c516379d90bc724988c509dbb960cfbace3aa595a46645cc4719a80e8d540b",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_network_namespace_3.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "settlement_transaction_only",
+      "report": {
+        "receiptRef": "sha256:fbba4811de9d30ac3989cb4864010fdc31e41cd4ddd6788ade1f6c24f4d5e92b",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "not_compared",
+          "payer": "not_compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_network_namespace_32.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "settlement_transaction_only",
+      "report": {
+        "receiptRef": "sha256:a0266b544c4fec88801d9b83c5fab9e8981d9efae47ba6df45ee917dbc417cfa",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "not_compared",
+          "payer": "not_compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_network_reference_32.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "settlement_transaction_only",
+      "report": {
+        "receiptRef": "sha256:ca71d350ad2a277646b9df32fbe5aba29d322bcd32ae44dcb611669fdf519967",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "not_compared",
+          "payer": "not_compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_network_lookalike_not_evm.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "lookalike_network",
+      "report": {
+        "receiptRef": "sha256:d780a5d62f3016fd46a195b57b69948b652896a7db6a79e3378a0483df4986d9",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_network_cloudflare_empty_payer.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "cloudflare_network",
+      "report": {
+        "receiptRef": "sha256:2c1760179ca6411354aeb685238a1b627df31aff1d17670009f4a4475eefe875",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_receiptid_22.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:4cf11266d0965e619ceeda7ab8589e22fb084ee0a2cc604807bc370bb0cbac75",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_receiptid_64.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:43fc496e27609cbba746831927385258e19fc3f43cbb1ab2e808b390cd1a1e36",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_bindings_16.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:31b1ed7292f626fb3a8ef2625c34399300240193ad6781641e9310743d7f5a5f",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "a:00",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:01",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:02",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:03",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:04",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:05",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:06",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:07",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:08",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:09",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:10",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:11",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:12",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:13",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:14",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "a:15",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_prefix_64.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:468812c7187004ffa8ffab0c2a02b4f747066c8a2948748d646fc1ac959da3a7",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:b",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_name_191.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:fd2faa7d6c2b938b76845f510e12a44ff5f03af5b9adb83d6f2c67e1bddf23ed",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "a:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_value_1024.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:8767e683cd4f64f5876824ae02f3b9d4dcbad52684a5b0d62dd5e9968dc39747",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "a:one",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_reversal_non_evm_value.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch",
+      "report": {
+        "receiptRef": "sha256:dfe06363e0b22e5a47919978a98e3cc744f65e700c12f1eb6a0788e1007b74d2",
+        "outcome": "delivered",
+        "settlementStatus": "reversed",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:reversal-transaction",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_namespace_lookalike.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:522350a84d209dd9af3ddffdb7e06e50e8385897e798cb521526cb1531009f52",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt.v2:advertised-info",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_issuedat_zero_archival.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "archival",
+      "report": {
+        "receiptRef": "sha256:474e0990db2f569887127ab4314d39a6f2231afd5e1ec2a2a73677e1fe55d01f",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 1718675456,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "reported"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_issuedat_max_archival.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "archival_at_end_of_time",
+      "report": {
+        "receiptRef": "sha256:28fcba692f3a6dfbe1d2f3d0b0bdc43e749e5ae707f7178550e02308c8570dfb",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 0,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "reported"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_freshness_future_60.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:d11c74ee2e08b742eb9bdccca8cdc08acfc9ea0492949e7b04edbc0d4583055c",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": -60,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_freshness_default_max_age_3600.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "session_default_max_age",
+      "report": {
+        "receiptRef": "sha256:6c4963df0cd87181cd2d52b51755cb23583bbc3caf22f83d26c90b2c9431e74d",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 3600,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_freshness_max_age_100.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "session_max_age_100",
+      "report": {
+        "receiptRef": "sha256:9659ed0ccb00a33e50058df255b9f8fb3d3963ed09ad5667a54c6b5c338ef5df",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 100,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_settlement_ref_evm_exact_case.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "evm_settlement_reference_mixed_case",
+      "report": {
+        "receiptRef": "sha256:9f0b127fa673b8b4e6da03b2229e8000c279aa7d5e3cf283981339d756e14030",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_settlement_ref_with_transaction.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "both",
+      "report": {
+        "receiptRef": "sha256:391245e5016b33e4a324c058ba160e7b30010482f25231ce40e4048acd6e1b9e",
+        "outcome": "delivered",
+        "settlementStatus": "capturePending",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_requirements_utf16_order.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_utf16_member_order",
+      "report": {
+        "receiptRef": "sha256:c11db3b3ecd9d089c188c50d6be83821434490921461e8f72d31afb3db70caba",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_response_absent_forms.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_values_absent_forms",
+      "report": {
+        "receiptRef": "sha256:d00ffa023c7fd6fcf51cfef0825f6c18fc0c41e7c97d0b37707229fde3a4c3eb",
+        "outcome": "delivered",
+        "settlementStatus": "capturePending",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "not_compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_response_junk_types.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_values_junk_types",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "not_compared",
+          "payer": "not_compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_response_network_not_identifier.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_network_not_an_identifier",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "not_compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_payer_empty_evm.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "no_payer_receipt_payer_empty",
+      "report": {
+        "receiptRef": "sha256:b5f03860998913fe5f6d0c7e2d88d61d265cb5c733847a81da6fa25c714e74b7",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_authorization_marker_not_true.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:79c03dee02d8d125e4e91d45110ac213fe174a06dceea70ff2e3b2daa48a69ec",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_config_clock_integer_float.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "clock_integer_valued_float",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_advertisement_absent_other_bindings.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised",
+      "report": {
+        "receiptRef": "sha256:85fd08c2d45fe2de6ab3af7b733a53f2db571e6ec10e85db732b1260c3322b0c",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "absent",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "a:one",
+            "status": "not_evaluated"
+          },
+          {
+            "type": "action-receipt:reversal-transaction",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_clock_negative_archival.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "archival_clock_negative",
+      "report": {
+        "receiptRef": "sha256:474e0990db2f569887127ab4314d39a6f2231afd5e1ec2a2a73677e1fe55d01f",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": -1,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "reported"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_freshness_max_age_0.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "session_max_age_0",
+      "report": {
+        "receiptRef": "sha256:d25a43a6aa3084d522851e3cd73173c72c0d226d6571a289724adc47b8370779",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 0,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_freshness_max_age_max.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "session_max_age_max_clock_max",
+      "report": {
+        "receiptRef": "sha256:474e0990db2f569887127ab4314d39a6f2231afd5e1ec2a2a73677e1fe55d01f",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 9007199254740991,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_requirements_max_safe_integer.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_max_safe_integer",
+      "report": {
+        "receiptRef": "sha256:3c81cf43573bed9234c37ba933c501d4a0108bde1420be10bccfc2f5ef4df967",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_requirements_unsafe_integer_not_evaluated.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_unsafe_integer",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_requirements_depth_8.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_depth_8",
+      "report": {
+        "receiptRef": "sha256:7d9d5f66b2020ebffdab47154bc198fc738a4d2a2f021b04b34456cdca90639d",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_requirements_depth_9_not_evaluated.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_depth_9",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_advertised_info_depth_8.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_info_depth_8",
+      "report": {
+        "receiptRef": "sha256:0d63e4a87202df8a7d61fae15ff72300923a632c59c151b634f03b44bc88f4df",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "matched",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "matched"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_advertised_info_depth_9_not_evaluated.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "advertised_info_depth_9",
+      "report": {
+        "receiptRef": "sha256:3c7f6ab45cfb366095d65fd9ed8fc08c3924e11d41a409a45442186b3d5ac675",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "action-receipt:advertised-info",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_binding_printable_edges.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "ok",
+      "report": {
+        "receiptRef": "sha256:2f46220eee3c68b85590c80296916cedaedf62922106f738c3ee9a816bfe4e95",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": [
+          {
+            "type": "a:!~",
+            "status": "not_evaluated"
+          }
+        ]
+      }
+    },
+    {
+      "file": "pos_charged_amount_empty_no_amount.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_no_charged_amount",
+      "report": {
+        "receiptRef": "sha256:ccbaf90ddf2fdb59770360ca439fa157d968954afa2b28b79f6b5cdbe8e7b3b1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_zero.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_zero",
+      "report": {
+        "receiptRef": "sha256:f632ab0d82feba3ce76c3f6318f36a0c7930c29392656de281d4e2e6d5706701",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_78_digits.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_78_digits",
+      "report": {
+        "receiptRef": "sha256:3d25efba32cc17badb746c80fba1fb970db169196da954fe9893628c9d3de997",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_from_extra.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_charged_amount_in_extra",
+      "report": {
+        "receiptRef": "sha256:ff86f5c45cf37508733fed6e1136da5d763bea37421c961bddca1c3040f158ae",
+        "outcome": "delivered",
+        "settlementStatus": "capturePending",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_batch_extra_empty_not_read.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_extra_charged_amount_empty",
+      "report": {
+        "receiptRef": "sha256:b5830de096bb34d6dfe2a0b150f0718dd9ab23acb8689b6f578756b2e74ab537",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_batch_extra_not_string_not_read.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_extra_charged_amount_not_a_string",
+      "report": {
+        "receiptRef": "sha256:b5830de096bb34d6dfe2a0b150f0718dd9ab23acb8689b6f578756b2e74ab537",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_batch_extra_not_object_not_read.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_extra_not_an_object",
+      "report": {
+        "receiptRef": "sha256:b5830de096bb34d6dfe2a0b150f0718dd9ab23acb8689b6f578756b2e74ab537",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_batch_no_extra.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_amount_without_extra_charged_amount",
+      "report": {
+        "receiptRef": "sha256:b5830de096bb34d6dfe2a0b150f0718dd9ab23acb8689b6f578756b2e74ab537",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_response_amount_not_string.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_not_a_string",
+      "report": {
+        "receiptRef": "sha256:ccbaf90ddf2fdb59770360ca439fa157d968954afa2b28b79f6b5cdbe8e7b3b1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_exact_extra_ignored.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "exact_extra_charged_amount_not_read",
+      "report": {
+        "receiptRef": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_from_extra_cloudflare.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "cloudflare_charged_amount_in_extra",
+      "report": {
+        "receiptRef": "sha256:1ad4a805d993f1d0ea9eaabaa53050dd20d2ce1ee33adb9811f95fff2f0c4d3a",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "not_compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_extra_zero.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_extra_charged_amount_zero",
+      "report": {
+        "receiptRef": "sha256:0c3fddd30045926f43beb2f9d9f8a0517e5acfa347de77126599aee540e7b79c",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_upto_reads_amount.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "upto_amount_beside_extra_charged_amount",
+      "report": {
+        "receiptRef": "sha256:ade2dd9ec8946cf0a49c43ddddbab03bbcee45cb8b3d6164450e53a25d1abbd2",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_auth_capture_none.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "auth_capture_amount_and_extra_charged_amount",
+      "report": {
+        "receiptRef": "sha256:87246eed96082d8b333caab8e6f45603f884513079d77089a958d03fa173d666",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_unknown_scheme_none.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "unknown_scheme_amount",
+      "report": {
+        "receiptRef": "sha256:b259e56bd8e82b4ed2a8af1a0a581ae4c8fdd41b382c7660976fed2089083cc6",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_scheme_case_exact.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "scheme_exact_in_other_case",
+      "report": {
+        "receiptRef": "sha256:ab0b6a1e6bfba0461425a8d1aa01caf58395f9d831d54891c31d2637f8053e44",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_scheme_case_batch.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "scheme_batch_settlement_in_other_case",
+      "report": {
+        "receiptRef": "sha256:4d116f70394a160421a59a2d765f591e2eda7a65accc44f98e9f4e7e352d28b0",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_not_compared_without_accepted.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "no_requirements",
+      "report": {
+        "receiptRef": "sha256:d76361680539c2e0706d6c51b725b2d5abdd95f8064a30a39791e2eb209f0c6b",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_not_compared_accepted_not_object.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_not_object",
+      "report": {
+        "receiptRef": "sha256:ccbaf90ddf2fdb59770360ca439fa157d968954afa2b28b79f6b5cdbe8e7b3b1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_not_compared_accepted_out_of_domain.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_unsafe_integer",
+      "report": {
+        "receiptRef": "sha256:d76361680539c2e0706d6c51b725b2d5abdd95f8064a30a39791e2eb209f0c6b",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "not_evaluated",
+          "payTo": "not_compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_not_compared_scheme_not_string.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "requirements_scheme_not_a_string",
+      "report": {
+        "receiptRef": "sha256:e88267864c2aa68fc2439099cbfc67675a68c6adf58d5ef21e27f25f3945c0f4",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "not_compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_batch_extra_surrogate_absent.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "batch_extra_charged_amount_surrogate",
+      "report": {
+        "receiptRef": "sha256:b5830de096bb34d6dfe2a0b150f0718dd9ab23acb8689b6f578756b2e74ab537",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
+          "freshness": "enforced"
+        },
+        "supersedes": "",
+        "bindings": []
+      }
+    },
+    {
+      "file": "pos_charged_amount_amount_surrogate_absent.json",
+      "expect": "PASS",
+      "reason": null,
+      "context": "response_amount_surrogate",
+      "report": {
+        "receiptRef": "sha256:ccbaf90ddf2fdb59770360ca439fa157d968954afa2b28b79f6b5cdbe8e7b3b1",
+        "outcome": "delivered",
+        "settlementStatus": "settled",
+        "ageSeconds": 44,
+        "checks": {
+          "resourceUrl": "not_compared",
+          "network": "compared",
+          "payer": "compared",
+          "requirements": "matched",
+          "payTo": "compared",
+          "chargedAmount": "compared",
+          "advertisement": "not_evaluated",
           "freshness": "enforced"
         },
         "supersedes": "",
@@ -1034,6 +4823,30 @@
       "context": "ok"
     },
     {
+      "file": "neg_compact_over_size_limit.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_compact_two_segments.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_compact_four_segments.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signature_not_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
       "file": "neg_header_not_object.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
@@ -1047,6 +4860,36 @@
     },
     {
       "file": "neg_header_utf16.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_header_whitespace.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_header_member_order.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_header_duplicate_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_header_nan_overwritten.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_header_escaped_member_name.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
       "context": "ok"
@@ -1076,7 +4919,37 @@
       "context": "ok"
     },
     {
+      "file": "neg_typ_number.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_typ",
+      "context": "ok"
+    },
+    {
       "file": "neg_unknown_alg.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "context": "ok"
+    },
+    {
+      "file": "neg_alg_array.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "context": "ok"
+    },
+    {
+      "file": "neg_alg_object.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "context": "ok"
+    },
+    {
+      "file": "neg_alg_number.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "context": "ok"
+    },
+    {
+      "file": "neg_alg_null.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_alg",
       "context": "ok"
@@ -1118,6 +4991,12 @@
       "context": "ok"
     },
     {
+      "file": "neg_canon_issuedat_2_53.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "archival_at_end_of_time"
+    },
+    {
       "file": "neg_canon_duplicate_member.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_canonicalization",
@@ -1154,6 +5033,12 @@
       "context": "ok"
     },
     {
+      "file": "neg_canon_issuedat_below_min_safe.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "archival"
+    },
+    {
       "file": "neg_schema_not_object.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
@@ -1161,6 +5046,18 @@
     },
     {
       "file": "neg_schema_null.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_version_missing.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_version_string.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
       "context": "ok"
@@ -1179,6 +5076,18 @@
     },
     {
       "file": "neg_schema_action_scalar.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_action_extra_member.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_scope_not_string.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
       "context": "ok"
@@ -1214,7 +5123,97 @@
       "context": "ok"
     },
     {
+      "file": "neg_schema_receiptid_21.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_receiptid_65.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
       "file": "neg_schema_network_not_caip2.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_network_namespace_2.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_network_namespace_33.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_network_reference_33.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_network_reference_empty.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_network_reference_dot.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_network_namespace_dot.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_issuedat_min_safe.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "archival"
+    },
+    {
+      "file": "neg_schema_nesting_depth_8.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_resourceurl_empty.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_payto_empty_non_evm.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "settlement_transaction_only"
+    },
+    {
+      "file": "neg_schema_payto_evm_grammar.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_agent_empty.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_actiontype_empty.json",
       "expect": "REJECT",
       "reason": "invalid_payload",
       "context": "ok"
@@ -1242,6 +5241,48 @@
       "expect": "REJECT",
       "reason": "invalid_payload",
       "context": "ok"
+    },
+    {
+      "file": "neg_schema_bindings_not_array.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_schema_charged_amount_79_digits.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_79_digits"
+    },
+    {
+      "file": "neg_schema_charged_amount_leading_zero.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_leading_zero"
+    },
+    {
+      "file": "neg_schema_charged_amount_non_digit.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_non_digit"
+    },
+    {
+      "file": "neg_schema_charged_amount_negative.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_negative"
+    },
+    {
+      "file": "neg_schema_charged_amount_not_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "response_amount_not_a_string"
+    },
+    {
+      "file": "neg_schema_charged_amount_leading_zero_non_evm.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "cloudflare_amount_leading_zero"
     },
     {
       "file": "neg_unsupported_version.json",
@@ -1310,10 +5351,94 @@
       "context": "ok"
     },
     {
+      "file": "neg_binding_prefix_65.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_name_192.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_value_1025.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_prefix_empty.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_name_empty.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_value_empty.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_value_space.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_value_del.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_name_del.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_reserved_unknown_type.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_advertised_value_form.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
+      "file": "neg_binding_reversal_value_form_evm.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "ok"
+    },
+    {
       "file": "neg_resource_mismatch.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_resource_mismatch",
       "context": "paid_another_resource"
+    },
+    {
+      "file": "neg_resource_paid_empty_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_resource_mismatch",
+      "context": "paid_resource_empty_string"
+    },
+    {
+      "file": "neg_resource_paid_unicode_normalization.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_resource_mismatch",
+      "context": "paid_resource_nfc"
     },
     {
       "file": "neg_signer_unauthorized.json",
@@ -1334,6 +5459,42 @@
       "context": "ok"
     },
     {
+      "file": "neg_signer_anchor_string.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signer_anchor_object.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signer_anchor_mixed_array.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_signer_anchor_number.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_authorization_no_answer.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_authorization_no_answer_listed.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
       "file": "neg_key_unresolved.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_key_unresolved",
@@ -1341,6 +5502,48 @@
     },
     {
       "file": "neg_key_unusable.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_private_key_pem.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_certificate.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_unknown_algorithm.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_unsupported_curve.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_unusable_curve_p384.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_pem_leading_spaces.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_key_unresolved",
+      "context": "ok"
+    },
+    {
+      "file": "neg_key_pem_noncanonical_base64.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_key_unresolved",
       "context": "ok"
@@ -1364,10 +5567,52 @@
       "context": "ok"
     },
     {
+      "file": "neg_sig_ecdsa_65_bytes.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
+      "file": "neg_sig_ecdsa_der.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
+      "file": "neg_sig_eddsa_key_for_es256.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
+      "file": "neg_sig_ec_key_for_eddsa.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "ok"
+    },
+    {
       "file": "neg_settlement_failed.json",
       "expect": "REJECT",
       "reason": "invalid_transaction_state",
       "context": "failed"
+    },
+    {
+      "file": "neg_settlement_success_without_identifier.json",
+      "expect": "REJECT",
+      "reason": "invalid_transaction_state",
+      "context": "success_without_identifier"
+    },
+    {
+      "file": "neg_settlement_success_false_with_transaction.json",
+      "expect": "REJECT",
+      "reason": "invalid_transaction_state",
+      "context": "success_false_with_transaction"
+    },
+    {
+      "file": "neg_settlement_success_string_true.json",
+      "expect": "REJECT",
+      "reason": "invalid_transaction_state",
+      "context": "success_is_the_string_true"
     },
     {
       "file": "neg_settlement_transaction_mismatch.json",
@@ -1394,6 +5639,12 @@
       "context": "ok"
     },
     {
+      "file": "neg_settlement_payer_dropped.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
       "file": "neg_settlement_uncorroborated_transaction.json",
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_settlement_mismatch",
@@ -1404,6 +5655,108 @@
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_settlement_mismatch",
       "context": "both"
+    },
+    {
+      "file": "neg_settlement_uncorroborated_ref.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch_response_has_transaction_only"
+    },
+    {
+      "file": "neg_settlement_dropped_ref.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "both"
+    },
+    {
+      "file": "neg_settlement_ref_case_not_folded.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "evm_settlement_reference_upper_case"
+    },
+    {
+      "file": "neg_settlement_non_evm_case_not_folded.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "lookalike_network"
+    },
+    {
+      "file": "neg_settlement_charged_amount_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_charged_amount_dropped.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_settlement_charged_amount_uncorroborated.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "response_no_charged_amount"
+    },
+    {
+      "file": "neg_settlement_charged_amount_top_level_when_extra.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch_charged_amount_in_extra"
+    },
+    {
+      "file": "neg_settlement_charged_amount_extra_number_not_read.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch_extra_charged_amount_not_a_string"
+    },
+    {
+      "file": "neg_settlement_charged_amount_response_out_of_grammar.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "response_amount_leading_zero"
+    },
+    {
+      "file": "neg_settlement_charged_amount_not_normalized.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "response_amount_leading_zero"
+    },
+    {
+      "file": "neg_settlement_charged_amount_batch_top_level_amount.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch_amount_without_extra_charged_amount"
+    },
+    {
+      "file": "neg_settlement_charged_amount_batch_extra_empty_falls_back.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "batch_extra_charged_amount_empty"
+    },
+    {
+      "file": "neg_settlement_charged_amount_exact_extra_not_read.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "exact_extra_charged_amount_not_read"
+    },
+    {
+      "file": "neg_settlement_charged_amount_upto_extra_not_read.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "upto_amount_beside_extra_charged_amount"
+    },
+    {
+      "file": "neg_settlement_charged_amount_auth_capture_amount.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "auth_capture_amount_and_extra_charged_amount"
+    },
+    {
+      "file": "neg_settlement_charged_amount_scheme_case_exact.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "scheme_exact_in_other_case"
     },
     {
       "file": "neg_requirements_amount_changed.json",
@@ -1434,13 +5787,259 @@
       "expect": "REJECT",
       "reason": "invalid_actionreceipt_freshness",
       "context": "archival"
+    },
+    {
+      "file": "neg_freshness_future_61.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "ok"
+    },
+    {
+      "file": "neg_freshness_default_max_age_3601.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "session_default_max_age"
+    },
+    {
+      "file": "neg_freshness_max_age_101.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "session_max_age_100"
+    },
+    {
+      "file": "neg_freshness_max_age_0_age_1.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "session_max_age_0"
+    },
+    {
+      "file": "neg_freshness_clock_min_archival.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "context": "archival_clock_min"
+    },
+    {
+      "file": "neg_order_header_canonical_before_typ.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_header_domain_before_typ.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_typ_before_alg.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_typ",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_alg_before_header_members.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_header_before_canonicalization.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_canonicalization_before_schema.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_version_before_member_set.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_version",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_member_set_before_outcome.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_outcome_before_status.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_status_before_bindings_type.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_status",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_binding_before_resource.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_binding",
+      "context": "paid_another_resource"
+    },
+    {
+      "file": "neg_order_resource_before_signer.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_resource_mismatch",
+      "context": "paid_another_resource"
+    },
+    {
+      "file": "neg_order_signer_before_signature.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_signature_before_settlement.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "context": "failed"
+    },
+    {
+      "file": "neg_order_success_before_binding.json",
+      "expect": "REJECT",
+      "reason": "invalid_transaction_state",
+      "context": "failed"
+    },
+    {
+      "file": "neg_order_settlement_before_requirements.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "neg_order_requirements_before_freshness.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_requirements_mismatch",
+      "context": "ok"
+    },
+    {
+      "file": "err_config_mode_upper_case.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_mode_upper_case"
+    },
+    {
+      "file": "err_config_mode_missing.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_mode_missing"
+    },
+    {
+      "file": "err_config_mode_null.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_mode_null"
+    },
+    {
+      "file": "err_config_now_boolean.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_now_boolean"
+    },
+    {
+      "file": "err_config_now_fraction.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_now_fraction"
+    },
+    {
+      "file": "err_config_now_string.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_now_string"
+    },
+    {
+      "file": "err_config_now_missing.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_now_missing"
+    },
+    {
+      "file": "err_config_now_unsafe_integer.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_now_unsafe_integer"
+    },
+    {
+      "file": "err_config_max_age_negative.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_max_age_negative"
+    },
+    {
+      "file": "err_config_max_age_string.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_max_age_string"
+    },
+    {
+      "file": "err_config_max_age_null.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_max_age_null"
+    },
+    {
+      "file": "err_config_max_age_boolean.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_max_age_boolean"
+    },
+    {
+      "file": "err_config_max_age_fraction.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_max_age_fraction"
+    },
+    {
+      "file": "err_config_now_below_min.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_now_below_min"
+    },
+    {
+      "file": "err_config_max_age_unsafe_integer.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_max_age_unsafe_integer"
+    },
+    {
+      "file": "err_config_paid_url_number.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_paid_url_number"
+    },
+    {
+      "file": "err_config_paid_url_array.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_paid_url_array"
+    },
+    {
+      "file": "err_config_context_null.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "context_null"
+    },
+    {
+      "file": "err_config_over_malformed_receipt.json",
+      "expect": "ERROR",
+      "reason": "invalid_configuration",
+      "context": "config_mode_upper_case"
     }
   ],
   "distinctReceiptRef": [
     {
-      "a": "pos_batch_settled.json",
+      "a": "pos_batch_committed.json",
       "b": "pos_batch_second_payment.json",
-      "why": "two payments under one batch root in the same second"
+      "why": "two payments under one batch commitment in the same second"
     },
     {
       "a": "pos_non_ascii_nfc.json",
@@ -1467,9 +6066,13 @@
         "pos_requirements_float_spelling.json",
         "pos_requirements_not_object.json",
         "pos_payer_empty_string.json",
-        "pos_resource_paid.json"
+        "pos_resource_paid.json",
+        "pos_envelope_extra_member.json",
+        "pos_response_junk_types.json",
+        "pos_response_network_not_identifier.json",
+        "pos_config_clock_integer_float.json"
       ],
-      "why": "one statement signed under four keys and verified in nine contexts"
+      "why": "one statement signed under four keys and verified in thirteen contexts"
     }
   ]
 }

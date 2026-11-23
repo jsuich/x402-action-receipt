@@ -8,39 +8,190 @@
       "level": "MUST",
       "text": "Perform the steps in order and stop at the first failure.",
       "anchor": "The verifier MUST perform the steps below **in order** and MUST stop at the first failure.",
-      "tested_by": "suite",
-      "note": "every negative vector is one mutation of a valid receipt, so its expected reason is the first failing step; the fuzzer compares the reason two implementations give for multi-fault inputs"
+      "tested_by": "vector",
+      "vectors": [
+        "neg_order_header_canonical_before_typ.json",
+        "neg_order_header_domain_before_typ.json",
+        "neg_order_typ_before_alg.json",
+        "neg_order_alg_before_header_members.json",
+        "neg_order_header_before_canonicalization.json",
+        "neg_order_canonicalization_before_schema.json",
+        "neg_order_version_before_member_set.json",
+        "neg_order_member_set_before_outcome.json",
+        "neg_order_outcome_before_status.json",
+        "neg_order_status_before_bindings_type.json",
+        "neg_order_binding_before_resource.json",
+        "neg_order_resource_before_signer.json",
+        "neg_order_signer_before_signature.json",
+        "neg_order_signature_before_settlement.json",
+        "neg_order_success_before_binding.json",
+        "neg_order_settlement_before_requirements.json",
+        "neg_order_requirements_before_freshness.json"
+      ]
+    },
+    {
+      "id": "V-ORD-2",
+      "role": "verifier",
+      "section": "5.3",
+      "level": "MUST",
+      "text": "Check \u00a75.3 in its stated order: integer `version`, `version == 1`, member set and grammar, outcome, status, bindings array, bindings.",
+      "anchor": "Reject with the code shown, checking in this order:",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_order_version_before_member_set.json",
+        "neg_order_member_set_before_outcome.json",
+        "neg_order_outcome_before_status.json",
+        "neg_order_status_before_bindings_type.json",
+        "neg_order_canonicalization_before_schema.json"
+      ]
     },
     {
       "id": "V-ERR-1",
       "role": "verifier",
       "section": "5",
       "level": "MUST NOT",
-      "text": "Do not raise on malformed input.",
-      "anchor": "It MUST NOT raise on malformed input.",
+      "text": "Never raise, and never return ERROR, because of anything in the receipt or the x402 objects.",
+      "anchor": "It MUST NOT raise, and MUST NOT return `ERROR`, because of anything in the receipt or in the x402 objects.",
       "tested_by": "fuzz",
-      "note": "property P6: no generated case may produce ERROR or an undeclared reason"
+      "vectors": [
+        "neg_alg_array.json",
+        "neg_alg_object.json",
+        "neg_alg_number.json",
+        "neg_alg_null.json",
+        "pos_response_junk_types.json",
+        "pos_response_absent_forms.json"
+      ],
+      "note": "properties P6 and P7 on both implementations: ERROR only when the configuration is outside the contract; the generator mutates header member types and text (non-string alg, NaN, huge integers, deep nesting) and x402 values of every type; the cited vectors pin the reviewer B-2 inputs"
     },
     {
       "id": "V-ERR-2",
       "role": "verifier",
       "section": "5",
       "level": "MUST NOT",
-      "text": "Do not report a verifier fault as a rejection.",
+      "text": "A verifier fault is ERROR, never reported as a rejection (and the reverse).",
       "anchor": "`ERROR` says nothing about the receipt and MUST NOT be reported as a rejection.",
-      "tested_by": "not-observable"
+      "tested_by": "vector",
+      "vectors": [
+        "err_config_mode_upper_case.json",
+        "err_config_mode_missing.json",
+        "err_config_mode_null.json",
+        "err_config_now_boolean.json",
+        "err_config_now_fraction.json",
+        "err_config_now_string.json",
+        "err_config_now_missing.json",
+        "err_config_now_unsafe_integer.json",
+        "err_config_max_age_negative.json",
+        "err_config_max_age_string.json",
+        "err_config_max_age_null.json",
+        "err_config_max_age_boolean.json",
+        "err_config_max_age_fraction.json",
+        "err_config_paid_url_number.json",
+        "err_config_paid_url_array.json",
+        "err_config_context_null.json",
+        "err_config_over_malformed_receipt.json",
+        "err_config_now_below_min.json",
+        "err_config_max_age_unsafe_integer.json"
+      ]
+    },
+    {
+      "id": "V-CFG-1",
+      "role": "verifier",
+      "section": "5",
+      "level": "MUST",
+      "text": "Return ERROR for configuration outside the contract (mode, clock, maximum age, paid resource URL), whatever the receipt.",
+      "anchor": "A verifier given configuration outside this contract returns `ERROR`.",
+      "tested_by": "vector",
+      "vectors": [
+        "err_config_mode_upper_case.json",
+        "err_config_mode_missing.json",
+        "err_config_mode_null.json",
+        "err_config_now_boolean.json",
+        "err_config_now_fraction.json",
+        "err_config_now_string.json",
+        "err_config_now_missing.json",
+        "err_config_now_unsafe_integer.json",
+        "err_config_max_age_negative.json",
+        "err_config_max_age_string.json",
+        "err_config_max_age_null.json",
+        "err_config_max_age_boolean.json",
+        "err_config_max_age_fraction.json",
+        "err_config_paid_url_number.json",
+        "err_config_paid_url_array.json",
+        "err_config_context_null.json",
+        "err_config_over_malformed_receipt.json",
+        "err_config_now_below_min.json",
+        "err_config_max_age_unsafe_integer.json"
+      ]
+    },
+    {
+      "id": "V-CFG-2",
+      "role": "verifier",
+      "section": "5",
+      "level": "MUST NOT",
+      "text": "Never substitute a default or nearest valid value for configuration it cannot read.",
+      "anchor": "It MUST NOT substitute a default or the nearest valid value: a mode it does not recognize is not `archival`, and a maximum age it cannot read is not 3600.",
+      "tested_by": "vector",
+      "vectors": [
+        "err_config_mode_upper_case.json",
+        "err_config_mode_null.json",
+        "err_config_mode_missing.json",
+        "err_config_max_age_null.json",
+        "err_config_max_age_string.json",
+        "err_config_max_age_boolean.json",
+        "err_config_max_age_fraction.json",
+        "err_config_max_age_negative.json",
+        "err_config_max_age_unsafe_integer.json"
+      ]
+    },
+    {
+      "id": "V-CFG-3",
+      "role": "verifier",
+      "section": "5",
+      "level": "MUST",
+      "text": "The clock is an integer number of Unix seconds in [-(2^53 - 1), 2^53 - 1] (read by value; a boolean is not one): both ends are valid, one past either end is ERROR.",
+      "anchor": "an integer number of Unix seconds",
+      "tested_by": "vector",
+      "vectors": [
+        "err_config_now_boolean.json",
+        "err_config_now_fraction.json",
+        "err_config_now_string.json",
+        "err_config_now_missing.json",
+        "err_config_now_unsafe_integer.json",
+        "pos_config_clock_integer_float.json",
+        "err_config_now_below_min.json",
+        "pos_clock_negative_archival.json",
+        "neg_freshness_clock_min_archival.json",
+        "pos_issuedat_max_archival.json"
+      ]
+    },
+    {
+      "id": "V-CFG-4",
+      "role": "verifier",
+      "section": "5",
+      "level": "MUST",
+      "text": "The paid resource URL is absent or a string.",
+      "anchor": "not supplied or `null`, meaning the verifier did not pay; or a string",
+      "tested_by": "vector",
+      "vectors": [
+        "err_config_paid_url_number.json",
+        "err_config_paid_url_array.json",
+        "neg_resource_paid_empty_string.json"
+      ]
     },
     {
       "id": "V-ENV-1",
       "role": "verifier",
       "section": "5.1",
       "level": "MUST",
-      "text": "Reject a receipt that is not a JWS-format object with three base64url segments and a JSON-object header.",
+      "text": "Reject a receipt that is not a JWS-format object with a string signature of three base64url segments.",
       "anchor": "Reject with `invalid_payload` unless the receipt is an object with `format == \"jws\"`",
       "tested_by": "vector",
       "vectors": [
         "neg_not_jws_format.json",
-        "neg_header_not_object.json"
+        "neg_header_not_object.json",
+        "neg_compact_two_segments.json",
+        "neg_compact_four_segments.json",
+        "neg_signature_not_string.json"
       ]
     },
     {
@@ -56,16 +207,74 @@
       ]
     },
     {
+      "id": "V-ENV-11",
+      "role": "verifier",
+      "section": "3",
+      "level": "MUST",
+      "text": "Reject a compact string longer than 65536 characters.",
+      "anchor": "`signature` is a string of at most 65536 characters",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_compact_at_size_limit.json",
+        "neg_compact_over_size_limit.json"
+      ]
+    },
+    {
+      "id": "V-ENV-12",
+      "role": "verifier",
+      "section": "3",
+      "level": "MUST",
+      "text": "Ignore any other member of the receipt object.",
+      "anchor": "Any other member of the receipt object is ignored and is not covered by the signature.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_envelope_extra_member.json"
+      ]
+    },
+    {
       "id": "V-ENV-3",
       "role": "verifier",
       "section": "5.1",
-      "level": "MUST NOT",
-      "text": "Decode the header strictly as UTF-8 without a byte-order mark; never let a parser detect the encoding.",
-      "anchor": "A parser that detects encodings from the bytes MUST NOT be given the bytes.",
+      "level": "MUST",
+      "text": "Reject a header with a byte-order mark, in another encoding, with a repeated member, with NaN, or out of order.",
+      "anchor": "A header with a byte-order mark, in another encoding, with a repeated member, with `NaN`, or with members out of order fails here.",
       "tested_by": "vector",
       "vectors": [
         "neg_header_bom.json",
-        "neg_header_utf16.json"
+        "neg_header_utf16.json",
+        "neg_header_duplicate_member.json",
+        "neg_header_nan_overwritten.json",
+        "neg_header_member_order.json"
+      ]
+    },
+    {
+      "id": "V-ENV-8",
+      "role": "verifier",
+      "section": "3",
+      "level": "MUST",
+      "text": "The header has one spelling: its bytes are the JCS form of the header object.",
+      "anchor": "The header bytes are the RFC 8785 serialization of that object, so a header has one spelling",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_header_whitespace.json",
+        "neg_header_member_order.json",
+        "neg_header_escaped_member_name.json",
+        "neg_header_duplicate_member.json",
+        "neg_order_header_canonical_before_typ.json"
+      ]
+    },
+    {
+      "id": "V-ENV-9",
+      "role": "verifier",
+      "section": "5.1",
+      "level": "MUST",
+      "text": "The header passes the full canonical-bytes test of \u00a75.2, value domain included, before `typ` is read.",
+      "anchor": "the first decodes to bytes `H` that pass the test of \u00a75.2",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_order_header_domain_before_typ.json",
+        "neg_header_nan_overwritten.json",
+        "neg_order_header_canonical_before_typ.json"
       ]
     },
     {
@@ -73,12 +282,13 @@
       "role": "verifier",
       "section": "5.1",
       "level": "MUST",
-      "text": "Reject unless `typ` is `x402-action-receipt+jws`.",
+      "text": "Reject unless `typ` is the string `x402-action-receipt+jws`.",
       "anchor": "Reject with `invalid_actionreceipt_typ` unless the header's `typ` is",
       "tested_by": "vector",
       "vectors": [
         "neg_typ_missing.json",
-        "neg_typ_wrong.json"
+        "neg_typ_wrong.json",
+        "neg_typ_number.json"
       ]
     },
     {
@@ -102,7 +312,26 @@
       "anchor": "Reject with `invalid_actionreceipt_alg` unless `alg` is",
       "tested_by": "vector",
       "vectors": [
-        "neg_unknown_alg.json"
+        "neg_unknown_alg.json",
+        "neg_alg_array.json",
+        "neg_alg_object.json",
+        "neg_alg_number.json",
+        "neg_alg_null.json"
+      ]
+    },
+    {
+      "id": "V-ENV-10",
+      "role": "verifier",
+      "section": "5.1",
+      "level": "MUST",
+      "text": "An `alg` of any other type is rejected with the alg code, never an ERROR.",
+      "anchor": "A value of any other type is rejected here.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_alg_array.json",
+        "neg_alg_object.json",
+        "neg_alg_number.json",
+        "neg_alg_null.json"
       ]
     },
     {
@@ -136,13 +365,17 @@
       "role": "verifier",
       "section": "5.2",
       "level": "MUST",
-      "text": "Reject a payload outside the value domain: unsafe integers, unpaired surrogates, nesting deeper than 8.",
-      "anchor": "the parsed value lies in the value domain of §4.6",
+      "text": "Reject a payload outside the value domain: integers outside [-(2^53 - 1), 2^53 - 1], unpaired surrogates, nesting deeper than 8; a payload at those bounds passes this step.",
+      "anchor": "the parsed value lies in the value domain of \u00a74.6",
       "tested_by": "vector",
       "vectors": [
         "neg_canon_number_unsafe_integer.json",
+        "neg_canon_issuedat_2_53.json",
         "neg_canon_lone_surrogate.json",
-        "neg_canon_nesting_depth.json"
+        "neg_canon_nesting_depth.json",
+        "neg_canon_issuedat_below_min_safe.json",
+        "neg_schema_issuedat_min_safe.json",
+        "neg_schema_nesting_depth_8.json"
       ]
     },
     {
@@ -174,7 +407,9 @@
       "vectors": [
         "neg_canon_number_float.json",
         "neg_schema_null.json",
-        "neg_schema_not_object.json"
+        "neg_schema_not_object.json",
+        "neg_order_canonicalization_before_schema.json",
+        "neg_order_header_before_canonicalization.json"
       ]
     },
     {
@@ -182,14 +417,14 @@
       "role": "verifier",
       "section": "5.3",
       "level": "MUST",
-      "text": "Reject unless the payload is an object with exactly the listed members and an integer `version`.",
-      "anchor": "`invalid_payload` unless the value is an object with exactly the members of §4.1",
+      "text": "Reject unless the payload is an object with an integer `version` member.",
+      "anchor": "`invalid_payload` unless the value is an object that has a `version` member whose value is an integer.",
       "tested_by": "vector",
       "vectors": [
         "neg_schema_not_object.json",
         "neg_schema_null.json",
-        "neg_schema_unknown_member.json",
-        "neg_schema_missing_member.json",
+        "neg_schema_version_missing.json",
+        "neg_schema_version_string.json",
         "neg_schema_version_boolean.json"
       ]
     },
@@ -198,11 +433,12 @@
       "role": "verifier",
       "section": "5.3",
       "level": "MUST",
-      "text": "Reject any `version` other than 1, before interpreting other members.",
+      "text": "Reject any `version` other than 1, before the member set is checked.",
       "anchor": "`invalid_actionreceipt_version` unless `version == 1`",
       "tested_by": "vector",
       "vectors": [
-        "neg_unsupported_version.json"
+        "neg_unsupported_version.json",
+        "neg_order_version_before_member_set.json"
       ]
     },
     {
@@ -210,18 +446,84 @@
       "role": "verifier",
       "section": "5.3",
       "level": "MUST",
-      "text": "Reject a member of the wrong type or outside its grammar.",
-      "anchor": "`invalid_payload` unless `action` is an object with exactly the members of §4.2",
+      "text": "Reject a payload without exactly the listed members, a member of the wrong type, or one outside its grammar.",
+      "anchor": "`invalid_payload` unless the object has exactly the members of \u00a74.1",
       "tested_by": "vector",
       "vectors": [
+        "neg_schema_unknown_member.json",
+        "neg_schema_missing_member.json",
         "neg_schema_action_scalar.json",
+        "neg_schema_action_extra_member.json",
+        "neg_schema_scope_not_string.json",
         "neg_schema_issuedat_string.json",
         "neg_schema_issuedat_negative.json",
         "neg_schema_no_settlement_id.json",
         "neg_schema_receiptid_short.json",
+        "neg_schema_receiptid_21.json",
+        "neg_schema_receiptid_65.json",
+        "pos_receiptid_22.json",
+        "pos_receiptid_64.json",
+        "pos_issuedat_zero_archival.json",
+        "pos_issuedat_max_archival.json",
         "neg_schema_network_not_caip2.json",
+        "neg_schema_resourceurl_empty.json",
+        "neg_schema_payto_empty_non_evm.json",
+        "neg_schema_payto_evm_grammar.json",
+        "neg_schema_agent_empty.json",
+        "neg_schema_actiontype_empty.json",
         "neg_schema_digest_base64url.json",
-        "neg_schema_supersedes_grammar.json"
+        "neg_schema_supersedes_grammar.json",
+        "neg_schema_issuedat_min_safe.json",
+        "neg_schema_nesting_depth_8.json"
+      ]
+    },
+    {
+      "id": "V-SCH-8",
+      "role": "verifier",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "A network identifier has a 3 to 32 character namespace and a 1 to 32 character reference; non-CAIP-2 identifiers such as `cloudflare:402` are valid.",
+      "anchor": "The `network` grammar is the CAIP-2 shape with a longer namespace.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_network_namespace_3.json",
+        "pos_network_namespace_32.json",
+        "pos_network_reference_32.json",
+        "neg_schema_network_namespace_2.json",
+        "neg_schema_network_namespace_33.json",
+        "neg_schema_network_reference_33.json",
+        "pos_network_cloudflare_empty_payer.json",
+        "neg_schema_network_reference_empty.json",
+        "neg_schema_network_reference_dot.json",
+        "neg_schema_network_namespace_dot.json"
+      ]
+    },
+    {
+      "id": "V-SCH-9",
+      "role": "verifier",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "`payer` may be empty on any network; on eip155 a non-empty `payer` is lowercase hex.",
+      "anchor": "`payer` when `network` begins `eip155:` and it is non-empty",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_payer_empty_evm.json",
+        "pos_network_cloudflare_empty_payer.json",
+        "pos_batch_committed.json",
+        "neg_schema_payer_checksum_case.json"
+      ]
+    },
+    {
+      "id": "V-SCH-10",
+      "role": "verifier",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "The EVM rules apply only when `network` begins `eip155:`; a network that merely looks similar gets none of them.",
+      "anchor": "`payTo` when `network` begins `eip155:`",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_network_lookalike_not_evm.json",
+        "neg_settlement_non_evm_case_not_folded.json"
       ]
     },
     {
@@ -234,7 +536,8 @@
       "tested_by": "vector",
       "vectors": [
         "neg_schema_payer_checksum_case.json",
-        "neg_schema_transaction_uppercase.json"
+        "neg_schema_transaction_uppercase.json",
+        "neg_schema_payto_evm_grammar.json"
       ]
     },
     {
@@ -247,7 +550,9 @@
       "tested_by": "vector",
       "vectors": [
         "pos_non_ascii_nfc.json",
-        "pos_non_ascii_nfd.json"
+        "pos_non_ascii_nfd.json",
+        "pos_binding_advertised_scope_nfd.json",
+        "neg_resource_paid_unicode_normalization.json"
       ]
     },
     {
@@ -278,7 +583,41 @@
         "neg_invalid_status.json",
         "pos_capture_pending.json",
         "pos_reversed.json",
-        "pos_refunded_supersedes.json"
+        "pos_refunded_supersedes.json",
+        "pos_batch_committed.json"
+      ]
+    },
+    {
+      "id": "V-SCH-11",
+      "role": "verifier",
+      "section": "5.3",
+      "level": "MUST",
+      "text": "Reject with `invalid_payload` when `bindings` is not an array.",
+      "anchor": "`invalid_payload` unless `bindings` is an array.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_schema_bindings_not_array.json",
+        "neg_order_status_before_bindings_type.json"
+      ]
+    },
+    {
+      "id": "V-SCH-12",
+      "role": "verifier",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "`chargedAmount` is `\"\"`, `0` or a decimal integer of at most 78 digits with no leading zero; any other value, or one that is not a string, is rejected.",
+      "anchor": "a decimal integer of at most 78 digits, no leading zero",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_empty_no_amount.json",
+        "pos_charged_amount_zero.json",
+        "pos_charged_amount_78_digits.json",
+        "neg_schema_charged_amount_79_digits.json",
+        "neg_schema_charged_amount_leading_zero.json",
+        "neg_schema_charged_amount_non_digit.json",
+        "neg_schema_charged_amount_negative.json",
+        "neg_schema_charged_amount_not_string.json",
+        "neg_schema_charged_amount_leading_zero_non_evm.json"
       ]
     },
     {
@@ -286,8 +625,8 @@
       "role": "verifier",
       "section": "5.3",
       "level": "MUST",
-      "text": "Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count.",
-      "anchor": "`invalid_actionreceipt_binding` unless `bindings` satisfies §4.5",
+      "text": "Reject a `bindings` array that breaks the entry shape, grammar, order, uniqueness or count; accept one at every bound.",
+      "anchor": "`invalid_actionreceipt_binding` unless `bindings` satisfies \u00a74.5",
       "tested_by": "vector",
       "vectors": [
         "neg_binding_unsorted.json",
@@ -295,7 +634,38 @@
         "neg_binding_extra_member.json",
         "neg_binding_type_grammar.json",
         "neg_binding_value_non_ascii.json",
-        "neg_binding_too_many.json"
+        "neg_binding_too_many.json",
+        "neg_binding_prefix_65.json",
+        "neg_binding_name_192.json",
+        "neg_binding_value_1025.json",
+        "pos_bindings_16.json",
+        "pos_binding_prefix_64.json",
+        "pos_binding_name_191.json",
+        "pos_binding_value_1024.json",
+        "neg_order_binding_before_resource.json",
+        "neg_binding_prefix_empty.json",
+        "neg_binding_name_empty.json",
+        "neg_binding_value_empty.json",
+        "neg_binding_value_space.json",
+        "neg_binding_value_del.json",
+        "neg_binding_name_del.json",
+        "pos_binding_printable_edges.json"
+      ]
+    },
+    {
+      "id": "V-BND-5",
+      "role": "verifier",
+      "section": "5.3",
+      "level": "MUST",
+      "text": "The `action-receipt:` namespace is closed: only the two types of \u00a74.5.2, each with its value form.",
+      "anchor": "every entry whose `type` begins `action-receipt:` is one of the two types of \u00a74.5.2 with a `value` of that type's form",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_binding_reserved_unknown_type.json",
+        "neg_binding_advertised_value_form.json",
+        "neg_binding_reversal_value_form_evm.json",
+        "pos_binding_reversal_non_evm_value.json",
+        "pos_binding_namespace_lookalike.json"
       ]
     },
     {
@@ -308,7 +678,8 @@
       "tested_by": "vector",
       "vectors": [
         "pos_bindings_unheld.json",
-        "pos_bindings_composed.json"
+        "pos_bindings_composed.json",
+        "pos_binding_namespace_lookalike.json"
       ]
     },
     {
@@ -321,7 +692,8 @@
       "tested_by": "vector",
       "vectors": [
         "pos_binding_advertised_digest_differs.json",
-        "pos_binding_advertised_scope_differs.json"
+        "pos_binding_advertised_scope_differs.json",
+        "pos_binding_advertised_actiontype_differs.json"
       ]
     },
     {
@@ -329,14 +701,51 @@
       "role": "verifier",
       "section": "4.5.2",
       "level": "MUST",
-      "text": "Evaluate `action-receipt:advertised-info` when the advertised `info` is held: digest, then `scope` and `actionType` equality.",
-      "anchor": "`matched` iff the digest is equal and, for each of `scope` and `actionType` present in `info`, the receipt's `action` member is equal",
+      "text": "Evaluate `action-receipt:advertised-info` when the advertised `info` is held in the value domain: digest, then `scope` and `actionType` equality.",
+      "anchor": "`matched` iff the digest is equal and, for each of `scope` and `actionType` that is a member of `info`, its value is a string equal to the receipt's `action` member",
       "tested_by": "vector",
       "vectors": [
         "pos_bindings_composed.json",
         "pos_binding_advertised_digest_differs.json",
         "pos_binding_advertised_scope_differs.json",
-        "pos_binding_advertised_scope_not_string.json"
+        "pos_binding_advertised_actiontype_differs.json",
+        "pos_binding_advertised_scope_not_string.json",
+        "pos_advertised_info_outside_domain.json",
+        "pos_advertised_info_depth_8.json",
+        "pos_advertised_info_depth_9_not_evaluated.json"
+      ]
+    },
+    {
+      "id": "V-BND-6",
+      "role": "verifier",
+      "section": "4.5.2",
+      "level": "MUST",
+      "text": "`action-receipt:reversal-transaction` is never evaluated offline.",
+      "anchor": "Never offline. A verifier that resolves it on the rail reports the result itself",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_refunded_supersedes.json",
+        "pos_binding_reversal_non_evm_value.json"
+      ]
+    },
+    {
+      "id": "V-ADV-1",
+      "role": "verifier",
+      "section": "5.11",
+      "level": "MUST",
+      "text": "Report `checks.advertisement`: not_evaluated without held info, absent without the binding, else the binding's status.",
+      "anchor": "A per-entry status cannot show an entry that is missing, so the report also carries `checks.advertisement`:",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_advertisement_absent.json",
+        "pos_bindings_composed.json",
+        "pos_binding_advertised_digest_differs.json",
+        "pos_es256_valid.json",
+        "pos_advertised_info_outside_domain.json",
+        "pos_bindings_unheld.json",
+        "pos_advertisement_absent_other_bindings.json",
+        "pos_advertised_info_depth_8.json",
+        "pos_advertised_info_depth_9_not_evaluated.json"
       ]
     },
     {
@@ -344,13 +753,44 @@
       "role": "verifier",
       "section": "5.4",
       "level": "MUST",
-      "text": "Reject unless `kid` is authorized for the receipt's resource by the service or the recipient anchor.",
-      "anchor": "Reject with `invalid_actionreceipt_signer` unless `kid` is authorized for the receipt's `resourceUrl`",
+      "text": "Reject with the signer code when the source answered and `kid` is not among the keys it lists for the resource.",
+      "anchor": "the source answered, and `kid` is not among the keys it lists for the resource. Reject with `invalid_actionreceipt_signer`.",
       "tested_by": "vector",
       "vectors": [
         "neg_signer_unauthorized.json",
         "neg_signer_unknown_kid.json",
-        "pos_payto_signer.json"
+        "pos_payto_signer.json",
+        "neg_order_signer_before_signature.json",
+        "neg_order_resource_before_signer.json"
+      ]
+    },
+    {
+      "id": "V-AUT-5",
+      "role": "verifier",
+      "section": "5.4",
+      "level": "MUST NOT",
+      "text": "When the authorization source gives no answer, reject as unresolved, never as a signer finding.",
+      "anchor": "The verifier MUST NOT report this as `invalid_actionreceipt_signer`: failing to reach a source is not a finding against the signer.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_authorization_no_answer.json",
+        "neg_authorization_no_answer_listed.json",
+        "pos_authorization_marker_not_true.json"
+      ]
+    },
+    {
+      "id": "V-AUT-6",
+      "role": "verifier",
+      "section": "7",
+      "level": "MUST",
+      "text": "In the key fixture an authorization entry that is not an array of strings authorizes nothing.",
+      "anchor": "a value that is not an array of strings authorizes nothing",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_signer_anchor_string.json",
+        "neg_signer_anchor_object.json",
+        "neg_signer_anchor_mixed_array.json",
+        "neg_signer_anchor_number.json"
       ]
     },
     {
@@ -370,8 +810,8 @@
       "role": "verifier",
       "section": "5.4",
       "level": "MUST NOT",
-      "text": "Do not dereference a location that only the receipt names.",
-      "anchor": "It MUST NOT dereference a location that only the receipt names.",
+      "text": "Never take the location of authorization data from `kid`; a `did:web` kid on another host is not authorized under (a).",
+      "anchor": "It MUST NOT take it from `kid`: a `did:web` `kid` whose host is not the host of `resourceUrl` is not authorized under (a) unless a registry the verifier trusts says so.",
       "tested_by": "needs-network"
     },
     {
@@ -388,12 +828,30 @@
       "role": "verifier",
       "section": "5.5",
       "level": "MUST",
-      "text": "Report an authorized key that cannot be obtained or parsed as unresolved, not as a bad signature.",
+      "text": "Report an authorized key that cannot be obtained, or is not a usable public key, as unresolved, not as a bad signature.",
       "anchor": "reject with `invalid_actionreceipt_key_unresolved`",
       "tested_by": "vector",
       "vectors": [
         "neg_key_unresolved.json",
-        "neg_key_unusable.json"
+        "neg_key_unusable.json",
+        "neg_key_unknown_algorithm.json",
+        "neg_key_unsupported_curve.json",
+        "neg_key_unusable_curve_p384.json"
+      ]
+    },
+    {
+      "id": "V-KEY-2",
+      "role": "verifier",
+      "section": "5",
+      "level": "MUST",
+      "text": "Only a public key is a usable key: a private key, a certificate, or a PEM with anything around it is not.",
+      "anchor": "A private key, a certificate, or a public",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_key_private_key_pem.json",
+        "neg_key_certificate.json",
+        "neg_key_pem_leading_spaces.json",
+        "neg_key_pem_noncanonical_base64.json"
       ]
     },
     {
@@ -408,7 +866,8 @@
         "neg_sig_tampered_payload.json",
         "pos_es256_valid.json",
         "pos_es256k_valid.json",
-        "pos_eddsa_valid.json"
+        "pos_eddsa_valid.json",
+        "neg_order_signature_before_settlement.json"
       ]
     },
     {
@@ -420,7 +879,9 @@
       "anchor": "the key's type and curve match `alg`",
       "tested_by": "vector",
       "vectors": [
-        "neg_sig_wrong_curve.json"
+        "neg_sig_wrong_curve.json",
+        "neg_sig_eddsa_key_for_es256.json",
+        "neg_sig_ec_key_for_eddsa.json"
       ]
     },
     {
@@ -429,10 +890,12 @@
       "section": "3",
       "level": "MUST",
       "text": "Require 64-byte low-s ECDSA signatures.",
-      "anchor": "ECDSA signatures are the 64-byte `r || s` form of RFC 7518 §3.4 and MUST be low-`s`",
+      "anchor": "ECDSA signatures are the 64-byte `r || s` form of RFC 7518 \u00a73.4 and MUST be low-`s`",
       "tested_by": "vector",
       "vectors": [
-        "neg_sig_high_s.json"
+        "neg_sig_high_s.json",
+        "neg_sig_ecdsa_65_bytes.json",
+        "neg_sig_ecdsa_der.json"
       ]
     },
     {
@@ -440,11 +903,15 @@
       "role": "verifier",
       "section": "5.7",
       "level": "MUST",
-      "text": "Reject unless settlement succeeded and provides an identifier.",
+      "text": "Reject unless `success` is the boolean true and the response provides an identifier.",
       "anchor": "Reject with `invalid_transaction_state` unless the `SettlementResponse` has `success == true`",
       "tested_by": "vector",
       "vectors": [
-        "neg_settlement_failed.json"
+        "neg_settlement_failed.json",
+        "neg_settlement_success_without_identifier.json",
+        "neg_settlement_success_false_with_transaction.json",
+        "neg_settlement_success_string_true.json",
+        "neg_order_success_before_binding.json"
       ]
     },
     {
@@ -457,7 +924,8 @@
       "tested_by": "vector",
       "vectors": [
         "neg_settlement_transaction_mismatch.json",
-        "neg_settlement_dropped_transaction.json"
+        "neg_settlement_dropped_transaction.json",
+        "neg_order_settlement_before_requirements.json"
       ]
     },
     {
@@ -482,7 +950,156 @@
       "tested_by": "vector",
       "vectors": [
         "neg_settlement_ref_mismatch.json",
-        "pos_batch_settled.json"
+        "neg_settlement_dropped_ref.json",
+        "pos_batch_committed.json",
+        "pos_settlement_ref_with_transaction.json"
+      ]
+    },
+    {
+      "id": "V-SET-10",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "The receipt carries no `settlementRef` the response does not have.",
+      "anchor": "If it has none, the receipt's `settlementRef` is `\"\"`.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_uncorroborated_ref.json"
+      ]
+    },
+    {
+      "id": "V-SET-11",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "Holding `accepted`, the receipt's `chargedAmount` equals the charged amount the table of \u00a74.3 finds when there is one.",
+      "anchor": "If there is one, the receipt's `chargedAmount` equals it",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_charged_amount_mismatch.json",
+        "neg_settlement_charged_amount_dropped.json",
+        "pos_es256_valid.json",
+        "pos_charged_amount_zero.json",
+        "pos_charged_amount_78_digits.json",
+        "pos_charged_amount_from_extra.json",
+        "pos_charged_amount_upto_reads_amount.json",
+        "pos_charged_amount_from_extra_cloudflare.json",
+        "pos_charged_amount_extra_zero.json",
+        "neg_settlement_charged_amount_exact_extra_not_read.json",
+        "neg_settlement_charged_amount_upto_extra_not_read.json"
+      ]
+    },
+    {
+      "id": "V-SET-12",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "Holding `accepted`, the receipt carries no `chargedAmount` when the table finds none.",
+      "anchor": "if there is none, the receipt's `chargedAmount` is `\"\"`",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_charged_amount_uncorroborated.json",
+        "pos_charged_amount_empty_no_amount.json",
+        "pos_charged_amount_response_amount_not_string.json",
+        "neg_settlement_charged_amount_auth_capture_amount.json",
+        "neg_settlement_charged_amount_batch_top_level_amount.json",
+        "neg_settlement_charged_amount_batch_extra_empty_falls_back.json",
+        "neg_settlement_charged_amount_extra_number_not_read.json",
+        "neg_settlement_charged_amount_top_level_when_extra.json"
+      ]
+    },
+    {
+      "id": "V-SET-13",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "A verifier holding `accepted` as an in-domain object with a string `scheme` finds the charged amount by the table of \u00a74.3: `exact` and `upto` read `amount`, `batch-settlement` reads `extra.chargedAmount` and never `amount`, any other scheme (`auth-capture` among them) has none.",
+      "anchor": "If the verifier holds `accepted` as a JSON object in the value domain whose `scheme` is a string, it finds the exchange's charged amount by the table of \u00a74.3.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_es256_valid.json",
+        "pos_charged_amount_exact_extra_ignored.json",
+        "neg_settlement_charged_amount_exact_extra_not_read.json",
+        "pos_charged_amount_upto_reads_amount.json",
+        "neg_settlement_charged_amount_upto_extra_not_read.json",
+        "pos_charged_amount_from_extra.json",
+        "neg_settlement_charged_amount_top_level_when_extra.json",
+        "pos_charged_amount_batch_extra_empty_not_read.json",
+        "pos_charged_amount_batch_extra_not_string_not_read.json",
+        "pos_charged_amount_batch_extra_not_object_not_read.json",
+        "pos_charged_amount_batch_no_extra.json",
+        "neg_settlement_charged_amount_batch_top_level_amount.json",
+        "neg_settlement_charged_amount_batch_extra_empty_falls_back.json",
+        "neg_settlement_charged_amount_extra_number_not_read.json",
+        "pos_charged_amount_from_extra_cloudflare.json",
+        "pos_charged_amount_extra_zero.json",
+        "pos_charged_amount_auth_capture_none.json",
+        "neg_settlement_charged_amount_auth_capture_amount.json",
+        "pos_charged_amount_unknown_scheme_none.json",
+        "pos_batch_committed.json",
+        "pos_settlement_ref_with_transaction.json"
+      ]
+    },
+    {
+      "id": "V-SET-14",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "The charged amount is not normalized: a response amount that is out of grammar equals no receipt's.",
+      "anchor": "Nothing is normalized: an amount spelled `010` in the response is not `10`",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_charged_amount_not_normalized.json",
+        "neg_settlement_charged_amount_response_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "V-SET-15",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "Without `accepted` as an in-domain object whose `scheme` is a string, do not compare the charged amount: report `chargedAmount: not_compared`, and a receipt value the response contradicts still passes.",
+      "anchor": "A verifier that does not hold such an `accepted` cannot tell where the charged amount is, so it does not compare: the report records `chargedAmount: not_compared`, and the receipt's `chargedAmount` constrains nothing.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_not_compared_without_accepted.json",
+        "pos_charged_amount_not_compared_accepted_not_object.json",
+        "pos_charged_amount_not_compared_accepted_out_of_domain.json",
+        "pos_charged_amount_not_compared_scheme_not_string.json",
+        "pos_requirements_not_held.json",
+        "pos_response_junk_types.json",
+        "pos_requirements_depth_9_not_evaluated.json"
+      ]
+    },
+    {
+      "id": "V-SET-16",
+      "role": "verifier",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Scheme names are compared exactly; a value at a location the table does not name for the scheme is not a charged amount.",
+      "anchor": "Scheme names are compared exactly. A value at a location the table does not name for the scheme is not a charged amount.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_scheme_case_exact.json",
+        "neg_settlement_charged_amount_scheme_case_exact.json",
+        "pos_charged_amount_scheme_case_batch.json",
+        "pos_charged_amount_exact_extra_ignored.json"
+      ]
+    },
+    {
+      "id": "V-SET-17",
+      "role": "verifier",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "The value at the scheme's location is the charged amount only when present (\u00a74.6): a lone surrogate, a non-string or `\"\"` is none.",
+      "anchor": "The value at that location when present (\u00a74.6) is the charged amount; otherwise the exchange has none",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_charged_amount_batch_extra_surrogate_absent.json",
+        "pos_charged_amount_amount_surrogate_absent.json",
+        "pos_charged_amount_batch_extra_empty_not_read.json",
+        "pos_charged_amount_batch_extra_not_string_not_read.json",
+        "pos_charged_amount_response_amount_not_string.json"
       ]
     },
     {
@@ -490,11 +1107,13 @@
       "role": "verifier",
       "section": "5.8",
       "level": "MUST",
-      "text": "Compare `network` when the response's is in CAIP-2 form.",
-      "anchor": "If the response's `network` is in CAIP-2 form, the receipt's `network` equals it.",
+      "text": "Compare `network` when the response's is a network identifier; otherwise record that it was not compared.",
+      "anchor": "If the response's `network` is a network identifier (\u00a74.6), the receipt's `network` equals it.",
       "tested_by": "vector",
       "vectors": [
-        "neg_settlement_network_mismatch.json"
+        "neg_settlement_network_mismatch.json",
+        "pos_response_network_not_identifier.json",
+        "pos_response_junk_types.json"
       ]
     },
     {
@@ -507,6 +1126,7 @@
       "tested_by": "vector",
       "vectors": [
         "neg_settlement_payer_mismatch.json",
+        "neg_settlement_payer_dropped.json",
         "pos_payer_absent.json"
       ]
     },
@@ -519,20 +1139,38 @@
       "anchor": "it lowercases the response's `transaction` and `payer`",
       "tested_by": "vector",
       "vectors": [
-        "pos_response_casing.json"
+        "pos_response_casing.json",
+        "pos_response_transaction_upper_prefix.json"
+      ]
+    },
+    {
+      "id": "V-SET-9",
+      "role": "verifier",
+      "section": "5.8",
+      "level": "MUST",
+      "text": "Normalize nothing else: a settlement reference and every value off eip155 are compared exactly.",
+      "anchor": "Nothing else is normalized.",
+      "tested_by": "vector",
+      "vectors": [
+        "neg_settlement_ref_case_not_folded.json",
+        "pos_settlement_ref_evm_exact_case.json",
+        "neg_settlement_non_evm_case_not_folded.json",
+        "pos_network_lookalike_not_evm.json"
       ]
     },
     {
       "id": "V-SET-8",
       "role": "verifier",
-      "section": "5.8",
+      "section": "4.6",
       "level": "MUST",
-      "text": "Treat an absent member, `null` and the empty string alike as 'has none'.",
-      "anchor": "an absent member, `null` and `\"\"` all mean it has none",
+      "text": "A value read from an unsigned object is present only as a non-empty string of well-formed Unicode; anything else is absent.",
+      "anchor": "when it is a non-empty string of well-formed Unicode. Anything else is absent:",
       "tested_by": "vector",
       "vectors": [
         "pos_payer_empty_string.json",
-        "pos_payer_absent.json"
+        "pos_payer_absent.json",
+        "pos_response_absent_forms.json",
+        "pos_response_junk_types.json"
       ]
     },
     {
@@ -541,10 +1179,25 @@
       "section": "5.9",
       "level": "MUST",
       "text": "When the accepted requirements are held, `requirementsDigest` must equal their digest.",
-      "anchor": "`requirementsDigest` equals the digest computed per §4.4",
+      "anchor": "`requirementsDigest` equals the digest computed per \u00a74.4",
       "tested_by": "vector",
       "vectors": [
-        "neg_requirements_amount_changed.json"
+        "neg_requirements_amount_changed.json",
+        "neg_order_requirements_before_freshness.json",
+        "pos_requirements_max_safe_integer.json",
+        "pos_requirements_depth_8.json"
+      ]
+    },
+    {
+      "id": "V-REQ-6",
+      "role": "verifier",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "Canonicalize with members sorted by UTF-16 code units, not code points.",
+      "anchor": "members sorted by UTF-16 code units",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_requirements_utf16_order.json"
       ]
     },
     {
@@ -581,7 +1234,9 @@
       "tested_by": "vector",
       "vectors": [
         "pos_requirements_not_held.json",
-        "pos_requirements_not_object.json"
+        "pos_requirements_not_object.json",
+        "pos_requirements_unsafe_integer_not_evaluated.json",
+        "pos_requirements_depth_9_not_evaluated.json"
       ]
     },
     {
@@ -605,7 +1260,9 @@
       "anchor": "In both modes, reject with `invalid_actionreceipt_freshness` if `age < -60`.",
       "tested_by": "vector",
       "vectors": [
-        "neg_freshness_future_archival.json"
+        "neg_freshness_future_archival.json",
+        "pos_freshness_future_60.json",
+        "neg_freshness_future_61.json"
       ]
     },
     {
@@ -613,11 +1270,29 @@
       "role": "verifier",
       "section": "5.10",
       "level": "MUST",
-      "text": "In session mode, reject a receipt older than the maximum age.",
+      "text": "In session mode, reject a receipt older than the maximum age; the maximum age may be 0 or as large as 2^53 - 1.",
       "anchor": "In `session` mode, also reject if `age > maxAge`.",
       "tested_by": "vector",
       "vectors": [
-        "neg_freshness_stale.json"
+        "neg_freshness_stale.json",
+        "pos_freshness_max_age_100.json",
+        "neg_freshness_max_age_101.json",
+        "pos_freshness_max_age_0.json",
+        "neg_freshness_max_age_0_age_1.json",
+        "pos_freshness_max_age_max.json"
+      ]
+    },
+    {
+      "id": "V-FRS-4",
+      "role": "verifier",
+      "section": "5.10",
+      "level": "MUST",
+      "text": "With no maximum age configured, the maximum age is 3600 seconds.",
+      "anchor": "The default `maxAge` is 3600 seconds.",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_freshness_default_max_age_3600.json",
+        "neg_freshness_default_max_age_3601.json"
       ]
     },
     {
@@ -629,7 +1304,9 @@
       "anchor": "In `archival` mode age is not a reason to reject.",
       "tested_by": "vector",
       "vectors": [
-        "pos_archival_180d.json"
+        "pos_archival_180d.json",
+        "pos_issuedat_zero_archival.json",
+        "pos_issuedat_max_archival.json"
       ]
     },
     {
@@ -639,8 +1316,96 @@
       "level": "MUST",
       "text": "Return the report with every PASS.",
       "anchor": "A verifier MUST make at least this available:",
-      "tested_by": "suite",
-      "note": "the full report of every positive vector is compared with the manifest, and the reports that carry a 'not compared' or 'not evaluated' reading are also declared by hand in the suite"
+      "tested_by": "vector",
+      "vectors": [
+        "pos_es256_valid.json",
+        "pos_es256k_valid.json",
+        "pos_eddsa_valid.json",
+        "pos_payto_signer.json",
+        "pos_outcome_failed.json",
+        "pos_outcome_partial.json",
+        "pos_batch_committed.json",
+        "pos_batch_second_payment.json",
+        "pos_capture_pending.json",
+        "pos_reversed.json",
+        "pos_refunded_supersedes.json",
+        "pos_bindings_composed.json",
+        "pos_bindings_unheld.json",
+        "pos_binding_advertised_digest_differs.json",
+        "pos_binding_advertised_scope_differs.json",
+        "pos_binding_advertised_actiontype_differs.json",
+        "pos_binding_advertised_scope_not_string.json",
+        "pos_binding_advertised_scope_nfd.json",
+        "pos_advertisement_absent.json",
+        "pos_advertised_info_outside_domain.json",
+        "pos_requirements_not_held.json",
+        "pos_response_casing.json",
+        "pos_payer_absent.json",
+        "pos_archival_180d.json",
+        "pos_non_ascii_nfc.json",
+        "pos_non_ascii_nfd.json",
+        "pos_requirements_float_spelling.json",
+        "pos_requirements_not_object.json",
+        "pos_payer_empty_string.json",
+        "pos_resource_paid.json",
+        "pos_envelope_extra_member.json",
+        "pos_compact_at_size_limit.json",
+        "pos_network_namespace_3.json",
+        "pos_network_namespace_32.json",
+        "pos_network_reference_32.json",
+        "pos_network_lookalike_not_evm.json",
+        "pos_network_cloudflare_empty_payer.json",
+        "pos_receiptid_22.json",
+        "pos_receiptid_64.json",
+        "pos_bindings_16.json",
+        "pos_binding_prefix_64.json",
+        "pos_binding_name_191.json",
+        "pos_binding_value_1024.json",
+        "pos_binding_reversal_non_evm_value.json",
+        "pos_binding_namespace_lookalike.json",
+        "pos_issuedat_zero_archival.json",
+        "pos_issuedat_max_archival.json",
+        "pos_freshness_future_60.json",
+        "pos_freshness_default_max_age_3600.json",
+        "pos_freshness_max_age_100.json",
+        "pos_settlement_ref_evm_exact_case.json",
+        "pos_settlement_ref_with_transaction.json",
+        "pos_requirements_utf16_order.json",
+        "pos_response_absent_forms.json",
+        "pos_response_junk_types.json",
+        "pos_response_network_not_identifier.json",
+        "pos_payer_empty_evm.json",
+        "pos_authorization_marker_not_true.json",
+        "pos_config_clock_integer_float.json",
+        "pos_advertisement_absent_other_bindings.json",
+        "pos_clock_negative_archival.json",
+        "pos_freshness_max_age_0.json",
+        "pos_freshness_max_age_max.json",
+        "pos_requirements_max_safe_integer.json",
+        "pos_requirements_unsafe_integer_not_evaluated.json",
+        "pos_requirements_depth_8.json",
+        "pos_requirements_depth_9_not_evaluated.json",
+        "pos_advertised_info_depth_8.json",
+        "pos_advertised_info_depth_9_not_evaluated.json",
+        "pos_binding_printable_edges.json"
+      ],
+      "note": "every positive's full report is declared by hand in the suite (EXPECT_REPORT over a default written from \u00a75.12) and compared member by member; run_vectors.py compares the full published report for any adapter"
+    },
+    {
+      "id": "V-RPT-5",
+      "role": "verifier",
+      "section": "5.12",
+      "level": "MUST",
+      "text": "Every PASS report carries `checks.chargedAmount`: `compared` when \u00a75.8 compared the charged amount, otherwise `not_compared`.",
+      "anchor": "| `checks.chargedAmount` | `compared` or `not_compared` (\u00a75.8) |",
+      "tested_by": "vector",
+      "vectors": [
+        "pos_es256_valid.json",
+        "pos_charged_amount_auth_capture_none.json",
+        "pos_requirements_not_held.json",
+        "pos_charged_amount_not_compared_scheme_not_string.json",
+        "pos_charged_amount_not_compared_accepted_out_of_domain.json"
+      ]
     },
     {
       "id": "V-RPT-2",
@@ -650,18 +1415,18 @@
       "text": "`receiptRef` is the hash of the payload bytes and covers neither header nor signature.",
       "anchor": "so the same statement signed under two keys has one `receiptRef`",
       "tested_by": "matrix",
-      "note": "sameReceiptRef and distinctReceiptRef relations in the manifest; fuzz property P1"
+      "note": "sameReceiptRef and distinctReceiptRef relations in the manifest; the suite checks each positive's receiptRef against the payload segment's hash; fuzz property P1 on both implementations"
     },
     {
       "id": "V-RPT-3",
       "role": "verifier",
       "section": "4.3",
       "level": "MUST",
-      "text": "Two payments that differ only in `receiptId` are two receipts.",
-      "anchor": "It exists so that two payments which share every other member are still two receipts.",
+      "text": "Two statements that differ only in `receiptId` are two receipts.",
+      "anchor": "It exists so that two statements which share every other member are still two receipts.",
       "tested_by": "vector",
       "vectors": [
-        "pos_batch_settled.json",
+        "pos_batch_committed.json",
         "pos_batch_second_payment.json"
       ]
     },
@@ -680,12 +1445,14 @@
       "role": "verifier",
       "section": "5.4",
       "level": "MUST",
-      "text": "A verifier that made the payment rejects a receipt whose `resourceUrl` is not the URL it paid for.",
+      "text": "A verifier that made the payment rejects a receipt whose `resourceUrl` is not, as an exact string, the URL it paid for.",
       "anchor": "`invalid_actionreceipt_resource_mismatch` unless the receipt's `resourceUrl` equals, as an exact string, the resource URL it paid for",
       "tested_by": "vector",
       "vectors": [
         "neg_resource_mismatch.json",
-        "pos_resource_paid.json"
+        "pos_resource_paid.json",
+        "neg_resource_paid_empty_string.json",
+        "neg_resource_paid_unicode_normalization.json"
       ]
     },
     {
@@ -721,7 +1488,7 @@
       "section": "5.13",
       "level": "SHOULD",
       "text": "Pass the conformance suite before reporting a canonicalization rejection against an issuer.",
-      "anchor": "A verifier SHOULD pass the conformance suite (§7) before reporting one against an issuer.",
+      "anchor": "A verifier SHOULD pass the conformance suite (\u00a77) before reporting one against an issuer.",
       "tested_by": "informative"
     },
     {
@@ -743,12 +1510,41 @@
       "tested_by": "issuer-behaviour"
     },
     {
+      "id": "I-ADV-2",
+      "role": "issuer",
+      "section": "2.3",
+      "level": "MUST",
+      "text": "Carry the advertised `actionType` and `scope` in the receipt.",
+      "anchor": "the receipt it later issues MUST carry the same values",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_advertised_scope_conflict.json",
+        "refuse_advertised_actiontype_conflict.json",
+        "issue_advertised.json"
+      ]
+    },
+    {
+      "id": "I-ADV-3",
+      "role": "issuer",
+      "section": "2.3",
+      "level": "MUST",
+      "text": "Commit the advertisement with the `advertised-info` binding; the client's echo is not what is committed.",
+      "anchor": "the server commits the advertisement with the `action-receipt:advertised-info` binding",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_advertised.json",
+        "issue_advertised_echo_ignored.json",
+        "issue_advertised_info_empty.json",
+        "issue_advertised_will_issue_false.json"
+      ]
+    },
+    {
       "id": "I-BAS-1",
       "role": "issuer",
       "section": "2.4",
       "level": "MAY",
       "text": "May emit both a base receipt and an action receipt.",
-      "anchor": "A server MAY emit both a base receipt and an action receipt.",
+      "anchor": "A server MAY emit both a base receipt and an action receipt for one settlement.",
       "tested_by": "informative"
     },
     {
@@ -756,8 +1552,8 @@
       "role": "issuer",
       "section": "2.4",
       "level": "MUST",
-      "text": "When both are emitted, their common members are equal.",
-      "anchor": "and `transaction` when the base receipt carries one) MUST be equal",
+      "text": "When both are emitted, `network` and `resourceUrl` are equal and `payer` and `transaction` name the same account and transaction.",
+      "anchor": "When it does, `network` and `resourceUrl` MUST be equal in the two, and `payer` and `transaction` (when the base receipt carries one) MUST name the same account and transaction.",
       "tested_by": "issuer-behaviour"
     },
     {
@@ -770,13 +1566,952 @@
       "tested_by": "issuer-behaviour"
     },
     {
+      "id": "I-SET-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST NOT",
+      "text": "Use as `settlementRef` only a value the settlement result carried at the location \u00a74.3 names; never compute one, and never take one from anywhere else.",
+      "anchor": "An issuer MUST NOT use as `settlementRef` a value the settlement result did not carry, and MUST NOT compute one.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_no_identifier.json",
+        "refuse_cloudflare_no_identifier.json",
+        "issue_commitment_id_ignored_off_solana.json",
+        "issue_commitment_id_ignored_exact_solana.json",
+        "issue_commitment_id_ignored_batch_off_solana.json",
+        "refuse_commitment_only_exact.json",
+        "refuse_commitment_only_batch_off_solana.json",
+        "refuse_solana_batch_commitment_empty.json",
+        "refuse_solana_batch_commitment_not_string.json",
+        "refuse_solana_batch_commitment_missing.json",
+        "refuse_solana_batch_extra_not_object.json",
+        "refuse_out_of_band_reference_ignored.json",
+        "issue_surrogate_settlement_reference.json"
+      ]
+    },
+    {
+      "id": "I-SET-2",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "The settlement reference of `batch-settlement` on `solana:*` is `SettlementResponse.extra.commitmentId`; the receipt carries it beside the response's transaction, or with an empty one.",
+      "anchor": "| `batch-settlement` on `solana:*` | `SettlementResponse.extra.commitmentId` |",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_solana_batch_settlement.json",
+        "issue_batch.json",
+        "issue_both_identifiers.json",
+        "issue_transaction_wrong_type_with_reference.json",
+        "issue_surrogate_response_transaction.json",
+        "issue_settlement_ref_upper_case_verbatim.json",
+        "refuse_batch_network_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-SET-3",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Find the settlement reference by the table alone, from `accepted.scheme` and `accepted.network`: the scheme exactly, the namespace exactly; no row, no reference.",
+      "anchor": "is found by this table and nothing else: take `accepted.scheme` and `accepted.network`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_solana_batch_scheme_case.json",
+        "refuse_solana_batch_namespace_prefix.json",
+        "refuse_out_of_band_reference_ignored.json",
+        "issue_commitment_id_ignored_exact_solana.json",
+        "issue_commitment_id_ignored_batch_off_solana.json",
+        "refuse_commitment_only_batch_off_solana.json",
+        "refuse_commitment_only_exact.json",
+        "refuse_batch_network_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-CHG-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "`chargedAmount` is found by `accepted.scheme` and the table of \u00a74.3: the value at the scheme's location when present (\u00a74.6), else `\"\"`.",
+      "anchor": "Take `accepted.scheme`; the location is:",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_charged_amount_from_response_amount.json",
+        "issue_charged_amount_extra_overrides_amount_solana_batch.json",
+        "issue_charged_amount_extra_overrides_amount_cloudflare_batch.json",
+        "issue_solana_batch_settlement.json",
+        "issue_settlement_ref_upper_case_verbatim.json",
+        "issue_charged_amount_batch_extra_empty_no_fallback.json",
+        "issue_charged_amount_batch_extra_not_string_no_fallback.json",
+        "issue_charged_amount_batch_extra_not_object_no_fallback.json",
+        "issue_charged_amount_amount_surrogate.json",
+        "issue_charged_amount_batch_extra_surrogate.json",
+        "issue_charged_amount_batch_extra_zero.json"
+      ]
+    },
+    {
+      "id": "I-CHG-2",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST NOT",
+      "text": "Never compute `chargedAmount`, for example from `accepted.amount`: with no charged amount in the response it is `\"\"`.",
+      "anchor": "The issuer MUST NOT compute `chargedAmount`, for example from `accepted.amount`; the receipt records only what the settlement result reported.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_empty_no_amount.json",
+        "issue_charged_amount_amount_not_string.json",
+        "issue_svm_exact.json",
+        "issue_network_cloudflare.json"
+      ]
+    },
+    {
+      "id": "I-CHG-5",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Under `exact` and `upto` the charged amount is `SettlementResponse.amount`; `extra.chargedAmount` is not read.",
+      "anchor": "| `exact`, `upto` | `SettlementResponse.amount` |",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_charged_amount_from_response_amount.json",
+        "issue_charged_amount_upto_reads_amount.json",
+        "issue_charged_amount_exact_extra_ignored.json",
+        "issue_charged_amount_exact_extra_out_of_grammar_ignored.json",
+        "issue_charged_amount_empty_no_amount.json",
+        "refuse_charged_amount_upto_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-CHG-6",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Under `batch-settlement` the charged amount is `SettlementResponse.extra.chargedAmount` and never the top-level `amount` (a deposit, a refund or a payout at close): with no `extra.chargedAmount` it is `\"\"`.",
+      "anchor": "| `batch-settlement` | `SettlementResponse.extra.chargedAmount` (never the top-level `amount`, which the EVM and Solana bindings use for a deposit, a refund or a payout at close) |",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_batch_evm_refund_response.json",
+        "issue_batch_evm_deposit_response.json",
+        "issue_batch_svm_cooperative_refund_response.json",
+        "issue_batch_svm_seal_response.json",
+        "issue_charged_amount_batch_amount_only.json",
+        "issue_charged_amount_batch_amount_out_of_grammar_ignored.json",
+        "issue_charged_amount_extra_overrides_amount_solana_batch.json",
+        "issue_charged_amount_extra_overrides_amount_cloudflare_batch.json",
+        "issue_charged_amount_batch_extra_empty_no_fallback.json",
+        "issue_charged_amount_batch_extra_zero.json"
+      ]
+    },
+    {
+      "id": "I-CHG-7",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "A scheme with no row, `auth-capture` among them, has no charged amount: `chargedAmount` is `\"\"` whatever the response carries, and its `amount` is not judged.",
+      "anchor": "Schemes with no row include `auth-capture`, whose settlement result reports an authorized hold at one step and a captured amount at another; this draft records neither",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_auth_capture_none.json",
+        "issue_charged_amount_auth_capture_amount_out_of_grammar_ignored.json",
+        "issue_charged_amount_unknown_scheme_none.json",
+        "issue_charged_amount_scheme_not_string.json"
+      ]
+    },
+    {
+      "id": "I-CHG-8",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Scheme names are compared exactly: `Exact`, `batch-Settlement` and `upto ` have no row.",
+      "anchor": "Scheme names are compared exactly.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_scheme_case_exact.json",
+        "issue_charged_amount_scheme_case_batch.json",
+        "issue_charged_amount_scheme_whitespace.json"
+      ]
+    },
+    {
+      "id": "I-CHG-9",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "The `SettlementResponse` read is the one the server returns to the client with the receipt, not a different result its facilitator gave it (a self-managed batch deposit result reports the deposit).",
+      "anchor": "The `SettlementResponse` read here and throughout is the one the server returns to the client with this receipt.",
+      "tested_by": "issuer-behaviour"
+    },
+    {
+      "id": "I-PAY-2",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Without a response payer, the payer is `authorization.from` when present, on any network, and `\"\"` when neither has one.",
+      "anchor": "none, it is `PaymentPayload.payload.authorization.from`, on any network, when present",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_payer_from_authorization.json",
+        "issue_payer_from_authorization_non_evm.json",
+        "issue_payer_none.json",
+        "issue_svm_exact_no_response_payer.json"
+      ]
+    },
+    {
+      "id": "I-SUP-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "MAY",
+      "text": "May issue a later receipt for the same settlement, with `supersedes` set.",
+      "anchor": "**`supersedes`.** A server MAY issue a later receipt for the same settlement when the payment's state changes or it corrects an earlier statement.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json",
+        "issue_reversal_lowercased_evm.json"
+      ]
+    },
+    {
+      "id": "I-REV-1",
+      "role": "issuer",
+      "section": "4.3",
+      "level": "SHOULD",
+      "text": "Carry a reversal or refund transaction in the reversal binding.",
+      "anchor": "the server SHOULD carry it in the `action-receipt:reversal-transaction` binding",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json",
+        "issue_reversal_non_evm_verbatim.json"
+      ]
+    },
+    {
+      "id": "I-REQ-1",
+      "role": "issuer",
+      "section": "4.4",
+      "level": "MUST",
+      "text": "Hash only accepted requirements that lie in the value domain.",
+      "anchor": "`accepted` MUST lie in the value domain of \u00a74.6.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_requirements_non_integer.json",
+        "refuse_requirements_unsafe_integer.json",
+        "refuse_requirements_depth_9.json",
+        "issue_requirements_depth_8.json"
+      ]
+    },
+    {
+      "id": "I-REQ-2",
+      "role": "issuer",
+      "section": "4.4",
+      "level": "MUST NOT",
+      "text": "Issue no receipt when the requirements digest cannot be computed.",
+      "anchor": "MUST NOT issue a receipt for that payment",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_requirements_non_integer.json"
+      ]
+    },
+    {
+      "id": "I-REQ-3",
+      "role": "issuer",
+      "section": "4.4",
+      "level": "MUST",
+      "text": "Check that `accepted` is what the server offered before signing.",
+      "anchor": "so the issuer checks that before it signs (\u00a76.2 step 4)",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_offered_amount_changed.json",
+        "refuse_offered_payto_changed.json",
+        "refuse_offered_asset_changed.json",
+        "refuse_offered_max_timeout_changed.json",
+        "refuse_offered_scheme_changed.json",
+        "refuse_offered_network_changed.json"
+      ]
+    },
+    {
+      "id": "I-BND-1",
+      "role": "issuer",
+      "section": "4.5.1",
+      "level": "SHOULD NOT",
+      "text": "A binding does not restate or contradict a core member.",
+      "anchor": "An issuer SHOULD NOT carry a binding that restates or contradicts one",
+      "tested_by": "issuer-behaviour"
+    },
+    {
+      "id": "I-PRS-1",
+      "role": "issuer",
+      "section": "4.6",
+      "level": "MUST",
+      "text": "Read every x402 string as present or absent by the one definition of \u00a74.6; an unpaired surrogate is absent, and the receipt built from that reading verifies.",
+      "anchor": "The issuer and the verifier use this one definition, so they cannot disagree about whether a response carried a value.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_surrogate_response_transaction.json",
+        "issue_surrogate_response_payer.json",
+        "issue_surrogate_settlement_reference.json",
+        "issue_surrogate_authorization_from.json",
+        "refuse_no_identifier_surrogate.json",
+        "refuse_resource_url_surrogate.json",
+        "issue_payer_response_not_string.json"
+      ]
+    },
+    {
+      "id": "I-CNV-1",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "An optional statement member that is missing or `null` is not given.",
+      "anchor": "An optional statement member (`supersedes`, the reversal transaction, the further bindings) is not given when it is missing or `null`.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_null_means_absent.json"
+      ]
+    },
+    {
+      "id": "I-CNV-3",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "A given optional statement member is well formed, or the issuer refuses.",
+      "anchor": "Given, it MUST be well formed (steps 8 and 10), and the issuer refuses if it is not.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_supersedes_not_string.json",
+        "refuse_reversal_not_string.json",
+        "refuse_further_bindings_not_array.json",
+        "refuse_reversal_empty_string.json",
+        "refuse_reversal_malformed_evm.json",
+        "refuse_reversal_surrogate.json"
+      ]
+    },
+    {
+      "id": "I-CNV-4",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "x402 objects are read leniently: a value of the wrong type is absent.",
+      "anchor": "**x402 objects are read leniently.**",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_transaction_wrong_type_with_reference.json",
+        "refuse_no_identifier_wrong_type.json",
+        "issue_response_network_absent.json",
+        "issue_response_network_not_identifier.json"
+      ]
+    },
+    {
+      "id": "I-CNV-5",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "Ignore unnamed members of the statement and of `action`, at those two levels only.",
+      "anchor": "Members of the statement, and of its `action` object, that this section does not name are ignored.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_action_extra_member_ignored.json",
+        "issue_statement_extra_member_ignored.json"
+      ]
+    },
+    {
+      "id": "I-CNV-6",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "A binding entry has exactly two members; one with another member is refused.",
+      "anchor": "a binding entry has exactly two members (\u00a74.5)",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_binding_extra_member.json",
+        "refuse_binding_not_object.json"
+      ]
+    },
+    {
+      "id": "I-CNV-2",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "Treat the extension as advertised only when the entry is an object whose `info` is a JSON object.",
+      "anchor": "The issuer **advertised** this extension when",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_advertisement_info_not_object.json",
+        "issue_advertisement_entry_not_object.json",
+        "issue_advertised.json"
+      ]
+    },
+    {
+      "id": "I-CNV-7",
+      "role": "issuer",
+      "section": "6.1",
+      "level": "MUST",
+      "text": "The advertised `info` is read strictly: a member whose value is `null` is a member.",
+      "anchor": "nothing in it is read leniently: a member of it whose value is `null` is a member, not an absence.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_advertised_scope_null.json",
+        "refuse_advertised_actiontype_null.json"
+      ]
+    },
+    {
+      "id": "I-ORD-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Perform the ten steps in order.",
+      "anchor": "The issuer MUST perform these steps in order.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_order_1_before_2.json",
+        "refuse_order_2_before_3.json",
+        "refuse_order_3_before_4.json",
+        "refuse_order_4_before_5.json",
+        "refuse_order_5_before_6.json",
+        "refuse_order_6_before_7.json",
+        "refuse_order_7_before_8.json",
+        "refuse_order_8_before_9.json",
+        "refuse_order_9_before_10.json",
+        "refuse_order_settlement_before_statement.json",
+        "refuse_order_charged_amount_before_statement.json"
+      ]
+    },
+    {
+      "id": "I-ORD-2",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST NOT",
+      "text": "Issue nothing once a step fails.",
+      "anchor": "At the first step that fails it MUST NOT issue a receipt.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_settlement_failed.json",
+        "refuse_no_identifier.json"
+      ]
+    },
+    {
+      "id": "I-STP-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 1: refuse unless settlement succeeded (strictly `true`).",
+      "anchor": "`SettlementResponse.success` is `true`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_settlement_failed.json",
+        "refuse_settlement_pending.json",
+        "refuse_settlement_truthy_string.json",
+        "refuse_settlement_success_one.json"
+      ]
+    },
+    {
+      "id": "I-STP-2",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 2: refuse without a transaction or a settlement reference.",
+      "anchor": "the response has a `transaction`, or the issuer has a settlement reference (\u00a74.3)",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_no_identifier.json",
+        "refuse_no_identifier_wrong_type.json",
+        "refuse_no_identifier_surrogate.json",
+        "refuse_cloudflare_no_identifier.json",
+        "issue_batch.json",
+        "issue_both_identifiers.json",
+        "refuse_commitment_only_exact.json",
+        "refuse_solana_batch_commitment_empty.json"
+      ]
+    },
+    {
+      "id": "I-STP-3",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 3: refuse unless the accepted requirements are an object in the value domain.",
+      "anchor": "`PaymentPayload.accepted` is a JSON object in the value domain of \u00a74.6",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_requirements_non_integer.json",
+        "refuse_requirements_missing.json",
+        "refuse_requirements_array.json",
+        "refuse_requirements_unsafe_integer.json",
+        "refuse_requirements_depth_9.json",
+        "issue_requirements_float_spelling.json",
+        "issue_requirements_depth_8.json"
+      ]
+    },
+    {
+      "id": "I-STP-4",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 4: refuse unless `accepts` is an array and `accepted` equals one of its entries.",
+      "anchor": "`PaymentRequired.accepts` is an array, and `accepted` equals one of its entries (below)",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_offered_amount_changed.json",
+        "refuse_offered_payto_changed.json",
+        "refuse_offered_extra_changed.json",
+        "refuse_offered_member_added.json",
+        "refuse_offered_accepts_missing.json",
+        "refuse_offered_accepts_not_array.json",
+        "refuse_offered_accepts_empty.json",
+        "issue_offer_among_several.json",
+        "refuse_offered_asset_changed.json",
+        "refuse_offered_max_timeout_changed.json",
+        "refuse_offered_scheme_changed.json",
+        "refuse_offered_network_changed.json"
+      ]
+    },
+    {
+      "id": "I-OFF-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Compare `accepted` with each offered entry by JCS bytes, both in the value domain: equal by value is equal; a case difference is not.",
+      "anchor": "`accepted` equals an entry of `accepts` when both are in the value domain and their JCS serializations are the same bytes.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_requirements_float_spelling.json",
+        "issue_offer_float_spelling.json",
+        "issue_offer_member_order_differs.json",
+        "issue_offer_entry_out_of_domain_skipped.json",
+        "refuse_offered_only_out_of_domain.json",
+        "refuse_offered_payto_case_differs.json",
+        "refuse_offered_true_is_not_one.json",
+        "issue_requirements_member_order_utf16.json"
+      ]
+    },
+    {
+      "id": "I-STP-5",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 5: refuse unless the accepted network is a network identifier and does not conflict with a response network that is one.",
+      "anchor": "`accepted.network` is a network identifier (\u00a74.6); and, when `SettlementResponse.network` is also one, the two are equal",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_network_not_identifier.json",
+        "refuse_network_namespace_33.json",
+        "refuse_network_namespace_2.json",
+        "refuse_network_reference_33.json",
+        "refuse_network_not_identifier_either_side.json",
+        "refuse_network_conflict.json",
+        "issue_network_namespace_32.json",
+        "issue_network_cloudflare.json",
+        "issue_response_network_not_identifier.json",
+        "refuse_network_conflict_reference_case.json",
+        "issue_network_reference_underscore.json",
+        "refuse_network_reference_dot.json",
+        "refuse_network_namespace_dot.json",
+        "refuse_batch_network_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-STP-6",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 6: refuse unless the resource URL is present; copy it verbatim.",
+      "anchor": "`PaymentRequired.resource.url` is present",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_no_resource.json",
+        "refuse_resource_url_empty.json",
+        "refuse_resource_url_not_string.json",
+        "refuse_resource_url_surrogate.json",
+        "issue_resource_url_whitespace_verbatim.json"
+      ]
+    },
+    {
+      "id": "I-STP-7",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 7: refuse unless `payTo` is present and the identifiers satisfy the grammar after lowercasing.",
+      "anchor": "`accepted.payTo` is present, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy \u00a74.6",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_payto_role_constant.json",
+        "refuse_payto_missing.json",
+        "refuse_payto_empty_non_evm.json",
+        "refuse_transaction_not_hex.json",
+        "refuse_payer_out_of_grammar_evm.json",
+        "refuse_payer_from_authorization_out_of_grammar.json"
+      ]
+    },
+    {
+      "id": "I-CHG-3",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 7: refuse when the charged amount found (\u00a74.3) is outside the grammar of \u00a74.6; never repair it. A value at a location the table does not name is not judged.",
+      "anchor": "and `chargedAmount` (\u00a74.3) satisfies \u00a74.6",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_charged_amount_79_digits.json",
+        "refuse_charged_amount_leading_zero.json",
+        "refuse_charged_amount_non_digit.json",
+        "refuse_charged_amount_negative.json",
+        "refuse_charged_amount_extra_out_of_grammar.json",
+        "refuse_charged_amount_upto_out_of_grammar.json",
+        "refuse_order_charged_amount_before_statement.json",
+        "issue_charged_amount_78_digits.json",
+        "issue_charged_amount_zero.json",
+        "refuse_charged_amount_leading_zero_svm.json",
+        "issue_charged_amount_batch_amount_out_of_grammar_ignored.json",
+        "issue_charged_amount_exact_extra_out_of_grammar_ignored.json",
+        "issue_charged_amount_auth_capture_amount_out_of_grammar_ignored.json"
+      ]
+    },
+    {
+      "id": "I-CHG-4",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "The payload's `chargedAmount` is the value of \u00a74.3, verbatim, or `\"\"`.",
+      "anchor": "`chargedAmount` is the value of \u00a74.3, verbatim, or `\"\"`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_charged_amount_from_response_amount.json",
+        "issue_charged_amount_78_digits.json",
+        "issue_charged_amount_zero.json"
+      ]
+    },
+    {
+      "id": "I-PAY-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "The payer is the response's when present, else `authorization.from` when present (on any network), else `\"\"`.",
+      "anchor": "`payer` is `SettlementResponse.payer` when present; failing that the scheme payload's payer when present",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_payer_from_authorization.json",
+        "issue_payer_response_wins_over_authorization.json",
+        "issue_payer_none.json",
+        "issue_payer_permit2_from_response.json",
+        "issue_payer_permit2_no_response_payer.json",
+        "issue_svm_exact.json",
+        "issue_svm_exact_no_response_payer.json",
+        "issue_payer_from_authorization_non_evm.json"
+      ]
+    },
+    {
+      "id": "I-STP-7L",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Lowercase `payer`, `payTo` and `transaction` on eip155 (ASCII only); copy them verbatim elsewhere.",
+      "anchor": "When `accepted.network` begins `eip155:` the issuer lowercases `payer`, `payTo` and `transaction`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_response_uppercase_hex.json",
+        "issue_payer_from_authorization_lowercased.json",
+        "issue_network_namespace_32.json",
+        "issue_svm_exact.json"
+      ]
+    },
+    {
+      "id": "I-REF-1",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Never change the settlement reference, on any network.",
+      "anchor": "The settlement reference is never changed.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_settlement_ref_upper_case_verbatim.json",
+        "issue_solana_batch_settlement.json"
+      ]
+    },
+    {
+      "id": "I-STP-8",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 8: refuse a statement that is not well formed; each sub-check has its own exchange, with both sides of every bound.",
+      "anchor": "**Well-formed statement (step 8).**",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_receiptid_short.json",
+        "refuse_agent_empty.json",
+        "refuse_agent_surrogate.json",
+        "refuse_actiontype_empty.json",
+        "refuse_actiontype_missing.json",
+        "refuse_scope_not_string.json",
+        "refuse_scope_missing.json",
+        "refuse_scope_unpaired_surrogate.json",
+        "refuse_outcome_unknown.json",
+        "refuse_outcome_retired_value.json",
+        "refuse_status_unknown.json",
+        "refuse_status_case.json",
+        "refuse_receiptid_21.json",
+        "refuse_receiptid_65.json",
+        "refuse_receiptid_alphabet.json",
+        "refuse_issuedat_negative.json",
+        "refuse_issuedat_2_53.json",
+        "refuse_issuedat_fraction.json",
+        "refuse_issuedat_boolean.json",
+        "refuse_issuedat_string.json",
+        "refuse_supersedes_grammar.json",
+        "refuse_supersedes_not_string.json",
+        "refuse_reversal_not_string.json",
+        "refuse_further_bindings_not_array.json",
+        "refuse_statement_not_object.json",
+        "refuse_action_not_object.json",
+        "issue_receiptid_22.json",
+        "issue_receiptid_64.json",
+        "issue_issuedat_zero.json",
+        "issue_issuedat_max.json",
+        "issue_issuedat_float_spelling.json",
+        "issue_scope_empty.json",
+        "issue_outcome_failed.json",
+        "issue_outcome_partial.json",
+        "issue_status_capture_pending.json",
+        "issue_status_reversed.json",
+        "issue_supersedes_empty_string.json",
+        "refuse_receiptid_trailing_newline.json"
+      ]
+    },
+    {
+      "id": "I-STP-9",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 9: refuse when an advertised `actionType` or `scope` is a member whose value is not a string equal to the statement's.",
+      "anchor": "for each of `actionType` and `scope` that is a member of the advertised `info`, its value is a string equal to the statement's `action` member",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_advertised_scope_conflict.json",
+        "refuse_advertised_actiontype_conflict.json",
+        "refuse_advertised_scope_not_string.json",
+        "refuse_advertised_scope_null.json",
+        "refuse_advertised_actiontype_null.json"
+      ]
+    },
+    {
+      "id": "I-STP-10",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Step 10: refuse bindings that break the shape, grammar, value form, uniqueness or count.",
+      "anchor": "Two entries with one `type`, an entry that breaks the grammar of \u00a74.5 or the value form of \u00a74.5.2, or more than 16 entries fails the step.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_binding_duplicate_type.json",
+        "refuse_binding_grammar.json",
+        "refuse_binding_value_grammar.json",
+        "refuse_binding_value_empty.json",
+        "refuse_seventeen_bindings.json",
+        "refuse_seventeen_with_issuer_added.json",
+        "refuse_reversal_malformed_evm.json",
+        "issue_sixteen_bindings.json",
+        "issue_sixteen_with_issuer_added.json"
+      ]
+    },
+    {
+      "id": "I-BND-4",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Refuse a supplied binding in the `action-receipt:` namespace.",
+      "anchor": "A further binding whose `type` begins `action-receipt:` fails the step",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_binding_reserved_type.json",
+        "refuse_binding_reserved_unknown_type.json",
+        "refuse_binding_duplicates_advertisement.json",
+        "refuse_binding_reserved_reversal_type.json"
+      ]
+    },
+    {
+      "id": "I-BND-2",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Add the advertisement binding when the extension was advertised.",
+      "anchor": "if the issuer advertised this extension, add `action-receipt:advertised-info`",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_advertised.json",
+        "issue_bindings_sorted.json"
+      ]
+    },
+    {
+      "id": "I-BND-7",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Refuse an advertised `info` outside the value domain.",
+      "anchor": "An advertised `info` that is not in the value domain cannot be committed and fails the step",
+      "tested_by": "exchange",
+      "exchanges": [
+        "refuse_advertised_info_not_hashable.json",
+        "refuse_advertised_info_depth_9.json"
+      ]
+    },
+    {
+      "id": "I-BND-3",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Add the reversal binding when the statement gives a reversal transaction, lowercased on eip155.",
+      "anchor": "if the statement gives a reversal transaction, add `action-receipt:reversal-transaction` with that value, lowercased when `accepted.network` begins `eip155:`.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json",
+        "issue_reversal_lowercased_evm.json",
+        "issue_reversal_non_evm_verbatim.json"
+      ]
+    },
+    {
+      "id": "I-BND-5",
+      "role": "issuer",
+      "section": "6.2",
+      "level": "MUST",
+      "text": "Emit bindings in ascending order of `type`.",
+      "anchor": "Sort the entries in ascending order of `type`.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_bindings_sorted.json",
+        "issue_sixteen_bindings.json"
+      ]
+    },
+    {
+      "id": "I-SRC-1",
+      "role": "issuer",
+      "section": "4.1",
+      "level": "MUST",
+      "text": "Build each member from the source the table names.",
+      "anchor": "The Source column is normative for the issuer",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_basic.json",
+        "issue_batch.json",
+        "issue_both_identifiers.json",
+        "issue_refund.json",
+        "issue_svm_exact.json",
+        "issue_offer_among_several.json"
+      ]
+    },
+    {
+      "id": "I-SLF-1",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "SHOULD",
+      "text": "Run \u00a75.2 and \u00a75.3 on the built payload and refuse if either fails (answer `self_check_failed`).",
+      "anchor": "An implementation SHOULD nevertheless run those two checks on the payload it built and refuse if either fails",
+      "tested_by": "suite",
+      "note": "issuer.py runs a self-check suite that breaks eight members of an issued payload and requires self_check() to refuse each; flip_issuer.py disables the self-check and requires that suite to go red"
+    },
+    {
+      "id": "I-SIG-1",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "Sign the JCS payload under a header that is the JCS serialization of the three members of \u00a73.",
+      "anchor": "header that is the JCS serialization of the three members of \u00a73. It MUST:",
+      "tested_by": "suite",
+      "note": "issuer.py signs every issued exchange's payload with sign() and verifies it through both verifiers; flip_issuer.py replaces the JCS header by json.dumps and requires the suite to go red"
+    },
+    {
+      "id": "I-SIG-2",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "Sign only under a `kid` the issuer's own source lists for `resourceUrl`, with a key of the type `alg` names.",
+      "anchor": "use a key whose `kid` its own authorization source lists for `resourceUrl` (\u00a75.4), and whose type matches `alg`",
+      "tested_by": "suite",
+      "note": "issuer.py's signing suite requires sign() to refuse an unlisted kid, a resource its source does not list, and three key/alg mismatches"
+    },
+    {
+      "id": "I-SIG-3",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "Emit 64-byte `r || s` ECDSA signatures with low `s`, normalizing the library's output.",
+      "anchor": "for `ES256` and `ES256K`, emit the 64-byte `r || s` form with `s <= n/2`, replacing `s` by `n - s` when the library returns the high form",
+      "tested_by": "suite",
+      "note": "issuer.py signs 400 payloads per algorithm with the library's randomized ECDSA and requires both verifiers to pass all of them, and an un-normalized control to be rejected at least once"
+    },
+    {
+      "id": "I-SIG-4",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "Emit a compact string within the bound of \u00a73.",
+      "anchor": "emit a compact string within the bound of \u00a73",
+      "tested_by": "suite",
+      "note": "issuer.py's signing suite requires sign() to refuse a payload whose compact string would exceed 65536"
+    },
+    {
+      "id": "I-E2E-1",
+      "role": "issuer",
+      "section": "6.3",
+      "level": "MUST",
+      "text": "Every issued receipt, signed as \u00a76.3 says, passes both verifiers in the context of its own exchange with the report \u00a76.3 promises.",
+      "anchor": "That verifier returns `PASS` with requirements `matched`, `payTo` `compared`, `chargedAmount` `compared` (when `accepted.scheme` is a string), and, if the issuer advertised, `checks.advertisement` `matched`.",
+      "tested_by": "suite",
+      "note": "issuer.py signs every issued payload and compares both verifiers' reports with the \u00a76.3 promise; fuzz_issuer.py property Q3 does the same for every generated exchange"
+    },
+    {
+      "id": "I-STD-1",
+      "role": "issuer",
+      "section": "6.4",
+      "level": "MUST",
+      "text": "Sign only after settlement returns.",
+      "anchor": "Sign only after settlement returns.",
+      "tested_by": "issuer-behaviour"
+    },
+    {
+      "id": "I-STD-2",
+      "role": "issuer",
+      "section": "6.4",
+      "level": "MUST",
+      "text": "Keep every signing key resolvable and never rebind a `kid`.",
+      "anchor": "Keep every key that has signed a receipt resolvable for as long as receipts signed by it may need to be verified, and never rebind a `kid` to a different key",
+      "tested_by": "issuer-behaviour"
+    },
+    {
       "id": "I-KEY-1",
       "role": "issuer",
-      "section": "6",
+      "section": "6.4",
       "level": "RECOMMENDED",
       "text": "Use a signing key separate from the `payTo` key.",
       "anchor": "A dedicated signing key separate from the `payTo` key is RECOMMENDED",
       "tested_by": "informative"
+    },
+    {
+      "id": "I-STD-3",
+      "role": "issuer",
+      "section": "6.4",
+      "level": "MUST",
+      "text": "A later receipt for the same settlement follows \u00a74.3: same settlement members, `supersedes` set, a permitted status pair.",
+      "anchor": "A later receipt for the same settlement follows \u00a74.3: same settlement members, `supersedes` set, a permitted status pair.",
+      "tested_by": "issuer-behaviour"
+    },
+    {
+      "id": "I-STD-5",
+      "role": "issuer",
+      "section": "6.4",
+      "level": "MUST",
+      "text": "A superseding receipt is built from the exchange of the receipt it supersedes, with a new statement, `receiptId` and clock, not from a later settlement result; the later event's transaction goes in the reversal binding. The exchanges show the result: every settlement member, `chargedAmount` included, is the original's. Which exchange a server feeds its issuer is not observable here.",
+      "anchor": "It is built from the exchange of the receipt it supersedes, with a new statement, `receiptId` and clock, not from a later settlement result: the later event's own transaction goes in the `action-receipt:reversal-transaction` binding.",
+      "tested_by": "exchange",
+      "exchanges": [
+        "issue_refund.json",
+        "issue_reversal_lowercased_evm.json",
+        "issue_reversal_non_evm_verbatim.json"
+      ]
+    },
+    {
+      "id": "I-STD-4",
+      "role": "issuer",
+      "section": "6.4",
+      "level": "MUST",
+      "text": "When both receipts are emitted, keep them consistent.",
+      "anchor": "When both receipts are emitted, keep them consistent (\u00a72.4).",
+      "tested_by": "issuer-behaviour"
     },
     {
       "id": "I-PRV-1",
@@ -786,6 +2521,16 @@
       "text": "Use pseudonymous `agent` and `scope` where possible.",
       "anchor": "`agent` and `scope` SHOULD be pseudonymous where the use case allows.",
       "tested_by": "informative"
+    },
+    {
+      "id": "I-ADP-1",
+      "role": "issuer",
+      "section": "7",
+      "level": "MUST",
+      "text": "Issuer adapter protocol: answer every line, including lines a naive parser cannot read (any nesting depth, integers of any length) and lines that are not JSON (`invalid_input`); never report the issuer's own fault as a refusal.",
+      "anchor": "An issuer conforms if, for every exchange under `exchanges/`, it produces exactly the expected payload or refuses with the expected reason",
+      "tested_by": "suite",
+      "note": "run_exchanges.py sends ten protocol cases (200000-deep nesting, 5000-digit integers, NaN, truncated and malformed deep lines), opaque ids, a shuffled order and a follow-up per exchange to every adapter"
     },
     {
       "id": "C-1",
@@ -806,30 +2551,12 @@
       "tested_by": "consumer-behaviour"
     },
     {
-      "id": "C-3",
-      "role": "consumer",
-      "section": "4.3",
-      "level": "MUST",
-      "text": "Obtain the latest receipt or resolve on the rail when current state matters.",
-      "anchor": "a consumer that needs the current state MUST obtain the latest receipt",
-      "tested_by": "consumer-behaviour"
-    },
-    {
       "id": "C-4",
       "role": "consumer",
       "section": "4.5.1",
       "level": "MUST NOT",
       "text": "Do not treat a binding that was not evaluated, or mismatched, as verified.",
       "anchor": "A consumer MUST NOT treat a `not_evaluated` or `mismatched` binding as verified.",
-      "tested_by": "consumer-behaviour"
-    },
-    {
-      "id": "C-5",
-      "role": "consumer",
-      "section": "4.7",
-      "level": "MUST",
-      "text": "Count payments by network and settlement identifier, never by `receiptRef` or `receiptId`.",
-      "anchor": "A consumer that counts payments MUST key on",
       "tested_by": "consumer-behaviour"
     },
     {
@@ -860,6 +2587,78 @@
       "tested_by": "consumer-behaviour"
     },
     {
+      "id": "C-3",
+      "role": "consumer",
+      "section": "4.3",
+      "level": "MUST NOT",
+      "text": "Do not rely on a receipt for the current state of a payment; resolve the settlement on the rail.",
+      "anchor": "A consumer that needs the current state of a payment MUST NOT rely on a receipt for it and resolves the settlement on the rail (\u00a75.14).",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-5",
+      "role": "consumer",
+      "section": "4.7",
+      "level": "MUST NOT",
+      "text": "Never count payments by `receiptRef` or `receiptId`.",
+      "anchor": "A consumer MUST NOT count payments by `receiptRef` or `receiptId`.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-9",
+      "role": "consumer",
+      "section": "4.3",
+      "level": "MUST",
+      "text": "Treat B as superseding A only when both pass, B names A's receiptRef, the settlement members are equal and the status pair is permitted; otherwise treat them as unrelated.",
+      "anchor": "A consumer holding receipts `A` and `B` MUST treat `B` as superseding `A` only if all of these hold, and otherwise MUST treat the two as unrelated:",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-10",
+      "role": "consumer",
+      "section": "4.3",
+      "level": "MUST NOT",
+      "text": "Do not pick one of two receipts that each validly supersede the same receipt.",
+      "anchor": "Two receipts that each validly supersede the same receipt show that the signer issued inconsistent statements; a consumer MUST NOT pick one.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-11",
+      "role": "consumer",
+      "section": "4.5.1",
+      "level": "MUST NOT",
+      "text": "Never let a binding change how a member of \u00a74.1 is read.",
+      "anchor": "a consumer MUST NOT let a binding change how it reads a member of \u00a74.1.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-12",
+      "role": "consumer",
+      "section": "9",
+      "level": "SHOULD NOT",
+      "text": "Do not read a signature failure on an old receipt as forgery unless the resolved key is known to be the one bound at issuedAt.",
+      "anchor": "A consumer SHOULD NOT read a signature failure on an old receipt as proof the presenter forged it unless it knows the key it resolved is the key that was bound at `issuedAt`.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-13",
+      "role": "consumer",
+      "section": "5.8",
+      "level": "MUST NOT",
+      "text": "Do not treat a settlement-mismatch rejection of a receipt with a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`.",
+      "anchor": "a consumer MUST NOT treat a `invalid_actionreceipt_settlement_mismatch` on a non-empty `settlementRef` as a finding against the signer unless the verifier held `accepted`.",
+      "tested_by": "consumer-behaviour"
+    },
+    {
+      "id": "C-14",
+      "role": "consumer",
+      "section": "5.8",
+      "level": "MUST NOT",
+      "text": "Do not treat a `chargedAmount` mismatch as a finding against the signer unless the `accepted` the verifier held also passes §5.9.",
+      "anchor": "This rule uses `accepted` before §5.9 binds it to the receipt, so a verifier holding the wrong `accepted` can reject here rather than in §5.9;",
+      "tested_by": "consumer-behaviour"
+    },
+    {
       "id": "V-ROL-7",
       "role": "verifier",
       "section": "5.14",
@@ -867,363 +2666,6 @@
       "text": "A requesting verifier supplies the URL it paid for.",
       "anchor": "MUST supply the URL it paid for",
       "tested_by": "caller-context"
-    },
-    {
-      "id": "I-ORD-1",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Perform the ten steps in order.",
-      "anchor": "The issuer MUST perform these steps in order.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_order_settlement_before_statement.json",
-        "refuse_order_statement_before_advertisement.json"
-      ]
-    },
-    {
-      "id": "I-ORD-2",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST NOT",
-      "text": "Issue nothing once a step fails.",
-      "anchor": "At the first step that fails it MUST NOT issue a receipt.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_settlement_failed.json",
-        "refuse_no_identifier.json"
-      ]
-    },
-    {
-      "id": "I-STP-1",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 1: refuse unless settlement succeeded (strictly `true`).",
-      "anchor": "`SettlementResponse.success` is `true`",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_settlement_failed.json",
-        "refuse_settlement_truthy_string.json"
-      ]
-    },
-    {
-      "id": "I-STP-2",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 2: refuse without a transaction or a settlement reference.",
-      "anchor": "the response has a `transaction`, or the issuer has a settlement reference",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_no_identifier.json",
-        "issue_batch.json",
-        "issue_both_identifiers.json"
-      ]
-    },
-    {
-      "id": "I-STP-3",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 3: refuse unless the accepted requirements are an object in the value domain.",
-      "anchor": "`PaymentPayload.accepted` is a JSON object in the value domain of §4.6",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_requirements_non_integer.json",
-        "refuse_requirements_missing.json",
-        "issue_requirements_float_spelling.json"
-      ]
-    },
-    {
-      "id": "I-REQ-2",
-      "role": "issuer",
-      "section": "4.4",
-      "level": "MUST NOT",
-      "text": "Issue no receipt when the requirements digest cannot be computed.",
-      "anchor": "MUST NOT issue a receipt for that payment",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_requirements_non_integer.json"
-      ]
-    },
-    {
-      "id": "I-REQ-1",
-      "role": "issuer",
-      "section": "4.4",
-      "level": "MUST",
-      "text": "Hash only accepted requirements that lie in the value domain.",
-      "anchor": "`accepted` MUST lie in the value domain of §4.6.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_requirements_non_integer.json"
-      ]
-    },
-    {
-      "id": "I-STP-4",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 4: refuse unless the accepted network is CAIP-2 and does not conflict with a CAIP-2 response network.",
-      "anchor": "`accepted.network` is a string in CAIP-2 form (§4.6)",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_network_not_caip2.json",
-        "refuse_network_not_caip2_either_side.json",
-        "refuse_network_conflict.json",
-        "issue_response_network_not_caip2.json"
-      ]
-    },
-    {
-      "id": "I-STP-5",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 5: refuse without the resource URL.",
-      "anchor": "it has `PaymentRequired.resource.url`",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_no_resource.json"
-      ]
-    },
-    {
-      "id": "I-STP-6",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 6: take the payer from the response, else from the scheme payload; refuse if neither.",
-      "anchor": "it has a payer: `SettlementResponse.payer`, or failing that `PaymentPayload.payload.authorization.from`",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_no_payer.json",
-        "issue_payer_from_authorization.json"
-      ]
-    },
-    {
-      "id": "I-STP-7",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 7: refuse unless `payTo` is had and the identifiers satisfy the grammar after lowercasing.",
-      "anchor": "it has `accepted.payTo`, and after the lowercasing below `payer`, `payTo` and `transaction` satisfy §4.6",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_payto_role_constant.json",
-        "refuse_payto_missing.json",
-        "refuse_transaction_not_hex.json"
-      ]
-    },
-    {
-      "id": "I-STP-7L",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Lowercase EVM identifiers; copy others verbatim.",
-      "anchor": "lowercases `payer`, `payTo` and `transaction`",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_basic.json",
-        "issue_response_uppercase_hex.json",
-        "issue_non_evm.json"
-      ]
-    },
-    {
-      "id": "I-STP-8",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 8: refuse a statement that is not well formed.",
-      "anchor": "**Well-formed statement (step 8).**",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_outcome_unknown.json",
-        "refuse_receiptid_short.json",
-        "refuse_issuedat_fraction.json",
-        "refuse_scope_unpaired_surrogate.json",
-        "issue_issuedat_float_spelling.json",
-        "issue_outcome_failed.json",
-        "refuse_outcome_retired_value.json"
-      ]
-    },
-    {
-      "id": "I-STP-9",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 9: refuse when an advertised `actionType` or `scope` is not a string equal to the statement's.",
-      "anchor": "for each of `actionType` and `scope` present in the advertised `info`, it is a string equal to the statement's `action` member",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_advertised_scope_conflict.json",
-        "refuse_advertised_scope_not_string.json"
-      ]
-    },
-    {
-      "id": "I-ADV-2",
-      "role": "issuer",
-      "section": "2.3",
-      "level": "MUST",
-      "text": "Carry the advertised `actionType` and `scope` in the receipt and commit the advertisement.",
-      "anchor": "the receipt it later issues MUST carry the same values",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_advertised_scope_conflict.json",
-        "issue_advertised.json"
-      ]
-    },
-    {
-      "id": "I-STP-10",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Step 10: refuse bindings that break the shape, grammar, uniqueness or count.",
-      "anchor": "Two entries with one `type`, an entry that breaks the grammar of §4.5, or more than 16 entries fails the step.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_binding_duplicate_type.json",
-        "refuse_binding_grammar.json",
-        "refuse_seventeen_bindings.json",
-        "refuse_bindings_not_array.json",
-        "issue_sixteen_bindings.json"
-      ]
-    },
-    {
-      "id": "I-BND-2",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Add the advertisement binding when the extension was advertised.",
-      "anchor": "if the issuer advertised this extension, add `action-receipt:advertised-info`",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_advertised.json",
-        "refuse_advertised_info_not_hashable.json"
-      ]
-    },
-    {
-      "id": "I-BND-3",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Add the reversal binding when the statement has a reversal transaction.",
-      "anchor": "if the statement has a reversal transaction, add",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_refund.json"
-      ]
-    },
-    {
-      "id": "I-REV-1",
-      "role": "issuer",
-      "section": "4.3",
-      "level": "SHOULD",
-      "text": "Carry a reversal or refund transaction in the reversal binding.",
-      "anchor": "the server SHOULD carry it in the `action-receipt:reversal-transaction` binding",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_refund.json"
-      ]
-    },
-    {
-      "id": "I-BND-4",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Refuse a supplied binding in the `action-receipt:` namespace.",
-      "anchor": "A further binding whose `type` begins `action-receipt:` fails the step",
-      "tested_by": "exchange",
-      "exchanges": [
-        "refuse_binding_reserved_type.json",
-        "refuse_binding_duplicates_advertisement.json"
-      ]
-    },
-    {
-      "id": "I-BND-1",
-      "role": "issuer",
-      "section": "4.5.1",
-      "level": "MUST NOT",
-      "text": "A binding does not restate or contradict a core member.",
-      "anchor": "A binding MUST NOT restate or contradict a member of §4.1.",
-      "tested_by": "issuer-behaviour"
-    },
-    {
-      "id": "I-BND-5",
-      "role": "issuer",
-      "section": "6.2",
-      "level": "MUST",
-      "text": "Emit bindings in ascending order of `type`.",
-      "anchor": "Sort the entries in ascending order of `type`.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_bindings_sorted.json",
-        "issue_sixteen_bindings.json"
-      ]
-    },
-    {
-      "id": "I-CNV-1",
-      "role": "issuer",
-      "section": "6.1",
-      "level": "MUST",
-      "text": "Treat absent and `null` optional members alike; ignore unnamed members; treat a value that is not had as not there.",
-      "anchor": "An optional member that is absent and one that is `null` are the same.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_null_means_absent.json",
-        "issue_action_extra_member_ignored.json",
-        "issue_transaction_wrong_type_with_reference.json"
-      ]
-    },
-    {
-      "id": "I-CNV-2",
-      "role": "issuer",
-      "section": "6.1",
-      "level": "MUST",
-      "text": "Treat the extension as advertised only when its `info` is a JSON object.",
-      "anchor": "The issuer **advertised** this extension when",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_advertisement_info_not_object.json",
-        "issue_advertised.json"
-      ]
-    },
-    {
-      "id": "I-SRC-1",
-      "role": "issuer",
-      "section": "4.1",
-      "level": "MUST",
-      "text": "Build each member from the source the table names.",
-      "anchor": "The Source column is normative for the issuer",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_basic.json",
-        "issue_batch.json",
-        "issue_both_identifiers.json",
-        "issue_refund.json",
-        "issue_non_evm.json"
-      ]
-    },
-    {
-      "id": "I-SET-1",
-      "role": "issuer",
-      "section": "4.3",
-      "level": "MUST NOT",
-      "text": "Carry no settlement identifier that settlement did not return.",
-      "anchor": "A receipt MUST NOT carry an identifier the server did not receive from settlement.",
-      "tested_by": "exchange",
-      "exchanges": [
-        "issue_batch.json",
-        "issue_transaction_wrong_type_with_reference.json"
-      ]
-    },
-    {
-      "id": "I-E2E-1",
-      "role": "issuer",
-      "section": "6.3",
-      "level": "MUST",
-      "text": "Every issued receipt verifies in the context of its own exchange.",
-      "anchor": "A receipt issued by this procedure, verified by §5 in the context of the same exchange, passes",
-      "tested_by": "suite",
-      "note": "issuer.py signs each issued payload and verifies it in the context derived from its exchange; fuzz_issuer.py property Q3 does the same through both verifiers for every generated exchange"
     }
   ]
 }

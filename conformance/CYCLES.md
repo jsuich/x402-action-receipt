@@ -1,12 +1,17 @@
 # Test cycles
 
-A record of each test cycle run against draft 0.3: what ran, what it found, and
-what changed as a result. Add an entry whenever a cycle finds something or the
-harness changes. A cycle that finds nothing is recorded in one line.
+A record of each test cycle run against drafts 0.3 and 0.4: what ran, what it
+found, and what changed as a result. Add an entry whenever a cycle finds
+something or the harness changes. A cycle that finds nothing is recorded in one
+line.
 
 How to run one: `python3 conformance/cycle.py --seeds <new seeds> --n 5000 --save <dir>`.
 Use seeds that have not been used before. Spent: 1 to 8, 11 to 18, 21 to 24,
-31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73.
+31 to 33, 41 to 43, 51 to 53, 61 to 64, 71 to 73, 81 to 83, 91 and 92, 101 to
+103 (the CI workflow's fixed seeds, run on every push), 111 to 113, 121 to 123,
+131 and 132, 141, 151 to 153, 161 and 162, 171 and 172, 181 to 183, 191 and 192,
+201 to 203, 211 and 212, 221 to 223, 231 and 232, 241 to 245, 251 to 253,
+261 to 263, 5001, 9001.
 
 Triage rule for a fuzz disagreement. Decide which it is, and record it:
 
@@ -161,17 +166,152 @@ Seeds 61 to 64 ran on an export of the committed tree before this change; seeds
 71 to 73 after it: 15,000 cases and 15,000 exchanges, 0 disagreements, all eleven
 stages passed. 95 vectors, 47 exchanges.
 
+## Cycle 10 — 2026-11-20 (draft 0.4: review, pre-publication review)
+
+**Six-reviewer review of 0.3.** Its findings, dispositions and how each code
+disposition was verified are in `conformance/REVIEW-0.4.md`; draft 0.4 is the
+result. The 0.4 work ran seeds 81 to 83, 91 and 92, 111 to 113, 121 to 123,
+131 and 132, and 141.
+
+**Pre-publication review of 0.4.** A further reviewer read the 0.4 text and
+code, ran 21 hand-written mutants of the four implementations through the full
+cycle (seeds 131 and 132, 2,000 each) and cross-checked both verifiers on
+generated receipts. It found:
+
+| # | Finding | Class | Resolution |
+|---|---|---|---|
+| 21 | The issuer exchanges handed the settlement reference in as a top-level `settlementReference`, outside the x402 objects. Five EVM `exact` exchanges (`issue_batch`, `issue_settlement_ref_upper_case_evm`, `issue_transaction_wrong_type_with_reference`, `issue_surrogate_response_transaction`, `issue_both_identifiers`) expected a `settlementRef` that the settlement result never carried, which §4.3 forbids; an issuer that found the reference by the table was red on all five | B + C | §4.3 now says the reference of an exchange is found by the table from `accepted.scheme` and `accepted.network` and nothing else. Both issuers do that; the input is gone from the exchanges and the adapter protocol. The five, and `issue_surrogate_settlement_reference`, are Solana `batch-settlement` exchanges testing the same rules (`issue_settlement_ref_upper_case_evm` is now `issue_settlement_ref_upper_case_verbatim`). New exchanges: `commitmentId` under `exact` or off `solana` is no reference; empty, non-string or missing `commitmentId` gives none; scheme and namespace match exactly; a top-level `settlementReference` is ignored. Requirements I-SET-1, I-SET-2 now cite them; I-SET-3 added |
+| 22 | Four mutants survived the whole cycle: the second issuer's network regex admitting `.` (M16), the reference verifier admitting `.` in the network reference (M10b), `checks.advertisement` reported `not_evaluated` instead of `absent` beside other bindings (M05b), a negative clock treated as a configuration error (M12b) | suite gap | Fixed cases for each: `refuse_network_reference_dot`, `neg_schema_network_reference_dot`, `pos_advertisement_absent_other_bindings`, `pos_clock_negative_archival`; and both sides of every configuration bound (clock ±(2^53 - 1) valid, ±2^53 `ERROR`; `maxAgeSeconds` 0 and 2^53 - 1 valid, 2^53 `ERROR`, a receipt one second old stale under 0). Sweeping the other bounds of §3, §4.5, §4.6 and §5 added: `issuedAt` at -(2^53 - 1) and -(2^53), payload nesting 8, held requirements and advertised `info` at 2^53 - 1 / 2^53 and 8 / 9 levels, binding prefix, name and value of length 0, characters 0x20 and 0x7F. Each new rule has a flip |
+| 23 | Rules caught only by a fuzzer, never by a named case: step 4 comparing `asset` and `maxTimeoutSeconds`, a supplied `action-receipt:reversal-transaction` binding, `authorization.from` off `eip155` (M06, M17, M07, M14 were killed by the fuzzers and by flip-probe setup errors, not by an exchange) | suite gap | Exchanges `refuse_offered_asset_changed`, `refuse_offered_max_timeout_changed`, `refuse_offered_scheme_changed`, `refuse_offered_network_changed`, `refuse_binding_reserved_reversal_type`, `issue_payer_from_authorization_non_evm`; issuer flips for each |
+| 24 | The text claimed the JavaScript implementations were independent of the Python ones; for 0.4 each side was revised by one implementer, and both verifiers use OpenSSL | B (text wrong) | §7 and the README now say so, and say some defects are caught only by the fuzzers |
+| 25 | §5.8's new consumer sentence had no requirement | suite gap | C-13 (consumer, untested) |
+| 26 | A line beginning with a UTF-8 byte-order mark: the Node issuer stripped it and issued, the Python issuer answered `invalid_input` | A (Node) | Both answer `invalid_input`; protocol case `not_json_leading_bom`; flip |
+| 27 | `cycle.py` ignored the fuzzers' exit codes and `fuzz_issuer.py`'s `status`, `problems` and `operators_never_applied`; `--seeds 7,7` ran a seed twice; `flip_issuer.py` and `flip_probe.py` passed with an empty flip list; `run_exchanges.py --help` raised a traceback; the CI comment named a local cycle's seeds and said CI explores | C | Each fixed; a fuzzer that reports a problem fails its stage |
+
+**This cycle.** Seeds 151 to 153, 3,000 each: 9,000 cases and 3,328 follow-ups
+through both verifiers, 9,000 exchanges and 5,462 round trips through both
+issuers and both verifiers; 0 disagreements, 0 property violations, all twelve
+stages passed. 256 vectors, 178 exchanges, 153 verifier flips, 133 issuer
+flips, 156 requirements (124 tested). Seeds 161 and 162 ran one fuzzer each
+while the fixes were made.
+
+The reviewer's 21 mutants were re-run against the result: with the fixed-case
+stages alone (`cycle.py --quick`) all 21 are killed, each by a named vector or
+exchange. Through the full cycle (seeds 171 and 172, 3,000 each) all 21 are
+killed as well; none survives. A flip-probe stage that fails only with "broken"
+or "setup errors" is an artifact of the mutant editing the line a flip patches,
+not a detection, so it is not counted as a kill above. The mutant labelled M15
+by the reviewer (find the reference by the table) is now the correct
+behaviour; it was re-run reversed (the old out-of-band read) and is killed by
+eight exchanges.
+
+## Cycle 11 — 2026-11-21 (chargedAmount)
+
+Spec 0.4 added the member `chargedAmount` (§4.1, §4.3, §4.6, §5.8, §6.2 step 7,
+§6.3). All four implementations carry it; the worked example of §4.7 was
+recomputed with `action_receipt.py --worked` (662 bytes, new `receiptRef` and
+compact JWS). Every existing expectation was kept; existing payloads gained the
+member, with each exchange's value decided from its own response (EVM `exact`
+`10000` from `amount`; Solana batch `10000` from `extra.chargedAmount`, `""`
+where the exchange replaces `extra`; SVM `exact` and Cloudflare `""`).
+
+Nine hand-written mutants of the new rule were run in scratch copies, first
+through the full cycle (seeds 211 and 212, 3,000 each), then through the fixed
+stages alone:
+
+| # | Mutant | Killed by, before the fix | Fixed cases added |
+|---|---|---|---|
+| M01 | verifier reads `extra.chargedAmount` only on `solana:` | the issuer round trip and both fuzzers; no vector | `pos_charged_amount_from_extra_any_scheme`, `pos_charged_amount_from_extra_cloudflare` |
+| M02 | issuer strips leading zeros | `refuse_charged_amount_leading_zero`, `refuse_charged_amount_extra_out_of_grammar` | — |
+| M03 | Node issuer treats an `extra.chargedAmount` of `0` as missing | the issuer fuzzer only | `issue_charged_amount_extra_zero_overrides_amount`, `pos_charged_amount_extra_zero` |
+| M04 | Node verifier bound 77 digits | `pos_charged_amount_78_digits`, `issue_charged_amount_78_digits` | — |
+| M05 | Node verifier skips the comparison when the receipt's is `""` | `neg_settlement_charged_amount_dropped` | — |
+| M06 | issuer takes `accepted.amount` under `exact` when the response has none | `issue_charged_amount_empty_no_amount`, `issue_svm_exact` and six more | — |
+| M07 | verifier checks the grammar only on `eip155` | the verifier fuzzer only | `neg_schema_charged_amount_leading_zero_non_evm`, `refuse_charged_amount_leading_zero_svm` |
+| M08 | Node issuer checks the amount after step 8 | `refuse_order_charged_amount_before_statement` | — |
+| M09 | Node verifier compares amounts as integers | `neg_settlement_charged_amount_not_normalized` | — |
+
+None survived the full cycle. Three (M01, M03, M07) were caught by no named
+case; after the fixed cases above, all nine are killed by a named vector or
+exchange in the fixed stages (`cycle.py --quick`).
+
+Seeds 201 to 203, 3,000 each: all twelve stages passed. 280 vectors, 197
+exchanges, 173 verifier flips, 151 issuer flips, 165 requirements (133 tested).
+Seed 9001 ran each fuzzer once while the operators were written.
+
+## Cycle 12 — 2026-11-21 (chargedAmount by scheme)
+
+A review of cycle 11 found the scheme-independent lookup wrong: on batch-settlement
+refund and close responses the top-level `amount` is a refund or a payout, so a
+conformant issuer signed a refund as the charge, and under `auth-capture` it
+recorded the hold. Spec 0.4 now finds the charged amount by `accepted.scheme`:
+`exact` and `upto` read `amount`, `batch-settlement` reads only
+`extra.chargedAmount`, any other scheme has none. A verifier compares only when
+it holds `accepted` as an in-domain object with a string `scheme`, and reports
+`checks.chargedAmount`. All four implementations follow it.
+
+Expectations that the rule made wrong were re-declared, not kept:
+`pos_charged_amount_from_extra_any_scheme` (now a negative, beside
+`pos_charged_amount_exact_extra_ignored`); the three `extra_*_falls_back`
+vectors and exchanges (now batch-settlement cases that do not fall back);
+`issue_charged_amount_extra_zero_overrides_amount` (now `..._batch_extra_zero`);
+`pos_charged_amount_extra_zero` and `pos_charged_amount_from_extra_cloudflare`
+(now batch-settlement requirements); `refuse_charged_amount_extra_out_of_grammar`
+(now batch-settlement; under `exact` extra is ignored). The Solana batch contexts
+carry their charge in `extra.chargedAmount`. Every PASS report gained
+`checks.chargedAmount`. The worked example is unchanged; `verify.mjs --example`
+now also reproduces the §5.12 report example (13 steps).
+
+New harness parts: fourteen flips per verifier and eleven per issuer for the
+table; fuzz operators `ctx_scheme` and `charged_scheme`; fuzz property P8, an
+oracle for the charged amount restated from §4.3; `found_charged_amount` in
+`fuzz_issuer.py` follows the table.
+
+Mutants, each through the full cycle (seeds 244 and 245, 2,000 each): the
+reviewer's eleven, adapted to the new code (m03 is the retired lookup under
+`exact`; m11, now the correct behaviour, is run reversed), and nine of our own.
+
+| # | Mutant | Killed by (fixed stages) |
+|---|---|---|
+| m01 | Python verifier compares one way only | `neg_settlement_charged_amount_uncorroborated`, `..._batch_top_level_amount` |
+| m02 | Node verifier grammar admits leading zeros | `neg_schema_charged_amount_leading_zero` |
+| m03 | Node issuer reads `extra.chargedAmount` first under `exact` | `issue_charged_amount_exact_extra_ignored` |
+| m04 | Python issuer judges the grammar only when the value equals `amount` | `refuse_charged_amount_extra_out_of_grammar` |
+| m05 | Node verifier reads `extra.chargedAmount` without the well-formedness test | `pos_charged_amount_batch_extra_surrogate_absent`, `issue_charged_amount_batch_extra_surrogate` |
+| m06 | Node issuer judges the top-level `amount` the table does not name | `issue_charged_amount_batch_amount_out_of_grammar_ignored` |
+| m07 | Node issuer reads `amount` without the well-formedness test | `issue_charged_amount_amount_surrogate` |
+| m08 | Python verifier bound 79 digits | `neg_schema_charged_amount_79_digits` |
+| m09 | Python verifier reads `extra.chargedAmount` only beside `commitmentId` | `pos_batch_committed`, `issue_batch_evm_deposit_response` |
+| m10 | Python issuer under batch reads `amount` when present | `issue_charged_amount_extra_overrides_amount_solana_batch` |
+| m11r | Python issuer under batch falls back to `amount` | `issue_charged_amount_batch_amount_only`, `..._batch_extra_empty_no_fallback` |
+| m12 | Python verifier gives `auth-capture` a row | `neg_settlement_charged_amount_auth_capture_amount` |
+| m13 | Node issuer case-folds the scheme | `issue_charged_amount_scheme_case_exact` |
+| m14 | Node verifier compares without `accepted` (retired lookup) | `pos_requirements_not_held`, `issue_charged_amount_scheme_not_string` |
+| m15 | Python issuer: `upto` has no row | `issue_charged_amount_upto_reads_amount` |
+| m16 | Node issuer stringifies a numeric `extra.chargedAmount` | `issue_charged_amount_batch_extra_not_string_no_fallback` |
+| m17 | Python issuer strips whitespace from the scheme | the issuer fuzzer only; then `issue_charged_amount_scheme_whitespace` |
+| m18 | Node verifier: `upto` prefers `extra.chargedAmount` | `pos_charged_amount_upto_reads_amount` |
+| m19 | Python verifier: `0` is no charged amount | `pos_charged_amount_zero`, `pos_charged_amount_extra_zero` |
+| m20 | Python verifier compares with an out-of-domain `accepted` | `pos_charged_amount_not_compared_accepted_out_of_domain` |
+
+None survived. m17 was caught by no named case; the exchange added for it
+kills it in the fixed stages. m16 escaped the issuer fuzzer on these seeds.
+
+Seeds 241 to 243, 3,000 each: all twelve stages passed. 298 vectors, 215
+exchanges, 194 verifier flips, 163 issuer flips, 175 requirements (142 tested). Seed 5001 ran
+each fuzzer once while the operators were written.
+
 ## Known limits of this process
 
 - Both verifiers were written in one working session, one of them from the spec
-  text alone. Agreement between them is weaker evidence than agreement with an
-  implementation by someone else.
+  text alone; for draft 0.4 one implementer revised both. Agreement between them
+  is weaker evidence than agreement with an implementation by someone else.
 - The fuzzer compares the two implementations with each other. A reading that
   both share and that is wrong is invisible to it; only the properties (P1 to P6)
   and the hand-declared vector expectations stand against that.
 - The properties are few and all concern a passing receipt.
-- 24 of 101 requirements are not tested, 9 of them verifier requirements. They
-  are listed with reasons in `CONFORMANCE.md`.
+- 33 of 175 requirements are not tested, 8 of them verifier requirements (draft
+  0.4, cycle 12). They are listed with reasons in `CONFORMANCE.md`.
 - Issuer conformance covers the payload an issuer builds and its refusals. It
   does not cover signing, the randomness of `receiptId`, or key retention.
 - The scheme-payload payer is defined for one field,

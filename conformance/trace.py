@@ -22,9 +22,17 @@ What --check asserts:
   T6  the verifier-testable requirements with no vector are listed and counted,
       never silently accepted
   T7  CONFORMANCE.md is exactly what --render would write
+  T8  the manifest's vectorsDigest is the digest of the files in vectors/ (so a
+      vector overwritten or edited by hand is seen), recomputed here
+  T9  no two manifest entries have identical receipt and context content (a
+      vector overwritten with a copy of another stops testing its rule)
+  T10 every file the manifest names exists in vectors/
+  T3 also applies to any requirement that lists vectors, whatever `tested_by`
+  says: a cited vector must exist.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import re
@@ -97,6 +105,42 @@ def load():
     return reqs, manifest
 
 
+def vectors_digest(vdir: pathlib.Path) -> str:
+    """sha256 over the RFC 8785 form of {file name: sha256 hex of the file} for
+    every .json in vectors/ except MANIFEST.json (the definition the manifest's
+    note states). Written here independently of action_receipt.py: names and
+    values are ASCII, so sorted keys and no whitespace are the JCS form."""
+    digests = {f.name: hashlib.sha256(f.read_bytes()).hexdigest()
+               for f in vdir.glob("*.json") if f.name != "MANIFEST.json"}
+    text = json.dumps(digests, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return "sha256:" + hashlib.sha256(text.encode()).hexdigest()
+
+
+def manifest_checks(manifest) -> list[str]:
+    """T8, T9, T10: the manifest against the files it describes."""
+    errs = []
+    vdir = MANIFEST.parent
+    if manifest.get("vectorsDigest") != vectors_digest(vdir):
+        errs.append(f"T8 vectorsDigest {manifest.get('vectorsDigest')} does not describe the files in "
+                    f"vectors/ (recomputed {vectors_digest(vdir)})")
+    seen = {}
+    for v in manifest["vectors"]:
+        f = vdir / v["file"]
+        if not f.exists():
+            errs.append(f"T10 manifest names a vector file that does not exist: {v['file']}")
+            continue
+        try:
+            receipt = json.loads(f.read_text())
+        except ValueError:
+            receipt = f.read_text()
+        key = json.dumps([receipt, manifest["contexts"].get(v["context"])], sort_keys=True)
+        if key in seen:
+            errs.append(f"T9 {v['file']} has the same receipt and context as {seen[key]}")
+        else:
+            seen[key] = v["file"]
+    return errs
+
+
 def render(reqs, manifest) -> str:
     vectors = {v["file"] for v in manifest["vectors"]}
     by_role = {}
@@ -125,10 +169,12 @@ def render(reqs, manifest) -> str:
         "issuer adapter protocol of section 3, it handles every exchange in",
         "`exchanges/MANIFEST.json` as stated there: it produces exactly the expected",
         "payload (compared by RFC 8785 serialization) or refuses with the expected",
-        "reason. Signing is not part of this class; a payload is signed under the header",
-        "of spec section 3 and the result is a verifier input. Issuer requirements that",
-        "an exchange cannot show (randomness of `receiptId`, key retention) are listed in",
-        "section 4 as untested.",
+        "reason, for the exchange as published and for a follow-up of it with a fresh",
+        "`receiptId` and `issuedAt`, and answers the adapter-protocol cases of section 3.",
+        "Signing is not part of this class: the exchanges compare payloads. The",
+        "reference issuer's `sign()` (spec §6.3) is tested by its own suite, through",
+        "both verifiers. Issuer requirements that an exchange cannot show (randomness",
+        "of `receiptId`, key retention) are listed in section 4 as untested.",
         "",
         "**Consumer.** Requirements on how a verification result is used are listed for",
         "completeness. They are not testable through this suite.",
@@ -156,7 +202,8 @@ def render(reqs, manifest) -> str:
         '{"id": "any string", "receipt": <any JSON value>, "context": {',
         '   "paidResourceUrl": "https://..." or null,',
         '   "success": true, "transaction": "0x...", "settlementRef": "",',
-        '   "network": "eip155:8453", "payer": "0x...", "accepted": {...} or null,',
+        '   "network": "eip155:8453", "payer": "0x...", "amount": "10000", "extra": {...},',
+        '   "accepted": {...} or null,',
         '   "advertisedInfo": {...} or null, "now": 1703123500,',
         '   "maxAgeSeconds": 3600, "mode": "session"}}',
         "```",
@@ -166,21 +213,40 @@ def render(reqs, manifest) -> str:
         "```json",
         '{"id": "same string", "verdict": "PASS", "reason": null, "report": {...}}',
         '{"id": "same string", "verdict": "REJECT", "reason": "invalid_...", "report": null}',
+        '{"id": "same string", "verdict": "ERROR", "reason": "invalid_configuration", "report": null}',
         "```",
         "",
-        "- `context` is the verifier input of spec §5. `paidResourceUrl` is present only",
-        "  when the verifier made the payment. The next five members come from the",
-        "  `SettlementResponse` and are unsigned. Any of these six may be absent, `null`",
-        "  or of the wrong type; the verifier must not fail on that.",
-        "- `mode` is `session` or `archival`, `now` is an integer and `maxAgeSeconds`,",
-        "  when present, is a non-negative integer. The harness never sends anything",
-        "  else for these three; behaviour outside that is not specified.",
-        "- The key fixture is `vectors/keys.json` (spec §7).",
-        "- `verdict` is `PASS`, `REJECT` or `ERROR`. `ERROR` is a verifier fault and is",
-        "  always a conformance failure.",
+        "- `context` is the verifier input of spec §5. Seven of its members are x402",
+        "  values from the `SettlementResponse` (`success`, `transaction`,",
+        "  `settlementRef`, `network`, `payer`, and `amount` and `extra`, in which",
+        "  the verifier finds the charged amount at the location spec §4.3 names for",
+        "  `accepted.scheme`, and only when it holds `accepted`) and two are optional",
+        "  objects (`accepted`, `advertisedInfo`); all are unsigned. Any of them may be absent,",
+        "  `null` or of the wrong type, and nothing in them may make the verifier",
+        "  return `ERROR` (spec §5).",
+        "- The rest is the verifier's own configuration and has the contract of spec §5:",
+        "  `mode` exactly `session` or `archival`; `now` an integer; `maxAgeSeconds`",
+        "  absent (3600) or an integer `>= 0`; `paidResourceUrl` absent, `null` (the",
+        "  verifier did not pay) or a string. Integers are read by value within",
+        "  `±(2^53 - 1)`, so `1703123500.0` is an integer and `true` is not. A `null`",
+        "  `maxAgeSeconds` is a value the verifier cannot read, not an absence. A",
+        "  context outside this contract, or one that is not an object, gets",
+        "  `ERROR` with reason `invalid_configuration`; the `err_config_*` vectors",
+        "  test it. An `ERROR` on any other vector is a conformance failure.",
+        "- The key fixture is `vectors/keys.json` (spec §7): `__service__:` and",
+        "  `__payTo__:` entries are arrays of authorized kids (anything else authorizes",
+        "  nothing), `__unavailable__:<resourceUrl>` set to `true` means the source gave",
+        "  no answer, and a kid maps to a SubjectPublicKeyInfo PEM.",
+        "- `verdict` is `PASS`, `REJECT` or `ERROR`; `reason` is set on `REJECT` and",
+        "  `ERROR`.",
         "",
         "Two adapters are in `conformance/adapters/`: Python (the reference verifier)",
         "and Node (the second verifier, `verify.mjs`).",
+        "`python3 conformance/run_vectors.py -- <adapter command>` drives any adapter",
+        "over the manifest and compares every entry (verdict, reason, full report),",
+        "with opaque case ids and metamorphic follow-ups; it never trusts the",
+        "adapter's exit code. `python3 conformance/fuzz.py --adapter NAME=COMMAND`",
+        "puts a third-party adapter in the differential fuzzer.",
         "",
         "### Issuer adapter protocol",
         "",
@@ -189,7 +255,7 @@ def render(reqs, manifest) -> str:
         "",
         "```json",
         '{"id": "any string", "exchange": {"paymentRequired": {...}, "paymentPayload": {...},',
-        '   "settlementResponse": {...}, "settlementReference": "..." or null,',
+        '   "settlementResponse": {...},',
         '   "statement": {"receiptId": "...", "issuedAt": 1703123456, "action": {...},',
         '      "settlementStatus": "settled", "supersedes": "", "reversalTransaction": null,',
         '      "bindings": []}}}',
@@ -201,11 +267,31 @@ def render(reqs, manifest) -> str:
         "```",
         "",
         "- `payload` is the receipt payload object of spec section 6.3, not signed and",
-        "  not serialized. `reason` is a refusal reason of spec section 6.2.",
+        "  not serialized. `reason` is a refusal reason of spec section 6.2, or one of",
+        "  three answers that are not refusals: `invalid_input` (the line is not a JSON",
+        "  object, which includes a line that begins with a UTF-8 byte-order mark;",
+        "  `id` is the line's if it can be read, else `null`), `issuer_fault`",
+        "  (the issuer itself failed) and `self_check_failed` (the payload it built",
+        "  failed its own §5.2/§5.3 check, spec §6.3). An issuer never reports its own",
+        "  failure as a refusal, and a conforming issuer gives none of the three for a",
+        "  JSON exchange.",
+        "- There is no settlement-reference input. The issuer finds the reference by",
+        "  the table of spec §4.3 from `paymentPayload.accepted.scheme` and",
+        "  `paymentPayload.accepted.network` (`batch-settlement` on `solana:*`:",
+        "  `settlementResponse.extra.commitmentId`), as a verifier holding `accepted`",
+        "  would; a value anywhere else, a top-level `settlementReference` member",
+        "  among them, is ignored like any member the procedure does not name.",
         "- Any part of an exchange may be missing or malformed; the issuer must answer",
-        "  every line with a payload or a refusal.",
+        "  every line, including valid JSON of any nesting depth or with integers of",
+        "  any length (the value of a number is its IEEE 754 double, spec §4.6).",
         "- `python3 issuer.py --batch` and `node issuer.mjs` are the two issuers here.",
-        "  `conformance/run_exchanges.py <command>` runs any issuer against the manifest.",
+        "  `conformance/run_exchanges.py <command>` runs any issuer against the manifest",
+        "  with opaque random ids in a shuffled order, a follow-up per exchange whose",
+        "  answer follows from spec §6, and eleven protocol cases (deep nesting, huge",
+        "  integers, lines that are not JSON, a line that begins with a byte-order",
+        "  mark); it never trusts the adapter's exit code.",
+        "  `python3 conformance/fuzz_issuer.py --issuer NAME=COMMAND` puts a third-party",
+        "  issuer in the issuer fuzzer.",
         "",
         "## 4. Requirements",
         "",
@@ -244,18 +330,19 @@ def render(reqs, manifest) -> str:
           "A stage that cannot run is reported as VOID and fails the cycle.", "",
           "| Stage | What it establishes |", "|---|---|",
           "| trace | this document matches the spec and the suite (checks T1 to T7 in `conformance/trace.py`) |",
-          "| python | the reference verifier reproduces the manifest, with an independent RFC 8785 library cross-checking every canonicalization |",
-          "| node | the second verifier reproduces the manifest |",
+          "| python | the reference verifier's own suite: hand-declared verdicts, reasons and full reports, the mutation matrix, `receiptRef` relations, an independent RFC 8785 library cross-checking every canonicalization |",
+          "| python-a | the Python adapter, driven by `run_vectors.py`, reproduces every manifest entry |",
+          "| node | the Node adapter, driven by `run_vectors.py`, reproduces every manifest entry |",
           "| example | the second verifier reproduces the spec's worked example from the spec text |",
-          "| flips | every check of the reference verifier, disabled, turns the suite red |",
-          "| fuzz | the two verifiers agree on generated cases, and six oracle-free properties hold |",
-          "| issuer | the reference issuer reproduces the exchange manifest, and every receipt it issues verifies in the context of its own exchange |",
-          "| issuer-n | the second issuer reproduces the exchange manifest |",
-          "| issuer-fl | every step of the reference issuer, disabled, turns its suite red |",
-          "| issuer-fz | the two issuers agree on generated exchanges, and every issued receipt verifies through both verifiers |",
+          "| flips | every listed check of either verifier, disabled, makes a named vector disagree |",
+          "| fuzz | the two verifiers agree on generated cases, and seven oracle-free properties and a charged-amount oracle restated from §4.3 (P8) hold on both; VOID below 500 cases per seed, FAIL if fewer cases ran than requested or a reason code, the configuration `ERROR` or an operator never fired |",
+          "| issuer | the reference issuer reproduces the exchange manifest; every receipt it issues, signed by its `sign()`, passes both verifiers with the §6.3 report; its self-check refuses broken payloads; 400 randomized ECDSA signatures per algorithm pass both verifiers |",
+          "| issuer-n | the second issuer, driven by `run_exchanges.py`, reproduces the manifest, the follow-ups and the protocol cases |",
+          "| issuer-fl | every listed sub-check of either issuer, disabled, makes a named exchange or suite check disagree; a crash counts as broken, not caught |",
+          "| issuer-fz | the two issuers agree on generated exchanges; five properties hold on both; every issued payload, signed, passes both verifiers with the §6.3 report; VOID below 500 cases, FAIL if fewer ran or a refusal never fired |",
           "",
-          "`python3 flip_probe.py . <scratch> --fuzz N` additionally measures the fuzzer:",
-          "how many disabled checks it detects in N cases.",
+          "`python3 flip_probe.py <repo> <scratch> --fuzz N` additionally measures the",
+          "fuzzer: how many disabled checks it detects in N cases.",
           "",
           "The history of cycles, with what each found, is in `conformance/CYCLES.md`.",
           ""]
@@ -279,13 +366,13 @@ def check(reqs, manifest) -> list[str]:
             errs.append(f"T1 {r['id']}: anchor not found in the spec: {a[:70]!r}")
         if r["role"] not in ROLES:
             errs.append(f"T0 {r['id']}: unknown role {r['role']}")
+        for v in r.get("vectors", []):
+            named.add(v)
+            if v not in vectors:
+                errs.append(f"T3 {r['id']}: names a vector that does not exist: {v}")
         if r["tested_by"] == "vector":
             if not r.get("vectors"):
                 errs.append(f"T3 {r['id']}: tested by vectors but names none")
-            for v in r.get("vectors", []):
-                named.add(v)
-                if v not in vectors:
-                    errs.append(f"T3 {r['id']}: names a vector that does not exist: {v}")
         elif r["tested_by"] == "exchange":
             if not r.get("exchanges"):
                 errs.append(f"T3 {r['id']}: tested by exchanges but names none")
@@ -304,6 +391,7 @@ def check(reqs, manifest) -> list[str]:
             errs.append(f"T2 §{section}: normative sentence not covered: {s[:90]!r}")
     for v in sorted(vectors - named):
         errs.append(f"T4 vector named by no requirement: {v}")
+    errs += manifest_checks(manifest)
     for v in sorted(xfiles - xnamed):
         errs.append(f"T4 exchange named by no requirement: {v}")
     if OUT.exists():

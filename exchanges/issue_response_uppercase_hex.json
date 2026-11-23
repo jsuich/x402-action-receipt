@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -23,6 +25,11 @@
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -52,9 +59,9 @@
     "success": true,
     "transaction": "0XABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
     "network": "eip155:8453",
-    "payer": "0X857B06519E91E3A54538791BDBB0E22373E36B66"
+    "payer": "0X857B06519E91E3A54538791BDBB0E22373E36B66",
+    "amount": "10000"
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMQ",
     "issuedAt": 1703123456,

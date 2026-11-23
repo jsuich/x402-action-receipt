@@ -1,9 +1,11 @@
 {
   "paymentRequired": {
     "x402Version": 2,
+    "error": "Payment required",
     "resource": {
       "url": "https://api.example.com/v1/complete",
-      "description": "Text completion"
+      "description": "Text completion",
+      "mimeType": "application/json"
     },
     "accepts": [
       {
@@ -23,6 +25,11 @@
   },
   "paymentPayload": {
     "x402Version": 2,
+    "resource": {
+      "url": "https://api.example.com/v1/complete",
+      "description": "Text completion",
+      "mimeType": "application/json"
+    },
     "accepted": {
       "scheme": "exact",
       "network": "eip155:8453",
@@ -52,9 +59,9 @@
     "success": true,
     "transaction": "0xabababababababababababababababababababababababababababababababab",
     "network": "eip155:8453",
-    "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66"
+    "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+    "amount": "10000"
   },
-  "settlementReference": null,
   "statement": {
     "receiptId": "Zm9yLXRlc3Rpbmctb25seS0wMg",
     "issuedAt": 1703123456,
@@ -65,7 +72,7 @@
       "outcome": "delivered"
     },
     "settlementStatus": "refunded",
-    "supersedes": "sha256:5ea130c2d5c3750da8e54ea640cdbf653056202c08a2af4c43677947becda7c2",
+    "supersedes": "sha256:e519515b6d4f25c1a7ec3e2592f36913b4db10b998e92b4ce7bb3d5dc9330f60",
     "reversalTransaction": "0xefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
   }
 }

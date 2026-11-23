@@ -21,7 +21,7 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 FILES = ["action-receipt.md", "CONFORMANCE.md", "conformance/requirements.json",
-         "conformance/trace.py", "vectors/MANIFEST.json", "exchanges/MANIFEST.json"]
+         "conformance/trace.py", "exchanges/MANIFEST.json"]
 
 
 def fresh() -> pathlib.Path:
@@ -29,7 +29,26 @@ def fresh() -> pathlib.Path:
     for f in FILES:
         (d / f).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(ROOT / f, d / f)
+    shutil.copytree(ROOT / "vectors", d / "vectors")      # T8-T10 read the files
     return d
+
+
+def edit_manifest(d, fn):
+    p = d / "vectors/MANIFEST.json"
+    doc = json.loads(p.read_text())
+    fn(doc)
+    p.write_text(json.dumps(doc, indent=2) + "\n")
+
+
+def overwrite_vector(d, target, source):
+    """Reviewer E's X6b: a vector overwritten with a copy of another of the
+    same context. The manifest's digest is updated too, so only T9 can see it."""
+    (d / "vectors" / target).write_text((d / "vectors" / source).read_text())
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("trace_under_test", d / "conformance/trace.py")
+    t = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(t)
+    edit_manifest(d, lambda m: m.update(vectorsDigest=t.vectors_digest(d / "vectors")))
 
 
 def check(d: pathlib.Path):
@@ -75,20 +94,36 @@ PLANTS = [
      lambda d: edit_reqs(d, lambda rs: by_id(rs, "V-AUT-3").update(tested_by="later"))),
     ("T7", "a stale CONFORMANCE.md",
      lambda d: (d / "CONFORMANCE.md").write_text((d / "CONFORMANCE.md").read_text() + "\nedited by hand\n")),
+    ("T8", "a vector file edited after the manifest was written (digest no longer describes it)",
+     lambda d: (d / "vectors/neg_canon_whitespace.json").write_text(
+         (d / "vectors/neg_canon_whitespace.json").read_text() + " ")),
+    ("T9", "a vector overwritten with a copy of another in the same context (reviewer E X6b)",
+     lambda d: overwrite_vector(d, "neg_canon_whitespace.json", "neg_canon_member_order.json")),
+    ("T10", "the manifest naming a vector file that is not in vectors/",
+     lambda d: (d / "vectors/neg_canon_whitespace.json").unlink()),
+    ("T3", "a requirement marked tested by the suite that cites a vector that does not exist",
+     lambda d: edit_reqs(d, lambda rs: by_id(rs, "V-ORD-1").update(vectors=["neg_order_nothing.json"]))),
 ]
 
 
 def main() -> int:
     failed = 0
+    # A plant counts only if it adds a line with its code that the untouched
+    # copy does not already report; otherwise a red control would make every
+    # plant look caught.
+    rc, out = check(fresh())
+    control_lines = set(out.splitlines())
     for code, what, plant in PLANTS:
         d = fresh()
         plant(d)
-        rc, out = check(d)
-        hit = rc != 0 and any(line.startswith(code + " ") for line in out.splitlines())
+        prc, pout = check(d)
+        hit = prc != 0 and any(line.startswith(code + " ") and line not in control_lines
+                               for line in pout.splitlines())
         failed += not hit
         print(f"[{'caught' if hit else 'MISSED'}] {code}: {what}")
-    rc, out = check(fresh())
     print(f"control (untouched): rc={rc}  {out.strip().splitlines()[-1][:110]}")
+    if rc != 0:
+        print("control errors: " + "; ".join(l[:60] for l in out.splitlines() if l[:2] in ("T0", "T1", "T2", "T3", "T4", "T5", "T7", "T8", "T9")))
     ok = failed == 0 and rc == 0
     print(f"trace self-test: {len(PLANTS) - failed} of {len(PLANTS)} planted defects caught; "
           f"control {'passed' if rc == 0 else 'FAILED'}")
